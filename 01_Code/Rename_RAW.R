@@ -4,92 +4,66 @@
 # Simple code to rename Raw files into something a little bit 
 # easier to work with
 
-# Special cases for run M03992 and M05812
-
 # Audrey Bourret
-# 2019-04-03
+# 2021-09-08
 
 # Library -----------------------------------------------------------------
 
-library(tidyverse)
-library(readxl)
 library(parallel)
+library(here)
+library(magrittr)
+library(stringr)
 
-#BiocManager::install("Biostrings")
+# Parameters --------------------------------------------------------------------
 
-# Internal functions
-for(i in 1:length( list.files("./03_Functions") )){
-  source(file.path("./03_Functions",  list.files("./03_Functions")[i]))  
-}
-
-# Data --------------------------------------------------------------------
-
-numCores <- if(get_os() %in% c("os","linux")){
-               detectCores() # Utilise le max de coeurs si sur linux
-            } else 1
-
-cat("There are", numCores, "cores available on this computer", sep = " ")
-#info.path <- get.value("info.path")
-#Sample.xl <- get.value("Sample.xl")
-
-#raw_unz.path <- get.value("raw_unz.path")
+numCores <- 1
 
 
 # Create new files names --------------------------------------------------
 
 # Get the current names of zipped files
 
-# Pattern to remove :
-list.files(get.value("raw.path"), full.name = T, pattern = ".fastq")[1:10]
+old.names <- list.files(file.path(here::here(), "00_Data", "01a_RawData"),
+                        full.name = T, 
+                        pattern = ".fastq") %>% 
+                        stringr::str_subset(".md5", negate = T) %>% 
+                        stringr::str_subset("i1|i2", negate = T)
 
-pat.rm <- "MI.M[:digit:][:digit:][:digit:][:digit:][:digit:]_[:digit:][:digit:][:digit:][:digit:].[:digit:][:digit:][:digit:].FLD[:digit:][:digit:][:digit:][:digit:]."
-pat.rm.extra <- "--PE1-CS1-IDT_i5_10."
+head(old.names)
+length(old.names)
+
+# Pattern to remove (new pattern can be added):
+
+# MiSeq GenomeQuebec pattern
+pat.MI <- paste0("MI.M", paste(rep("[:digit:]",5), collapse=""), "_", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",3), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), ".")
+# NovaSeq GenomeQuebec pattern + index
+pat.NS <- paste0("NS.", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",3), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",4), collapse=""), "---PE1-CS1-IDT_i5_[:digit:].")
+
+pat.rm <- c(pat.MI, pat.NS)
+pat.rm 
+
 # Doit être TRUE partout, sinon changer le patron
-name.test <- old.names %>% str_detect(pat.rm)
-name.test <- old.names %>% str_detect(pat.rm.extra)
 
+name.test <- old.names %>% stringr::str_detect(paste(pat.rm, collapse = "|"))
 table(name.test)
 
-list.files(get.value("raw.path"), full.name = T, pattern = ".fastq")[!name.test]
 
-old.names <- list.files(get.value("raw.path"), full.name = T, pattern = ".fastq") %>% str_subset(".md5", negate = T) %>% 
-                                                                                      str_subset("i1|i2", negate = T)       
-old.names
+rename.raw <- function(file.name) {
+         file.name %>% stringr::str_replace("01a_RawData",  "01b_RawData_rename") %>% 
+                       stringr::str_remove_all(paste(pat.rm, collapse = "|")) 
+  }
 
-new.names <- old.names %>% 
-                str_replace(get.value("raw.path"),  get.value("raw_rename.path")) %>% 
-                str_remove(pat.rm) %>% 
-                str_remove(pat.rm.extra) %>%       
-                str_replace("MiFish", "12S") %>% 
-                str_replace("dloop", "Pvit")
-
-old.names[1:10]
-new.names
+new.names <- rename.raw(old.names)
+new.names 
 
 # Change files names ------------------------------------------------------
 
-# Remove old files
-
-#file.remove(list.files(get.value("raw_rename.path"), full.name = T, pattern =".fastq"))
-
-# Copier unz -> unz_rename (can take some times)
-
-# system.time(
-# file.copy(old.names,
-#           new.names
-#           )
-# )
-
-# Parallele version, 6 times faster with 96 cores
+# Parallel version, up to 6 times faster
 #system.time(
-mclapply(old.names,
+
+parallel::mclapply(old.names,
         FUN = function(i) file.copy(i, 
-                                    i %>% 
-                                      str_replace(get.value("raw.path"),  get.value("raw_rename.path")) %>% 
-                                      str_remove(pat.rm)%>% 
-                                      str_remove(pat.rm.extra) %>% 
-                                      str_replace("MiFish", "12S") %>% 
-                                      str_replace("dloop", "Pvit")),
+                                    rename.raw(i)),
           mc.cores = numCores
           )  
 #)
