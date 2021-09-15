@@ -1,0 +1,12 @@
+# GLOBAL OPTIONS for MLI_metabar_pipeline
+# More than one loci can be analyzed at the same time, use ";" as separators.
+
+Loci: COI
+Sens: R1;R2
+
+# Primer sequences (default ones)
+COI.primers: GGWACWGGWTGAACWGTWTAYCCYCC;TAIACYTCIGGRTGICCRAARAAYCA
+12S.primers: ACTGGGATTAGATACCCC;TAGAACAGGCTCCTCTAG
+
+# Number of Cores we can use in the analysis
+NumCores: 1
