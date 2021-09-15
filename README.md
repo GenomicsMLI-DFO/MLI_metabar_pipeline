@@ -11,12 +11,27 @@ This pipeline is intended to run in R (and Rstudio), but need external programs 
 
 - R and Rstudio
 - FastQC
+- MultiQC
 - cutadapt
+
+Check that this work :
+system2("fastqc", "--help")
+
+MultiQC and cutadapt from python environment - should be added to the R path. Can be done as:
+
+# Add python env to this specific project
+Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
+                          Sys.getenv("PATH")),
+                        collapse = .Platform$path.sep))
+
+
 
 ### Before starting an analysis
 
 - Put raw read files in 00_Data/01a_RawData (see examples)
 - Put metadata in 00_Data/00_FileInfos (see examples)
+
+SeqInfo.csv
 
 - Install the depending R package : `...`
 
