@@ -1,0 +1,5 @@
+ID_plaque,ID_puit,ID_labo,ID_projet,Loci,Type_echantillon,Neg_prelevement,Neg_filtration,Neg_extraction,Neg_PCR,Commentaires
+3,B03,TE18-014,TE,COI,Echantillon,NA,TE18-019,NA,PPO-M04;PPO-M05,NA
+3,B08,TE18-019,TE,COI,Neg_filtre,NA,TE18-019,NA,PPO-M04;PPO-M05,NA
+3,F03,TE18-011,TE,COI,Echantillon,NA,TE18-019,NA,PPO-M04;PPO-M05,NA
+3,H01,TE18-010,TE,COI,Neg_prelev,NA,TE18-019,NA,PPO-M04;PPO-M05,NA
