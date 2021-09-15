@@ -8,18 +8,20 @@
 # 2021-06-23
 #
 
-start.time <- Sys.time()
-
-#
 
 # Library -----------------------------------------------------------------
 
 # Data manipulation
 
-library(tidyverse) # includes ggplot2 dplyr and stringr
+library(readr)
+library(here)
+library(parallel)
 
-library(gtools)    # for mixedsort
-library(readxl)
+
+#library(tidyverse) # includes ggplot2 dplyr and stringr
+
+#library(gtools)    # for mixedsort
+#library(readxl)
 
 #library(devtools)
 #devtools::install_github("kassambara/ggpubr")
@@ -34,168 +36,53 @@ library(readxl)
 # BiocManager::install("Biostrings")
 # BiocManager::install("dada2")
 
-library(Biostrings)
-library(dada2); packageVersion("dada2") # Faire mettre cette info dans le log
+#library(Biostrings)
+#library(dada2); packageVersion("dada2") # Faire mettre cette info dans le log
 
 # Internal functions
-for(i in 1:length( list.files("./03_Functions") )){
-  source(file.path("./03_Functions",  list.files("./03_Functions")[i]))  
-}
+source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
+source(file.path(here::here(), "01_Code", "Functions", "fastqc.R"))
 
-# Add pythom env to this specific project
-Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
+# Add python env to this specific project
+Sys.setenv(PATH = paste(c("/home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin",
                           Sys.getenv("PATH")),
                         collapse = .Platform$path.sep))
 
 system2("cutadapt", "--help")
 system2("multiqc", "--help")
 
-auto.folder()
+#auto.folder()
 
 
 # Data --------------------------------------------------------------------
 
-data.info <- read_csv(file.path(get.value("info.path"), "SeqInfo.csv") )
+data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
 
-# FR.Fish <- data.info %>% filter(Locus == "Fish", ID_projet == "Frankeinfish") %>% 
-#                          pull(ID_GQ)
-# 
-# FR.COI <- data.info %>% filter(Locus == "COI", ID_projet == "Frankeinfish") %>% 
-#   pull(ID_GQ)
-# 
-# PP3.COI <- data.info %>% filter(Locus == "COI", ID_projet == "PP3") %>% 
-#   pull(ID_GQ)
-# 
-# paste(PP3.COI, collapse = "|")
-# https://benjjneb.github.io/dada2/bigdata_paired.html
-
-LOCUS <- str_split(get.value("locus"), pattern = ";")[[1]]
-SENS  <- str_split(get.value("sens"), pattern = ";")[[1]]
+LOCUS <- str_split(get.value("Loci"), pattern = ";")[[1]]
+SENS  <- str_split(get.value("Sens"), pattern = ";")[[1]]
 
 cat(length(LOCUS), "loci will be analysed:", LOCUS, "\n", sep = " ")
 
-numCores <- if(get_os() %in% c("os","linux")){
-  detectCores() # Utilise le max de coeurs si sur linux
-} else 1
+numCores <- as.numeric(as.character(get.value("NumCores")))
 
-cat("There are", numCores, "cores available on this computer", sep = " ")
+cat("There is(are)", numCores, "core(s) available on this computer", sep = " ")
 
 # Setting up the log file
-
-if(file.exists(get.value("Raw.log"))){
-
-  switch(menu(title = "Do you want to erase the previous RAW log files?", graphics = T, 
-            choice = c("yes", "no")
-            )+1,
-       # Answer 0
-       cat("Nothing done\n"),
-       # Answer 1 (yes)
-      {cat("\nA new log file Process_RAW.log.txt was created (the previous RAW log was erased)\n\n")
-       cat("\n-------------------------\n", 
-           "Process raw eDNA data\n",
-           date(),
-           "\n-------------------------\n", 
-           file=get.value("Raw.log"), 
-           append = FALSE, sep = "\n")
-           }, 
-       # Answer 2 (no) 
-      {cat ("\nInformation will be append to the log file Process_RAW.log.txt\n\n")
-       cat("\n\n-------------------------\n",
-            "NEW ANALYSIS PERFORMED", 
-            date(),
-            "\n-------------------------\n", 
-            file=get.value("Raw.log"), 
-            append = T, sep = "\n")
-      }
-        )
-
-} else {
-  cat ("\nThe log file Process_RAW.log.txt was created\n\n")  
-  cat("\n-------------------------\n", 
-      "Process raw eDNA data\n",
-      date(),
-      "\n-------------------------\n", 
-      file=get.value("Raw.log"), 
-      append = FALSE, sep = "\n")
-}
 
 # Functions ---------------------------------------------------------------
 
 # Check that fastqc is found on this computer
 
-#system2("fastqc", "--help")
-
-# Wrapper around FastQC
-fastqc <- function(folder.in, folder.out) {
-  
-  if(get_os() %in% c("os","linux")){ # to run only on os and not windows
-    
-    Nfiles <- length(list.files(folder.in))
-    
-    cat("Performing a FastQC analysis on", Nfiles,"files \n")
-    
-    file.remove(list.files(folder.out, full.name = T, pattern ="fastqc"))
-    
-    temp <-  mclapply(list.files(folder.in, full.name = T, pattern = "fastq"),
-                      FUN = function(i){cmd <- paste("--outdir", folder.out, i, "-q")
-                      system2("fastqc", cmd)
-                      } ,
-                      mc.cores = numCores
-    )  
-    
-    # Save info on the log file
-    cat("FastQC analysis was performed:",
-        get.value("result.FQcutadapt.path"),
-        "\n-------------------------\n", 
-        file=get.value("Raw.log"), 
-        append = T, sep = "\n") 
-    
-  } else {cat("Cannot perform FastQC on windows yet -- sorry!!")}
-} # End of my function
-
-
-# Creating a FastQC report with MultiQC
-multiqc <- function(folder.out){
-  for(l in LOCUS){
-    print(l)
-    for(s in SENS){
-      print(s)
-      cmd <- paste(list.files(folder.out, full.names = T) %>%
-                     str_subset(paste0("_",l,"_")) %>% # update 2020-06-12 for FishAB vs Fish ...
-                     str_subset(paste0("_",s)) %>%
-                     str_subset(".zip"),
-                   "--outdir", file.path(folder.out, "MultiQC_report"),
-                   "--filename", paste0("multiqc_report_",l, "_", s, ".html"),
-                   "-f" # to rewrite on previous data
-      )
-
-      system2("multiqc", cmd)
-
-    }
-  }
-  
-  
-}
-
-
+system2("fastqc", "--help")
 
 # 1. RAW quality assesment (fastqc) ---------------------------------------
 
 # FastQC
-get.value("raw_rename.path")
-file.exists(get.value("raw_rename.path"))
+fastqc(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
+       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"))
 
-get.value("result.FQraw.path")
-file.exists(get.value("result.FQraw.path"))
-
-fastqc(get.value("raw_rename.path"), get.value("result.FQraw.path"))
-
-list.files(get.value("raw_rename.path"))[1:10]
-
-# MultiQC for the others? Or by project rather then by loci?
-
-multiqc(get.value("result.FQraw.path"))
+multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"))
 
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
 
