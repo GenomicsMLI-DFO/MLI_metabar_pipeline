@@ -42,6 +42,7 @@ library(parallel)
 # Internal functions
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "fastqc.R"))
+source(file.path(here::here(), "01_Code", "Functions", "cutadapt.R"))
 
 # Add python env to this specific project
 Sys.setenv(PATH = paste(c("/home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin",
@@ -82,107 +83,31 @@ system2("fastqc", "--help")
 fastqc(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
        folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"))
 
-multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"))
+multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"),
+        loci = LOCUS, 
+        sens = SENS)
 
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
 
 # 2.1 CUTADAPT
 
-list.files(get.value("filt_cutadapt.path"), full.name = T, pattern =".fastq") %>% 
-  str_subset(pattern = "_12S_")
-
-
 system2("cutadapt", "--help")
 
-# CHECK THE PATTERN FOR LOCUS - NOW "_LOCUS_"
-# NOW WITH NOVASEQ poly-G problem resolve with --nextseq-trim
-
-
-if(get_os() %in% c("os","linux")){ 
-
-  if(length(SENS) == 2){
-    
-    # Remove old files
-    file.remove(list.files(get.value("filt_cutadapt.path"), full.name = T, pattern =".fastq"))
-    file.remove(list.files(get.value("filt_cutadapt.log"), full.name = T, pattern ="_log.txt"))
-    
-    for(l in LOCUS){
-    
-      print(l)
-      
-      F.primer <- str_split(get.value(paste(l, "primers", sep=".")), pattern = ";")[[1]][1]
-      R.primer <- str_split(get.value(paste(l, "primers", sep=".")), pattern = ";")[[1]][2] 
-      
-      F.primer <- F.primer %>% str_replace_all("I", "N")
-      R.primer <- R.primer %>% str_replace_all("I", "N")
-      
-      mclapply(list.files(get.value("raw_rename.path"), pattern = paste0("_",l,"_"), full.names=T) %>% str_subset(paste0(SENS[1],".fastq")),
-               FUN = function(file1){file2 <- file1 %>% str_replace(paste0(SENS[1],".fastq"), paste0(SENS[2],".fastq")) 
-                                     new.file1 <- file1 %>% str_replace(get.value("raw_rename.path"), get.value("filt_cutadapt.path")) %>%
-                                                            str_replace (".fastq", "_cut.fastq") 
-                                     new.file2 <- new.file1 %>% str_replace(paste0(SENS[1],"_cut.fastq"), paste0(SENS[2],"_cut.fastq")) 
-                 
-                                     cmd <- paste("-g", paste0("^", F.primer),
-                                                  "-G", paste0("^", R.primer),
-                                                  "-o", new.file1, 
-                                                  "--paired-output", new.file2, 
-                                                  file1,
-                                                  file2,
-                                                  #"-f", "fastq",      
-                                                  "--discard-untrimmed", 
-                                                  #"--nextseq-trim=20", # To trim when quality go down just before poly-Q tail
-                                                  #"--report=minimal",
-                                                  #"-j", numCores, #Ncore
-                                                  sep = " ") # forward adapter
-                                     
-                                     A <- system2("cutadapt", cmd, stdout=T, stderr=T) # to R console
-                                     #system2("cutadapt", cmd)
-                                     # TO UPDaTE
-                                     
-                                     # save a file log
-                                     cat(file = new.file1 %>% str_replace(get.value("filt_cutadapt.path"), get.value("filt_cutadapt.log")) %>% 
-                                           str_replace(".fastq.gz","_log.txt") %>% 
-                                           str_remove(paste0("_",SENS[1])),
-                                         A, # what to put in my file
-                                         append= F, sep = "\n")
-                                     
-                                 },
-               mc.cores = numCores
-      )  
-      
-      
-    }
-    
-    
-  } else {print("No code for unpaired reads")}
-  
-
-} else {cat("Cannot perform cutadapt on windows yet -- sorry!!")}
-
-
-
-# Creating a FastQC report with MultiQC
-# THIS IS NOT WORKING WELL, we should add something here
-#for(l in LOCUS){
-#  print(l)
-#  cmd <- paste(list.files(get.value("filt_cutadapt.log"), full.names = T) %>% 
-#                 str_subset(l),
-#               "--outdir", get.value("result.Cutadapt"),
-#               #"--module", "cutadapt",
-#               "--filename", paste0("multiqc_report_",l, ".html"),
-#               "-f", # to rewrite on previous data
-#               "-v -s -d"
-#  )
-#  
-#  system2("multiqc", cmd)
-#  
-#}
-
+cutadapt(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"), 
+         folder.out = file.path(here::here(), "00_Data", "02a_Cutadapt"), 
+         loci = LOCUS, 
+         sens = SENS, 
+         numCores = numCores,
+         novaseq = FALSE) 
 
 # Running another fastqc following cutadapt
-fastqc(get.value("filt_cutadapt.path"), get.value("result.FQcutadapt.path"))
+fastqc(folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt"),
+       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cutadapt"),
+       numCores = numCores)
 
-multiqc(get.value("result.FQcutadapt.path"))
+multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cutadapt"),
+        loci = LOCUS, 
+        sens = SENS)
 
 
 # 2.2 DADA2

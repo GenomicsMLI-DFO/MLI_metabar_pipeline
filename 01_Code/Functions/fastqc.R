@@ -1,9 +1,9 @@
 #system2("fastqc", "--help")
 
 # Wrapper around FastQC
-fastqc <- function(folder.in, folder.out) {
+fastqc <- function(folder.in, folder.out, numCores = 1) {
   
-    Nfiles <- length(list.files(folder.in))
+    Nfiles <- length(list.files(folder.in, pattern = ".fastq.gz"))
     
     cat("Performing a FastQC analysis on", Nfiles,"files \n")
     
@@ -27,10 +27,10 @@ fastqc <- function(folder.in, folder.out) {
 
 
 # Creating a FastQC report with MultiQC
-multiqc <- function(folder.out){
-  for(l in LOCUS){
+multiqc <- function(folder.out, loci, sens){
+  for(l in loci){
     print(l)
-    for(s in SENS){
+    for(s in sens){
       print(s)
       cmd <- paste(list.files(folder.out, full.names = T) %>%
                      str_subset(paste0("_",l,"_")) %>% # update 2020-06-12 for FishAB vs Fish ...
