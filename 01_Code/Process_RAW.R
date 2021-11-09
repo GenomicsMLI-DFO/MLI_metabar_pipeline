@@ -118,27 +118,10 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cuta
 
 # 2.2 DADA2
 
-PARAM.DADA2 <- expand.grid(Locus = LOCUS, Sens = SENS) %>% as.data.frame()
-PARAM.DADA2$truncQ    <- 10
-PARAM.DADA2$truncLen  <- 0
-PARAM.DADA2$trimLeft  <- 0
-PARAM.DADA2$trimRight <- 0
-PARAM.DADA2$maxLen    <- Inf
-PARAM.DADA2$minLen    <- 50
-PARAM.DADA2$minQ      <- 0
-PARAM.DADA2$maxEE     <- 1 # was 2 before
-
-#PARAM.DADA2$truncLen[which(PARAM.DADA2$Locus == "12S")] <- 100
-PARAM.DADA2$truncLen[which(PARAM.DADA2$Locus == "12S")] <- 150
-#PARAM.DADA2$truncLen[which(PARAM.DADA2$Locus == "FishAB")] <- 160
-
-PARAM.DADA2$minLen[which(PARAM.DADA2$Locus == "COI")]   <- 150
-PARAM.DADA2$minLen[which(PARAM.DADA2$Locus == "Pvit")]   <- 150
-
+# Check if these paramaters seem good, if not change them
+PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Functions/dada2_param.tsv"))
 PARAM.DADA2
 
-# Remove old files
-file.remove(list.files(get.value("filt_dada2.path"), full.name = T, pattern =".fastq"))
 
 for(l in LOCUS){
 

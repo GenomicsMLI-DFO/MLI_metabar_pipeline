@@ -1,0 +1,7 @@
+Locus	Sens	truncQ	truncLen	trimLeft	trimRight	maxLen	minLen	minQ	maxEE
+COI	R1	10	0	0	0	Inf	150	0	1
+COI	R2	10	0	0	0	Inf	150	0	1
+12S	R1	10	0	0	0	Inf	100	0	1
+12S	R2	10	0	0	0	Inf	100	0	1
+Fish	R1	10	0	0	0	Inf	150	0	1
+Fish	R2	10	0	0	0	Inf	150	0	1
