@@ -2,10 +2,10 @@
 # Info --------------------------------------------------------------------
 
 # eDNA pipeline using DADA2
-# Test rapide pour phoca 2020 - avec Taq multi
+# Template pipeline
 # 
 # Audrey Bourret
-# 2021-06-23
+# 2021-09-11
 #
 
 
@@ -45,7 +45,7 @@ source(file.path(here::here(), "01_Code", "Functions", "fastqc.R"))
 source(file.path(here::here(), "01_Code", "Functions", "cutadapt.R"))
 
 # Add python env to this specific project
-Sys.setenv(PATH = paste(c("/home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin",
+Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
                           Sys.getenv("PATH")),
                         collapse = .Platform$path.sep))
 
@@ -63,19 +63,22 @@ data.info
 LOCUS <- str_split(get.value("Loci"), pattern = ";")[[1]]
 SENS  <- str_split(get.value("Sens"), pattern = ";")[[1]]
 
-cat(length(LOCUS), "loci will be analysed:", LOCUS, "\n", sep = " ")
+cat(length(LOCUS), "loci will be analysed:", LOCUS, 
+    "\nThis parameter can be changed with the file Option.txt", sep = " ")
 
 numCores <- as.numeric(as.character(get.value("NumCores")))
 
-cat("There is(are)", numCores, "core(s) available on this computer", sep = " ")
+cat(numCores, "core(s) will be used by the script",
+    "\nThis parameter can be changed with the file Option.txt", sep = " ")
 
 # Setting up the log file
 
 # Functions ---------------------------------------------------------------
 
-# Check that fastqc is found on this computer
+# Check that fastqc and mutliqc are found on this computer
 
 system2("fastqc", "--help")
+system2("multiqc", "--help")
 
 # 1. RAW quality assesment (fastqc) ---------------------------------------
 
@@ -90,6 +93,9 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
 
 # 2.1 CUTADAPT
+
+# We need to remove the adaptors, and discard reads untrimmed
+# this function can work with more than one loci
 
 system2("cutadapt", "--help")
 
