@@ -1,11 +1,11 @@
 
-cutadapt <- function(folder.in, folder.out, loci, sens, param, numCores) {
+dada2.filter <- function(folder.in, folder.out, loci, sens, param.dada2, numCores) {
   
 for(l in loci){
   
   cat("\nFiltering",l, "\n")  
   
-  PARAM.temp <- PARAM.DADA2 %>% filter(Locus == l)  
+  PARAM.temp <- param.dada2 %>% dplyr::filter(Locus == l)  
   
   # create files lists
   filesF.temp <- list.files(folder.in, full.name =T, pattern = ".fastq") %>%
@@ -19,7 +19,7 @@ for(l in loci){
   if(nrow(PARAM.temp == 2)){
     filesR.temp <- list.files(folder.in, full.name =T, pattern = ".fastq") %>% 
       str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-      str_subset(PARAM.temp$Sens[2] %>% as.character())
+      str_subset(PARAM.temp$Sens[2])
     
     
     
@@ -31,7 +31,7 @@ for(l in loci){
   filesF.filt.temp <- filesF.temp  %>% str_replace(folder.in, folder.out)
   filesR.filt.temp <- filesR.temp  %>% str_replace(folder.in, folder.out)
   
-  filter.summary.temp <- filterAndTrim(fwd = filesF.temp ,
+  filter.summary.temp <- dada2::filterAndTrim(fwd = filesF.temp ,
                                        filt = filesF.filt.temp,
                                        rev = filesR.temp,
                                        filt.rev = filesR.filt.temp,
@@ -47,7 +47,12 @@ for(l in loci){
                                        multithread=ifelse(numCores > 1, T, F), # TRUE on linux
                                        verbose = TRUE) 
   
-  readr::write_csv(filter.summary.temp, file = file.path(folder.out, paste0(l,"_dada2_summary.csv")))
+  filter.summary <- data.frame(ID = row.names(filter.summary.temp) %>% str_remove("_R1_cutadapt.fastq.gz"),
+                               reads.in = filter.summary.temp[,1],
+                               reads.out = filter.summary.temp[,2]
+                               )
+  
+  readr::write_csv(filter.summary, file = file.path(folder.out, "log", paste0(l,"_dada2_summary.csv")))
   
   cat(l, ":\n",
       #Data
@@ -56,7 +61,7 @@ for(l in loci){
       "Dada2 v", packageVersion("dada2") %>% as.character() , "\n",
       #N samples
       nrow(filter.summary.temp),
-      " samples were process\n",
+      " samples were processed\n",
       
       #Prop samples
       round(sum(filter.summary.temp[,2])/sum(filter.summary.temp[,1]),3)*100,
@@ -72,11 +77,11 @@ for(l in loci){
       ", maxEE = ", paste(PARAM.temp$maxEE[1], PARAM.temp$maxEE[2], sep="-"),"\n",
       "\n",
       sep = "",
-      file = file.path(folder.out, paste0(l,"_dada2_filtering.log")),
+      file = file.path(folder.out, "log", paste0(l,"_dada2_filtering.log")),
       append = TRUE
   )
   
-  cat(readLines(file.path(get.value("filt_dada2.log"), paste0(l,"_dada2_filtering.log"))), sep = "\n")
+  cat(readLines(file.path(folder.out, "log", paste0(l,"_dada2_filtering.log"))), sep = "\n")
   
 }
 
