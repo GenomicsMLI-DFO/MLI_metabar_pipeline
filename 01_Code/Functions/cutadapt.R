@@ -3,9 +3,11 @@ cutadapt <- function(folder.in, folder.out, loci, sens, numCores, novaseq = FALS
   
     if(length(sens) == 2){
       
+    cat("\nWorking on both directions, F and R\n")  
+      
       for(l in loci){
         
-        print(l)
+        cat("\nProcessing", l, "\n")  
         
         F.primer <- str_split(get.value(paste(l, "primers", sep=".")), pattern = ";")[[1]][1]
         R.primer <- str_split(get.value(paste(l, "primers", sep=".")), pattern = ";")[[1]][2] 
@@ -61,5 +63,7 @@ cutadapt <- function(folder.in, folder.out, loci, sens, numCores, novaseq = FALS
       
     } else {print("No code for unpaired reads")}
     
+  
+  cat("\nTrimming is over, files were saved in", folder.out, "\n")  
 }
 
