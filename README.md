@@ -1,9 +1,7 @@
 # MLI_metabar_pipeline
 Template repository to perform metabarcoding analysis. 
 
-
-This pipeline is intended to run in R (and Rstudio), but need external programs such as FastQC (REF) and cutadapt (REF). 
-
+This pipeline is intended to run in R (and Rstudio), but need external programs such as fastQC (REF), multiqc (REF) and cutadapt (REF). 
 
 ## How to use MLI_metabar_pipeline
 
@@ -14,18 +12,21 @@ This pipeline is intended to run in R (and Rstudio), but need external programs 
 - MultiQC
 - cutadapt
 
-Check that this work :
+To be sure that the external command are found by R, try to run these commands first:
+
+```{r}
 system2("fastqc", "--help")
+system2("multiqc", "--help")
+system2("cutadapt", "--help")
+```
 
-MultiQC and cutadapt from python environment - should be added to the R path. Can be done as:
+MultiQC and cutadapt can be installed in a python environment that should be added to the R path. Can be done as:
 
-# Add python env to this specific project
-Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
+```{r}
+Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
                           Sys.getenv("PATH")),
                         collapse = .Platform$path.sep))
-
-
-
+```
 ### Before starting an analysis
 
 - Put raw read files in 00_Data/01a_RawData (see examples)
@@ -33,24 +34,21 @@ Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
 
 SeqInfo.csv
 
-- Install the depending R package : `...`
+- Install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`
 
 This can be done all at once with this command line in R :
 
 ```{r}
 install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2"))
-
 ```
-Somes are from biostrings
+Somes are from biostrings : `dada2`, `Biostrings`
 
 ```{r}
-
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
  
 BiocManager::install("Biostrings")
 BiocManager::install("dada2")
-
 ```
 
 
@@ -59,6 +57,7 @@ BiocManager::install("dada2")
 Use **01_Rename_RAW.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
 
 MiSeq : "MI.M*00000*_*0000*.*000*.FLD*0000*."
+
 NovaSeq : "NS.*0000*.*000*.FLD*0000*.*0000*---PE1-CS1-IDT_i5_*0*."
 
 Other patterns or transformation can be implemented
@@ -75,10 +74,16 @@ These are the steps:
 5. dada2 dereplication, sample inference and merging
 6. dada2 chimera removal
 
+Then you can use **03_Raw_report.Rmd** within *01_Code* folder to get a first view on what have been done.
+
 ### Deal with negative samples
 
 ## Example
 
+A test dataset is available with the template pipeline.
 
+These files are withe the **00_Data/01a_Raw_Data** folder.
+
+4 samples at the COI marker, both F (R1) and R (R2).
 
 ## References
