@@ -17,11 +17,14 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(stringr)
+library(magrittr)
 library(here)
 library(parallel)
 library(ggplot2)
 
 library(dada2)
+library(Biostrings)
+
 #library(tidyverse) # includes ggplot2 dplyr and stringr
 
 #library(gtools)    # for mixedsort
@@ -50,15 +53,14 @@ source(file.path(here::here(), "01_Code", "Functions", "cutadapt.R"))
 source(file.path(here::here(), "01_Code", "Functions", "dada2.R"))
 
 # Add python env to this specific project
-Sys.setenv(PATH = paste(c("/home/genleia/Documents/PythonVenv/GenoBaseEnv/bin",
-                          Sys.getenv("PATH")),
-                        collapse = .Platform$path.sep))
+#Sys.setenv(PATH = paste(c("/home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin",
+#                          Sys.getenv("PATH")),
+#                        collapse = .Platform$path.sep))
 
 system2("cutadapt", "--help")
 system2("multiqc", "--help")
 
 #auto.folder()
-
 
 # Data --------------------------------------------------------------------
 
@@ -67,9 +69,10 @@ data.info
 
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
 SENS  <- stringr::str_split(get.value("Sens"), pattern = ";")[[1]]
+RUN   <- stringr::str_split(get.value("Run"), pattern = ";")[[1]]
 
-cat(length(LOCUS), "loci will be analysed:", LOCUS, 
-    "\nThis parameter can be changed with the file Option.txt", sep = " ")
+cat(length(LOCUS), "loci will be analyse (", paste(LOCUS, collapse = ", "), ") from the run(s)", paste(RUN, collapse = ", "),
+    "\nTheses parameters can be changed with the file Option.txt", sep = " ")
 
 numCores <- as.numeric(as.character(get.value("NumCores")))
 
@@ -123,7 +126,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cuta
 
 # 2.2 DADA2
 
-# Check if these paramaters seem good, if not change them
+# Check if these parameters seem good, if not change them
 PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Functions/dada2_param.tsv"))
 PARAM.DADA2
 
@@ -142,25 +145,37 @@ COI.res <- COI.res %>% mutate(Keep = reads.in,
   select(-c(reads.in, reads.out)) %>% 
   tidyr::pivot_longer(cols = c(Keep, Remove), names_to = "Reads", values_to = "N")  
   
-COI.res %>%   ggplot(aes(x = ID, y = N, fill = Reads)) +
-  geom_bar()
+COI.res %>%  mutate(Reads = factor(Reads, levels = c("Remove", "Keep")),
+                    ID_labo = ID %>% str_remove("_COI")) %>%
+  left_join(data.info) %>% 
+  ggplot(aes(x = ID_labo, y = N, fill = Reads)) +
+  geom_bar(stat = "identity") +
+  facet_grid(.~Type_echantillon, scale = "free")
+
 # QUALITY ASSEMENT
 
-fastqc(get.value("filt_dada2.path"), get.value("result.FQdada2.path"))
+# Running another fastqc following cutadapt
+fastqc(folder.in = file.path(here::here(), "00_Data", "02b_Filtered_dada2"),
+       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada2"),
+       numCores = numCores)
 
-multiqc(get.value("result.FQdada2.path"))
+multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada2"),
+        loci = LOCUS, 
+        sens = SENS)
+
 
 # 3. FILT to ASV (denoise with DADA2) --------------------------------------------------
 
-# 3.1 Calcul du taux d'erreur
+# 3.1 Compute error rate
 
-# Be careful, MUST include samples from the same RUN (cause error can be run specific)
-
+# Be careful, MUST include samples from the same RUN (cause errors can be run specific)
+# I was used to compute it by loci, but I don't think it's necessary
+# except if the error rate have something to do with the position and all markers don't have the same length
+# Some part are weird simply because it was in a loop previously
 
   # create files lists
-  filesF.temp <- list.files(get.value("filt_dada2.path"), full.name =T, pattern = ".fastq") %>%
-    #str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-    str_subset(paste0(SENS[1],"_cut"))
+  filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
+                 str_subset(SENS[1])
   
   # Add a message to be sure that the right number of files were used
   cat(length(filesF.temp), "files were found\n")  
@@ -173,10 +188,9 @@ multiqc(get.value("result.FQdada2.path"))
                                                      multithread = ifelse(numCores > 1, T, F)))
   
   #if(nrow(PARAM.temp == 2)){
-    filesR.temp <- list.files(get.value("filt_dada2.path"), full.name =T, pattern = ".fastq") %>% 
-      #str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-      str_subset(paste0(SENS[2] %>% as.character(),"_cut"))
-  
+    filesR.temp <-  list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
+                    str_subset(SENS[2])
+    
     # Add a message to be sure that the right number of files were used
     cat(length(filesR.temp), "files were found\n")  
     
@@ -189,8 +203,10 @@ multiqc(get.value("result.FQdada2.path"))
   #} else {err.R.temp <- vector()}
   
   #  cat("\nPlotting error rate results for" , l, "\n")  
+  
+  # Print a PDF of error rate
     
-  pdf(file.path(get.value("error.dada2.path"), paste0("ErrorsRate.dada2_june2021.pdf"))) 
+  pdf(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", "ErrorsRate.pdf")) 
     print(plotErrors(get(paste0("err.F")), nominalQ=TRUE))
     print(plotErrors(get(paste0("err.R")), nominalQ=TRUE))
   dev.off()
@@ -198,28 +214,21 @@ multiqc(get.value("result.FQdada2.path"))
   #cat("\nSaving error rate results for" , l, "\n") 
     
 save(list = paste0("err.F"),
-     file = file.path(get.value("error.dada2.path"),paste0("err.F.data")  ))
+     file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", paste0("err.F.Rdata")))
   
 #if(nrow(PARAM.temp == 2)){ 
   save(list = paste0("err.R"),
-       file = file.path(get.value("error.dada2.path"),paste0("err.R.data")  ))
+       file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2",paste0("err.R.Rdata")))
 #  }  
-
-
-
-cat("Dada2 error rate assessment was performed and graph were saved:",
-    "01_Results/ErrorsRate.dada2.pdf",
-    "\n-------------------------\n", 
-    file=get.value("Raw.log"), 
-    append = T, sep = "\n") 
 
 
 # 3.2 Dereplication and sample inference
 
-# Since we are working with BIG DATA, we don't have enought memory
-# to run by locus. This is a first test by sample
+# Since we are working with BIG DATA, we don't have enough memory
+# to run it by locus most of the time. So this code run it by sample directly.
 
-for(x in list.files(get.value("error.dada2.path"), full.names = T, pattern = ".data")){
+# To reload error rate if necessary  
+for(x in list.files(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2"), full.names = T, pattern = ".Rdata")){
   load(x)
 }
 
@@ -228,9 +237,9 @@ for(l in LOCUS){
   cat("\nWorking on " , l, "\n")
 
   # create files lists
-  filesF.temp <- list.files(get.value("filt_dada2.path"), full.name =T, pattern = ".fastq") %>%
+  filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
     str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-    str_subset(paste0(SENS[1] %>% as.character(),"_cut"))
+    str_subset(SENS[1] %>% as.character())
   
   #filesR.temp <- filesF.temp %>% str_replace(SENS[1], SENS[2])
   
@@ -246,11 +255,9 @@ for(l in LOCUS){
   for(i in seq_along(filesF.temp)){
     
     samF <- filesF.temp[i]
-    samR <- samF %>% str_replace(paste0(SENS[1] %>% as.character(),"_cut"), paste0(SENS[2] %>% as.character(),"_cut"))
+    samR <- samF %>% str_replace(SENS[1] %>% as.character(), SENS[2] %>% as.character())
     
-    cat("\nProcessing:", samF %>%  str_remove(get.value("filt_dada2.path")) %>% 
-          str_remove(paste0("_", l, "_R1_cut.fastq.gz")) %>% 
-          str_remove("/"), "\n" )
+    cat("\nProcessing:", samF ,"\n" )
 
     cat("Dereplication\n" )
     
@@ -291,8 +298,10 @@ for(l in LOCUS){
  
   rm(list = c("derep.F", "derep.R", "dada.F", "dada.R", "merger"))
   
-  names(mergers) <-   names(mergers) %>% str_remove(get.value("filt_dada2.path")) %>% 
-                                         str_remove(paste0("_", l, "_R1_cut.fastq.gz")) %>% 
+  names(mergers) <-   names(mergers) %>% str_remove(file.path(here::here(), "00_Data", "02b_Filtered_dada2")) %>% 
+                                         str_remove(paste0("_", l, "_R1")) %>% 
+                                         str_remove("_cutadapt") %>% 
+                                         str_remove(".fastq.gz") %>% 
                                          str_remove("/")
   
   cat("\nMaking SeqTab for" , l, "\n")
@@ -304,85 +313,48 @@ for(l in LOCUS){
   cat("\nSaving SeqTab for" , l, "\n") 
   
   save(list = paste0("seqtab.", l, ".int"),
-       file = file.path(get.value("seqtab.dada2.path"),paste0("seqtab.wCHIM.", l, ".data")  ))
+       file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("seqtab.wCHIM.", l, ".Rdata")  ))
   
   close(pb)
   
  }
 
-cat("Dada2 dereplication, sample inference and seqence table were performed.",
-    "\n", 
-    file=get.value("Raw.log"), 
-    append = T, sep = "\n") 
 
 
-# 3.6 Remove chimera ------------------------------------------------------
-
-# Why false for multithread?
+# 3.6 Remove chimera 
 
 for(l in LOCUS){
   
   cat("\nRemoving chimera for" , l, "\n")
   
   assign(x = paste0("ESVtab.", l), value = removeBimeraDenovo(get(paste0("seqtab.",l,".int")), method = "consensus", 
-                                                              multithread = FALSE, verbose = TRUE)
+                                                              multithread = ifelse(numCores > 1, T, F), verbose = TRUE)
   )
   
   cat("\nSaving SeqTab without chimera for" , l, "\n") 
   
   save(list = paste0("ESVtab.", l),
-       file = file.path(get.value("chimera.dada2.path"),paste0("ESVtab.noCHIM.", l, ".data")  ))
+       file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("ESVtab.noCHIM.", l, ".Rdata")  ))
 
   
 }
 
-cat("Chimera were removed.",
-    "\n", 
-    file=get.value("Raw.log"), 
-    append = T, sep = "\n") 
 
+# Save ESV table and fasta file --------------------------------------
 
-
-# Write results
-
-write.dada2.res <- function(tab, name, folder){
-
-  file1 <- file.path(folder, paste0("all.", name, "_ESV.fasta"))
-  file2 <- file1 %>% str_replace(".fasta", "_ESVtable.txt")
-  
-  DNA <- DNAStringSet(getSequences(tab))
-  names(DNA) <- paste0("ESV_", 1:length(DNA))
-  
-  writeXStringSet(DNA, file1)
-  write.table(tab, file2)
-  
-}
 
 for(l in LOCUS){
 
-  write.dada2.res(get(paste0("ESVtab.",l)), l, get.value("ASV.dada2.path"))
+  write.dada2.res(ESVtab = get(paste0("ESVtab.",l)), 
+                  loci = l, 
+                  folder = file.path(here::here(), "00_Data", "03c_ESV"))
 
 }
 
-save(file = get.value("ASVtable.data"), 
-     list = ls(pattern = "ESVtab."))
-
-cat("Data were saved:",
-    get.value("ASVtable.data"),
-    "\n-------------------------\n", 
-    file=get.value("Raw.log"), 
-    append = T, sep = "\n") 
-
-
-# END of the script -------------------------------------------------------
-
-# save.image(file.path(log.path,"Process_RAW.Rdata"))
-
-end.time <- round(Sys.time() - start.time,2) 
-
-cat("\nEND of the raw data processing!",
-    #paste0("Rdata saved: ", file.path(log.path,"Process_RAW.Rdata")),
-    paste0("\nTime to run this script: ", end.time, " ",units(end.time)),
+# Write a final log
+  
+cat("\nEND of 02_Process_RAW.R script\n",
+    date(),
     "\n-------------------------\n", 
    
     paste("R version", devtools::session_info()$platform$version, sep = ": "),
@@ -395,27 +367,10 @@ cat("\nEND of the raw data processing!",
     paste("Biostrings", packageVersion("Biostrings"), sep = ": "),   
 
     "\n~ External programs ~",
-    
+    paste("fastqc", system2("fastqc", "-v", stdout=T, stderr=T), sep = ": "),     
+    paste("multiqc", system2("multiqc", "--version", stdout=T, stderr=T), sep = ": "),     
+    paste("cutadapt", system2("cutadapt", "--version", stdout=T, stderr=T), sep = ": "),  
     
     # Add it to the log file
-    file=get.value("Raw.log"), 
-    append = T, sep = "\n")
-
-
-if(get_os() %in% c("os","linux")){ # to run only on os and not windows
-  
-  cat(paste("fastqc", system2("fastqc", "-v", stdout=T, stderr=T), sep = ": "),     
-      paste("cutadapt", system2("cutadapt", "--version", stdout=T, stderr=T), sep = ": "),     
-      #paste("vsearch", system2("vsearch", "-v", stdout=T, stderr=T)[1] , sep = ": "),   
-      #paste("usearch", system2("usearch", "--version", stdout=T, stderr=T) , sep = ": "),      
-      "\n-------------------------\n", 
-            # Add it to the log file
-      file=get.value("Raw.log"), 
-      append = T, sep = "\n")
-
-
-}
-
-# END OF THE SCRIPT
-
-seqtab.Pvit.int %>% str()
+    file = file.path(here::here(), "00_Data", "03c_ESV", "Process_RAW.log"), 
+    append = F, sep = "\n")

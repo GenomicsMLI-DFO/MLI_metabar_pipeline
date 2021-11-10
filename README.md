@@ -38,12 +38,25 @@ SeqInfo.csv
 This can be done all at once with this command line in R :
 
 ```{r}
-install.packages(c("..."))
+install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2"))
+
 ```
+Somes are from biostrings
+
+```{r}
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+ 
+BiocManager::install("Biostrings")
+BiocManager::install("dada2")
+
+```
+
 
 ### Rename raw files
 
-Use **Rename_RAW.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
+Use **01_Rename_RAW.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
 
 MiSeq : "MI.M*00000*_*0000*.*000*.FLD*0000*."
 NovaSeq : "NS.*0000*.*000*.FLD*0000*.*0000*---PE1-CS1-IDT_i5_*0*."
@@ -52,7 +65,15 @@ Other patterns or transformation can be implemented
 
 ### From **raw reads** to **ESV table**
 
-Use the file **Process_RAW.R** within *01_Code* folder to transform raw reads into an ESV table. 
+Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads into an ESV table. 
+
+These are the steps:
+1. fastQC and multiQC on raw reads
+2. Cutdapt to check for and remove adaptors (followed by a second fastQC/multiQC)
+3. dada2 filtering (followed by a third fastQC/multiQC)
+4. dada2 error rate assessment
+5. dada2 dereplication, sample inference and merging
+6. dada2 chimera removal
 
 ### Deal with negative samples
 

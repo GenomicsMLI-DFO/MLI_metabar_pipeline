@@ -89,3 +89,17 @@ cat("Quality filtering was performed with dada2",
     "Files were saved in", folder.out, sep = "\n") 
 
 }
+
+
+write.dada2.res <- function(ESVtab, loci, folder){
+  
+  file1 <- file.path(folder, paste0("ESV.", loci, ".fasta"))
+  file2 <- file1 %>% str_replace(".fasta", "_table.txt")
+  
+  DNA <- DNAStringSet(getSequences(tab))
+  names(DNA) <- paste0("ESV_", loci, "_", 1:length(DNA))
+  
+  writeXStringSet(DNA, file1)
+  write.table(tab, file2)
+  
+}

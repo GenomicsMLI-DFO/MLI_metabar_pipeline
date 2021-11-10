@@ -10,3 +10,6 @@ COI.primers: GGWACWGGWTGAACWGTWTAYCCYCC;TAIACYTCIGGRTGICCRAARAAYCA
 
 # Number of Cores we can use in the analysis
 NumCores: 1
+
+# Run names - needed as samples from the same RUN will be analysed toghetter sometime
+Run: MI_3992
