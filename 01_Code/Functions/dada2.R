@@ -96,10 +96,10 @@ write.dada2.res <- function(ESVtab, loci, folder){
   file1 <- file.path(folder, paste0("ESV.", loci, ".fasta"))
   file2 <- file1 %>% str_replace(".fasta", "_table.txt")
   
-  DNA <- DNAStringSet(getSequences(tab))
+  DNA <- DNAStringSet(getSequences(ESVtab))
   names(DNA) <- paste0("ESV_", loci, "_", 1:length(DNA))
   
   writeXStringSet(DNA, file1)
-  write.table(tab, file2)
+  write.table(ESVtab, file2)
   
 }
