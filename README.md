@@ -56,9 +56,15 @@ BiocManager::install("dada2")
 
 Use **01_Rename_RAW.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
 
-MiSeq : "MI.M*00000*_*0000*.*000*.FLD*0000*."
+MiSeq
 
-NovaSeq : "NS.*0000*.*000*.FLD*0000*.*0000*---PE1-CS1-IDT_i5_*0*."
+"MI.M*00000*_*0000*.*000*.FLD*0000*."
+
+NovaSeq 
+
+"NS.*0000*.*000*.FLD*0000*.*0000*---PE1-CS1-IDT_i5_*0*."
+
+"NS.*0000*.FLD*0000*---PE1-CS1-IDT_i5_*0*."
 
 Other patterns or transformation can be implemented
 
