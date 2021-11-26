@@ -37,7 +37,11 @@ length(old.names)
 # MiSeq GenomeQuebec pattern
 pat.MI <- paste0("MI.M", paste(rep("[:digit:]",5), collapse=""), "_", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",3), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), ".")
 # NovaSeq GenomeQuebec pattern + index
-pat.NS <- paste0("NS.", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",3), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",4), collapse=""), "---PE1-CS1-IDT_i5_[:digit:].")
+pat.NS <- c(# Pattern in 2020
+            paste0("NS.", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",3), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), ".", paste(rep("[:digit:]",4), collapse=""), "---PE1-CS1-IDT_i5_[:digit:]."),
+            # Pattern in 2021
+            paste0("NS.", paste(rep("[:digit:]",4), collapse=""), ".FLD", paste(rep("[:digit:]",4), collapse=""), "---PE1-CS1-IDT_i5_[:digit:].")
+            )
 
 pat.rm <- c(pat.MI, pat.NS)
 pat.rm 
