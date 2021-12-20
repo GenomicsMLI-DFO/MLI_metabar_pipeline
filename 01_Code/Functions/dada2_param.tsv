@@ -3,5 +3,13 @@ COI	R1	10	0	0	0	Inf	150	0	1
 COI	R2	10	0	0	0	Inf	150	0	1
 12S	R1	10	0	0	0	Inf	100	0	1
 12S	R2	10	0	0	0	Inf	100	0	1
-Fish	R1	10	0	0	0	Inf	150	0	1
-Fish	R2	10	0	0	0	Inf	150	0	1
+MiFish	R1	10	0	0	0	Inf	150	0	1
+MiFish	R2	10	0	0	0	Inf	150	0	1
+MiFishDFO	R1	10	0	0	0	Inf	150	0	1
+MiFishDFO	R2	10	0	0	0	Inf	150	0	1
+Royce R1	10	0	0	0	Inf	150	0	1
+Royce	R2	10	0	0	0	Inf	150	0	1
+MiMam	R1	10	0	0	0	Inf	150	0	1
+MiMam	R2	10	0	0	0	Inf	150	0	1
+16S	R1	10	0	0	0	Inf	150	0	1
+16S	R2	10	0	0	0	Inf	150	0	1
