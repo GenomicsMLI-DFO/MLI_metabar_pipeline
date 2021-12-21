@@ -239,7 +239,7 @@ for(l in LOCUS){
   # create files lists
   filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
     str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-    str_subset(SENS[1] %>% as.character())
+    str_subset(paste0("_", SENS[1], "_"))
   
   #filesR.temp <- filesF.temp %>% str_replace(SENS[1], SENS[2])
   
@@ -255,7 +255,7 @@ for(l in LOCUS){
   for(i in seq_along(filesF.temp)){
     
     samF <- filesF.temp[i]
-    samR <- samF %>% str_replace(SENS[1] %>% as.character(), SENS[2] %>% as.character())
+    samR <- samF %>% str_replace( paste0("_", SENS[1], "_"),  paste0("_", SENS[2], "_"))
     
     cat("\nProcessing:", samF ,"\n" )
 
