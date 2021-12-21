@@ -10,7 +10,7 @@ for(l in loci){
   # create files lists
   filesF.temp <- list.files(folder.in, full.name =T, pattern = ".fastq") %>%
     str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-    str_subset(PARAM.temp$Sens[1] %>% as.character())
+    str_subset(paste0("_",PARAM.temp$Sens[1] %>% as.character(), "_"))
   
   
   # Add a message to be sure that the right number of files were used
@@ -19,7 +19,7 @@ for(l in loci){
   if(nrow(PARAM.temp == 2)){
     filesR.temp <- list.files(folder.in, full.name =T, pattern = ".fastq") %>% 
       str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
-      str_subset(PARAM.temp$Sens[2])
+       str_subset(paste0("_",PARAM.temp$Sens[2] %>% as.character(), "_"))
     
     
     
