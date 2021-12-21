@@ -92,7 +92,7 @@ extract_cutadapt_stats <- function(folder.in, loci){
    
   # New dataframe 
   RES <- data.frame(ID_labo = character(),
-                    Locus = character(),
+                    Loci = character(),
                     Raw = numeric(),
                     Adapt = numeric(),
                     stringsAsFactors = F)
