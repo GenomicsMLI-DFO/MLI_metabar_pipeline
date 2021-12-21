@@ -5,10 +5,10 @@ Loci: COI;16S;MiFish;MiFishDFO;Royce;MiMam
 Sens: R1;R2
 
 # Number of Cores we can use in the analysis
-NumCores: 20
+NumCores: 1
 
 # Run names - needed as samples from the same RUN will be analysed toghetter sometime
-Run: 1524
+Run: MI_3992
 
 # Primer sequences (default ones)
 
