@@ -64,6 +64,62 @@ cutadapt <- function(folder.in, folder.out, loci, sens, numCores, novaseq = FALS
     } else {print("No code for unpaired reads")}
     
   
-  cat("\nTrimming is over, files were saved in", folder.out, "\n")  
+  cat("\nTrimming is over, files were saved in", folder.out, "\n")
+  
+  # Get stats
+  
+  extract_cutadapt_stats(folder.in = file.path(folder.out, "log"), 
+                         loci = loci)
+    
 }
 
+
+extract_cutadapt_line <- function(TAB, TEXT){
+  res <- TAB %>% str_subset(TEXT) %>% 
+    str_remove(TEXT) %>% 
+    str_remove_all(" ") %>%
+    str_remove_all(",") #%>% 
+  #as.numeric()
+  return(res)
+}
+
+folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt", "log")
+
+extract_cutadapt_stats <- function(folder.in, loci){
+  # List log files
+  cutadapt.log <- list.files(folder.out, full.names = F) %>% str_subset("log.txt")
+  
+   
+  # New dataframe 
+  RES <- data.frame(ID_labo = character(),
+                    Locus = character(),
+                    Raw = numeric(),
+                    Adapt = numeric(),
+                    stringsAsFactors = F)
+  # Loop over the files
+  
+  for(x in seq_along(cutadapt.log)){
+    
+    cat(cutadapt.log[x], sep="\n")
+ 
+    log.file <- readLines(file.path(folder.in, cutadapt.log[x]))
+    
+       
+    sample_full <-  cutadapt.log[x] %>% str_remove("_cutadapt_log.txt")
+    sample <- sample_full %>% stringr::str_remove(paste(paste0("_", loci), collapse = "|"))
+    locus  <- sample_full %>% stringr::str_remove(paste0(sample, "_"))  
+    N.start <- extract_cutadapt_line(log.file, "Total read pairs processed:" ) %>% as.numeric()
+    N.cut <- sapply(str_split(extract_cutadapt_line(log.file, "Pairs written \\(passing filters\\):"), "\\("), `[`,1 ) %>% as.numeric()
+    
+    RES[x,] <- c(sample, locus, N.start, N.cut)
+    
+  
+  
+}
+
+  Reads.sum <- RES %>% mutate(Raw = as.numeric(as.character(Raw)),
+                              Adapt = as.numeric(as.character(Adapt)))
+  
+  write_csv(Reads.sum, file = file.path(folder.in, "Cutadapt_Stats.csv"))
+                              
+}
