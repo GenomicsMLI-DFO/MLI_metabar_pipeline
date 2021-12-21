@@ -175,7 +175,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada
 
   # create files lists
   filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
-                 str_subset(SENS[1])
+                 str_subset(paste0("_", SENS[1], "_"))
   
   # Add a message to be sure that the right number of files were used
   cat(length(filesF.temp), "files were found\n")  
@@ -189,7 +189,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada
   
   #if(nrow(PARAM.temp == 2)){
     filesR.temp <-  list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
-                    str_subset(SENS[2])
+                    str_subset(paste0("_", SENS[2], "_"))
     
     # Add a message to be sure that the right number of files were used
     cat(length(filesR.temp), "files were found\n")  
