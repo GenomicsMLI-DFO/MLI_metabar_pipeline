@@ -1,7 +1,7 @@
-# MLI_metabar_pipeline
+# MLI metabarcoding pipeline
 Template repository to perform metabarcoding analysis. 
 
-This pipeline is intended to run in R (and Rstudio), but need external programs such as fastQC (REF), multiqc (REF) and cutadapt (REF). 
+This pipeline is intended to run in R (and Rstudio), but need external programs such as [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [multiqc](https://multiqc.info/) and [cutadapt](https://cutadapt.readthedocs.io/en/stable/). 
 
 ## How to use MLI_metabar_pipeline
 
@@ -54,7 +54,11 @@ BiocManager::install("dada2")
 
 ### Rename raw files
 
-Use **01_Rename_RAW.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
+To be process, fastq files must be rename as **SAMPLENAME_MARKER_R1or2.fastq.gz**. This can be done with one of the two following scripts:
+
+#### Rename option 1 : Only remove sequencer/run id pattern
+
+Use **01_Rename_RAW_SeqPattern.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
 
 MiSeq
 
@@ -67,6 +71,10 @@ NovaSeq
 "NS.*0000*.FLD*0000*---PE1-CS1-IDT_i5_*0*."
 
 Other patterns or transformation can be implemented
+
+#### Rename option 2 : Start from file ID name 
+
+Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq files. It will used the metadata file to create a new name.
 
 ### From **raw reads** to **ESV table**
 
