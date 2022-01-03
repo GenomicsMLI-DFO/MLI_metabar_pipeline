@@ -88,7 +88,7 @@ These are the steps:
 5. dada2 dereplication, sample inference and merging
 6. dada2 chimera removal
 
-Then you can use **03_Raw_report.Rmd** within *01_Code* folder to get a first view on what have been done.
+Then you can run the **Raw_report.Rmd** within *02_Results/00_Report* folder to get a first view on what have been done.
 
 ### Deal with negative samples
 
