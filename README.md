@@ -1,16 +1,16 @@
 # MLI metabarcoding pipeline
 Template repository to perform metabarcoding analysis. 
 
-This pipeline is intended to run in R (and Rstudio), but need external programs such as [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [multiqc](https://multiqc.info/) and [cutadapt](https://cutadapt.readthedocs.io/en/stable/). 
+This pipeline is intended to run in R (and Rstudio), but need external programs (see pre-requisite section). 
 
 ## How to use MLI_metabar_pipeline
 
 ### Pre-requisite
 
 - R and Rstudio
-- FastQC
-- MultiQC
-- cutadapt
+- [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- [multiqc](https://multiqc.info/)
+- [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
 
 To be sure that the external command are found by R, try to run these commands first:
 
@@ -74,7 +74,7 @@ Other patterns or transformation can be implemented
 
 #### Rename option 2 : Start from file ID name 
 
-Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq files. It will used the metadata file to create a new name.
+Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq files. It will used the metadata file (*SeqInfo.csv*) to create a new name. File name must exclude the **_R1orR2.fastq.gz** part.
 
 ### From **raw reads** to **ESV table**
 
