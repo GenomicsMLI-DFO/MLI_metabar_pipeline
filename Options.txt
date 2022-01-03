@@ -1,7 +1,7 @@
 # GLOBAL OPTIONS for MLI_metabar_pipeline
 # More than one loci can be analyzed at the same time, use ";" as separators.
 
-Loci: COI;16S;MiFish;MiFishDFO;Royce;MiMam
+Loci: COI
 Sens: R1;R2
 
 # Number of Cores we can use in the analysis

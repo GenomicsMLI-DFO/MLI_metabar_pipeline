@@ -5,9 +5,7 @@
 # Template pipeline
 # 
 # Audrey Bourret
-# 2021-09-11
-#
-
+# 2021
 
 # Library -----------------------------------------------------------------
 
@@ -24,27 +22,6 @@ library(ggplot2)
 
 library(dada2)
 library(Biostrings)
-
-#library(tidyverse) # includes ggplot2 dplyr and stringr
-
-#library(gtools)    # for mixedsort
-#library(readxl)
-
-#library(devtools)
-#devtools::install_github("kassambara/ggpubr")
-#library(ggpubr)    # on github - for nice graphs
-
-# Fastq and fasta manipulation
-
-
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
-# 
-# BiocManager::install("Biostrings")
-# BiocManager::install("dada2")
-
-#library(Biostrings)
-#library(dada2); packageVersion("dada2") # Faire mettre cette info dans le log
 
 # Internal functions
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
@@ -114,6 +91,29 @@ cutadapt(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
          numCores = numCores,
          novaseq = FALSE) 
 
+# Extract cutadapt res
+
+cutadapt.res <- read_csv(file.path(here::here(), "00_Data", "02a_Cutadapt", "log", "Cutadapt_Stats.csv"))
+graph.cutadapt <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step", values_to = "Nreads") %>%
+  mutate(Nreads1 = Nreads + 1 ,
+         Step = factor(Step, levels = c("Raw", "Adapt"))) %>% 
+  left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
+            by = c("ID_labo", "Loci")) %>% 
+  ggplot(aes(x = Step, y = Nreads1, col = Type_echantillon, group = ID_labo)) +
+  #geom_jitter(height = 0) +
+  geom_point() +
+  geom_line() + 
+  #geom_boxplot() +
+  scale_y_continuous(trans="log10") +
+  labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+  facet_grid(~Loci) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+graph.cutadapt
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Cutadapt_filt.png"), plot =  graph.cutadapt, height = 5, width = 6)
+
+
 # Running another fastqc following cutadapt
 fastqc(folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt"),
        folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cutadapt"),
@@ -138,19 +138,43 @@ dada2.filter (folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt"),
          numCores = numCores
 )
          
-COI.res <- readr::read_csv(file.path("00_Data/02b_Filtered_dada2/log/COI_dada2_summary.csv")) 
+# Extract dada2 summary
+dada2.summary <- data.frame()
 
-COI.res <- COI.res %>% mutate(Keep = reads.in,
-                   Remove = reads.in - reads.out) %>% 
-  select(-c(reads.in, reads.out)) %>% 
-  tidyr::pivot_longer(cols = c(Keep, Remove), names_to = "Reads", values_to = "N")  
+for(l in LOCUS){
   
-COI.res %>%  mutate(Reads = factor(Reads, levels = c("Remove", "Keep")),
-                    ID_labo = ID %>% str_remove("_COI")) %>%
+  dada2.int <- readr::read_csv(file.path("00_Data", "02b_Filtered_dada2", "log", paste0(l, "_dada2_summary.csv"))) 
+  dada2.int <- dada2.int %>% mutate(Loci = l)
+  dada2.summary <- bind_rows(dada2.summary, dada2.int)
+  
+}
+
+dada2.summary
+
+
+dada2.summary <- dada2.summary %>% mutate(Dada2 = reads.out,
+                                          Adapt = reads.in,
+                                          Remove = reads.in - reads.out) %>% 
+  select(-c(reads.in, reads.out)) %>% 
+  tidyr::pivot_longer(cols = c(Dada2, Adapt), names_to = "Reads", values_to = "N")  
+
+graph.dada2 <- dada2.summary %>%  mutate(N1 = N + 1,
+                                         #Reads = factor(Reads, levels = c("Remove", "Keep")),
+                                         ID_labo = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
   left_join(data.info) %>% 
-  ggplot(aes(x = ID_labo, y = N, fill = Reads)) +
-  geom_bar(stat = "identity") +
-  facet_grid(.~Type_echantillon, scale = "free")
+  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  geom_point() +
+  geom_line() + 
+  #geom_boxplot() +
+  scale_y_continuous(trans="log10") +
+  labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+  facet_grid(~Loci) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+
+graph.dada2
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "DADA2_filt.png"), plot =  graph.dada2, height = 5, width = 6)
 
 # QUALITY ASSEMENT
 
@@ -339,6 +363,50 @@ for(l in LOCUS){
   
 }
 
+# Compute stats before and after chimera removal
+  
+  ESV.summary <- data.frame(ID_labo = character(),
+                            Loci = character(),
+                            Merge = numeric(),
+                            Final = numeric(),
+                            stringsAsFactors = F)  
+  
+  for(l in LOCUS){
+    
+    RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
+                      Loci = l,
+                      Merge = rowSums(get(paste0("seqtab.",l,".int"))),
+                      Final =  rowSums(get(paste0("ESVtab.",l))) ,
+                      stringsAsFactors = F)  
+    
+    
+    ESV.summary   <- bind_rows(ESV.summary, RES)
+    
+  }  
+  
+  ESV.summary
+  
+  write_csv(ESV.summary, file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2", "ESVtab_Stats.csv"))
+  
+  
+  graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
+    mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
+           N1 = N + 1) %>%   
+    left_join(data.info) %>% 
+    ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+    geom_point() +
+    geom_line() + 
+    #geom_boxplot() +
+    scale_y_continuous(trans="log10") +
+    labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+    facet_grid(~Loci) +
+    theme_bw()+
+    theme(legend.position = "bottom")
+  
+  graph.ESV
+  
+  ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_filt.png"), plot =  graph.ESV, height = 5, width = 6)
+  
 
 # Save ESV table and fasta file --------------------------------------
 

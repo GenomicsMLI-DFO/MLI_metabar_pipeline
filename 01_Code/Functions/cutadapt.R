@@ -83,11 +83,10 @@ extract_cutadapt_line <- function(TAB, TEXT){
   return(res)
 }
 
-folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt", "log")
 
 extract_cutadapt_stats <- function(folder.in, loci){
   # List log files
-  cutadapt.log <- list.files(folder.out, full.names = F) %>% str_subset("log.txt")
+  cutadapt.log <- list.files(folder.in, full.names = F) %>% str_subset("log.txt")
   
    
   # New dataframe 
@@ -121,5 +120,7 @@ extract_cutadapt_stats <- function(folder.in, loci){
                               Adapt = as.numeric(as.character(Adapt)))
   
   write_csv(Reads.sum, file = file.path(folder.in, "Cutadapt_Stats.csv"))
+  
+  cat("\nStats can be found in", file.path(folder.in, "Cutadapt_Stats.csv"), "\n")
                               
 }
