@@ -1,8 +1,8 @@
 # Function to extract stuffs from options
 
 
-get.value <- function(NAME){
-  OPTIONS <- readr::read_lines("Options.txt")
+get.value <- function(NAME, file = "Options.txt"){
+  OPTIONS <- readr::read_lines(file)
   NAME <- paste0(NAME, ":")
   res <-stringr::str_subset(OPTIONS, NAME) 
   
@@ -11,5 +11,6 @@ get.value <- function(NAME){
   
   return(res)  
 }
+
 
 
