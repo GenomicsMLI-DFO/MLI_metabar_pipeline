@@ -79,8 +79,8 @@ nreads.res %>% ggplot(aes(x = Step, y = Nreads1, col = Type_echantillon, group =
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 nreads.res %>% filter(Step == "Final") %>% 
   ggplot(aes(x = Type_echantillon, y = Nreads1, col = Type_echantillon)) +
-  geom_jitter(height = 0) +
   geom_boxplot() +
+    geom_jitter(height = 0) +
   scale_y_continuous(trans="log10") +
   facet_grid(~Loci) +
     labs(y = "N reads + 1 (log)", x = "Sample type", title = "Boxplot of N reads in samples vs controls")+ 
@@ -89,7 +89,8 @@ nreads.res %>% filter(Step == "Final") %>%
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ```
-## N MOTUS vs reads
+
+## N MOTUs vs N reads
 
 To have an idea if the sequencing depth is OK
 
