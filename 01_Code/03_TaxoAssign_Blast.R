@@ -84,7 +84,7 @@ for(l in LOCUS){
 
 library(dplyr)
 
-RES.all <- tibble()
+RES.all.ncbi <- tibble()
 
 for(l in LOCUS){
 
@@ -96,7 +96,7 @@ for(t in c(95,97,99)){
                               Method = "TOP",
                               Threshold = t)
   
-  write_csv(TOP.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("TopHit.", t, ".", l, ".csv")))
+  readr::write_csv(TOP.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("TopHit.", t, ".", l, ".csv")))
 
   # LCA
   LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
@@ -107,15 +107,11 @@ for(t in c(95,97,99)){
 
   readr::write_csv(LCA.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("LCA.", t, ".", l,  ".csv")))
 
-RES.all <- bind_rows(RES.all, TOP.int, LCA.int)  
+RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)  
   
   }  
   
 }
-
-# Load all results
-
-
 
 
 #Loading seq table
@@ -132,57 +128,74 @@ assign(x = paste0("DNA.", l),
 
 
 tidy.ESV <- function(ESVtab, DNA.seq) {
- DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
-
-ESV.tidy <- ESVtab %>% as_tibble() %>% 
-                             dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
-                             tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
-                             dplyr::left_join(DNA.tidy)
- 
- return(ESV.tidy) 
+  DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
+  
+  ESV.tidy <- ESVtab %>% as_tibble() %>% 
+    dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
+    tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
+    dplyr::left_join(DNA.tidy)
+  
+  return(ESV.tidy) 
 }
 
 
-ESV_RES <- tibble()
+ESV.taxo.ALL <- tibble()
 
 for(l in LOCUS){
 
-  ESV_RES <- bind_rows(ESV_RES, 
-                       tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% mutate(Loci = l))
+  ESV.taxo.ALL <- bind_rows(ESV.taxo.ALL, 
+                       tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% mutate(Loci = l) 
+                                     )
   
   
 }
 
 
+# Combine all datasets, but dataset by dataset to be sure to keep unassigned
+
+FINAL_RES <- dplyr::tibble()
+
+for(m in c("LCA", "TOP") ){
+  
+  for(t in c(95,97,99)){
+
+    RES.all.ncbi.int <- RES.all.ncbi %>% filter(Method == m, Threshold == t) %>% select(-c(Loci,Method, Threshold)) %>% distinct(.keep_all = T)
+
+    FINAL_RES.int <- ESV.taxo.ALL %>% left_join(RES.all.ncbi.int,
+                                              by =  c("ESV" = "QueryAccVer")) %>% 
+                                      mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
+                                             Method = m, 
+                                             Threshold = t)
+
+   FINAL_RES <- bind_rows(FINAL_RES, FINAL_RES.int)
+
+  }
+  
+}
 
 
+#FINAL_RES %>% group_by(ESV) %>% summarise(N = n()) %>% arrange(desc(N))
 
-FINAL_RES <- ESV_RES %>% left_join(RES.all %>% select(-Loci), by =  c("ESV" = "QueryAccVer"))
-
-FINAL_RES
-
-#save(list = c("FINAL_RES", "ESV_RES", "RES.all"),
-#     file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"  ))
+save(list = c("FINAL_RES", "ESV_RES", "RES.all.ncbi"),
+     file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"  ))
 
 
 # Basic figures -----------------------------------------------------------
 
-
-
-
 library(ggplot2)
 
+# Differencre between LCA and Tophit at different threshold
 graph1 <- FINAL_RES %>% mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon)) %>% 
-group_by(ID_labo, Loci, phylum, class, genus, Taxon, Method, Threshold) %>% summarise(Nreads = sum(Nreads)) %>% 
+  group_by(Loci, phylum, class, genus, Taxon, Method, Threshold) %>% summarise(Nreads = sum(Nreads)) %>% 
   filter(Nreads > 0) %>% 
-  left_join(data.info) %>%
-  #filter(Type_echantillon %in% c("PPC", "PNC")) %>% 
-  ggplot(aes(x = ID_labo, y = Taxon, fill = Nreads)) + 
+   mutate(Method.thresh =paste0(Method, Threshold) ) %>% 
+  #filter(Method.thresh != "NANA") %>% 
+  ggplot(aes(x = Method.thresh, y = Taxon, fill = Nreads)) + 
   geom_bin2d() +
   scale_fill_distiller(palette = "Spectral", trans = "log10", na.value = "white") +
-  facet_grid(phylum ~Loci + Method + Threshold, scale = "free", space = "free") +
+  facet_grid(phylum ~Loci, scale = "free", space = "free") +
   theme_bw() +
-  #labs(title = "PCR control results")+ 
+  labs(title = "Visual comparison of BLAST assignments")+ 
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8),
         axis.text.y = element_text(face = "italic", size = 8, vjust = 0.5),
         axis.ticks.y = element_blank(),
@@ -195,5 +208,5 @@ group_by(ID_labo, Loci, phylum, class, genus, Taxon, Method, Threshold) %>% summ
 
 graph1
 
-#ggsave(filename = file.path(here::here(), "02_Results/03_Assignments/01_BlastX", "PC_MiFish.png"), plot =  graph3, height = 8, width = 10)
+ggsave(filename = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "Comparison_Blast.png"), plot =  graph1, height = 8, width = 10)
 
