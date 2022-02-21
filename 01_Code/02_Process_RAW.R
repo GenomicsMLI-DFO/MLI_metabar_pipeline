@@ -127,7 +127,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cuta
 # 2.2 DADA2
 
 # Check if these parameters seem good, if not change them
-PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Functions/dada2_param.tsv"))
+PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/dada2_param.tsv"))
 PARAM.DADA2
 
 dada2.filter (folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt"), 
