@@ -36,3 +36,6 @@ MiMam.primers: GGGTTGGTAAATTTCGTGCCAGC;CATAGTGGGGTATCTAATCCCAGTTTG
 # Belugas dloop
 dloopDL.primers: ACTACGTCAGTATTAAATAAACCTATTTCCAATAC;GAAGTAAGAACCAGATGTCTTGTGAAG
 
+# Ref database path
+
+NCBI.path: /media/genobiwan/Fast_Storage/Projet/Banque_REF_NCBI.git/01_Data/01_blastdb

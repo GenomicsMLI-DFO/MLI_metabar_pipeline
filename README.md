@@ -90,6 +90,10 @@ These are the steps:
 
 Then you can run the **Raw_report.Rmd** within *02_Results/00_Report* folder to get a first view on what have been done.
 
+### Taxonomic assignments
+
+Use the file **03_TaxoAssign_Blast.R** within *01_Code* folder to perform basic blast assignment with LCA and Tophit at 95, 97, and 99 thresholds. 
+
 ### Deal with negative samples
 
 ## Example
