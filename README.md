@@ -96,6 +96,16 @@ Use the file **03_TaxoAssign_Blast.R** within *01_Code* folder to perform basic 
 
 ### Deal with negative samples
 
+```
+# install bioconductor dependencies
+install.packages("BiocManager")
+BiocManager::install("biomformat")
+
+# install metabaR package
+install.packages("remotes")
+remotes::install_github("metabaRfactory/metabaR")
+```
+
 ## Example
 
 A test dataset is available with the template pipeline.
