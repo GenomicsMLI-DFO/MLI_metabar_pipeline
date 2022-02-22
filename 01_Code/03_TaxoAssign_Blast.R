@@ -27,7 +27,7 @@ LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
 cat(length(LOCUS), "loci will be analyse (", paste(LOCUS, collapse = ", "),")\nTheses parameters can be changed with the file Option.txt", sep = " ")
 
 numCores <- as.numeric(as.character(get.value("NumCores")))
-numCores <- 20
+#numCores <- 20
 
 cat(numCores, "core(s) will be used by the script",
     "\nThis parameter can be changed with the file Option.txt", sep = " ")
@@ -176,7 +176,7 @@ for(m in c("LCA", "TOP") ){
 
 #FINAL_RES %>% group_by(ESV) %>% summarise(N = n()) %>% arrange(desc(N))
 
-save(list = c("FINAL_RES", "ESV_RES", "RES.all.ncbi"),
+save(list = c("FINAL_RES", "ESV.taxo.ALL", "RES.all.ncbi"),
      file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"  ))
 
 
