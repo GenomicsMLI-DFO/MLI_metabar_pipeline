@@ -36,7 +36,8 @@ data.info.modif <- data.info %>%  mutate(
     Key_i5 = sapply(str_split(File, "_"), `[`, 3)
   ) %>%
   left_join(index_i7 %>% select(Key_i7 = Barcode_Name, tag_fwd = Barcode_Sequence)) %>%
-  left_join(index_i5 %>% select(Key_i5 = Dual_Mix, tag_rev = Direction))
+  left_join(index_i5 %>% select(Key_i5 = Dual_Mix, tag_rev = Direction)) %>% 
+  mutate(tag_rev = ifelse(is.na(tag_rev), "AAAAAAAA", tag_rev))
 
 data.info.modif %>% select(File, Key_i5, Key_i7, tag_fwd, tag_rev)
 
