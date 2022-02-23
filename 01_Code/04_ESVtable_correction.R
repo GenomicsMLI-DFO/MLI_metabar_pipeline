@@ -193,7 +193,7 @@ metabarlist.int$motus$count   <- colSums(metabarlist.int$reads)
 
 plate.gg <- ggpcrplate.modif(metabarlist.int, legend_title = "N reads")
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("plate_ori_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_plate_ori_",l, ".png")), 
        plot = plate.gg ,
        width = 6,
        height = 6,
@@ -244,7 +244,7 @@ assign(x = paste0("metabarlist.ori.", l),
 
 graph.depth <- ggpubr::ggarrange(plotlist = depth.gg)
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "depth_allsamples.png"), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "01_depth_allsamples.png"), 
        plot = graph.depth,
        width = 6,
        height = 6,
@@ -278,11 +278,11 @@ common_contam.all$ESV <- row.names(common_contam.all)
 common_contam.max$ESV <- row.names(common_contam.max)
 
 readr::write_csv(bind_rows(common_contam.all, common_contam.max) %>% arrange(desc(count)), 
-    file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("conta_",l, ".csv")))
+    file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("02_conta_",l, ".csv")))
 
 conta.gg <- ggpcrplate.cont(metabarlist.int, N = 20)
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("plate_conta_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("02_plate_conta_",l, ".png")), 
        plot = conta.gg ,
        width = 6,
        height = 6,
@@ -331,7 +331,7 @@ assign(x = paste0("metabarlist.ori.", l),
 
 graph.prop.conta <- ggpubr::ggarrange(plotlist = conta.gg)
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "conta.prop_allsamples.png"), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "03_conta.prop_allsamples.png"), 
        plot = graph.prop.conta ,
        width = 6,
        height = 6,
@@ -398,7 +398,7 @@ tag.gg <- ggplot(tests.tagjump.long.2, aes(x=as.factor(threshold), y=value)) +
         axis.text.x = element_text(angle=40, h=1), 
         legend.position = "none")
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("tagjump.threshold_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("04_tagjump.threshold_",l, ".png")), 
        plot = tag.gg ,
        width = 6,
        height = 6,
@@ -438,7 +438,7 @@ plate.tag.gg <- ggpubr::ggarrange(p1 + scale_size(limits = c(1, max(metabarlist.
                                   )
 
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("tagjump.plate_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("04_tagjump.plate_",l, ".png")), 
        plot = plate.tag.gg ,
        width = 8,
        height = 8,
@@ -497,13 +497,13 @@ graph.artefact <- ggpubr::ggarrange(graph.artefact.motus + theme(legend.position
 
 graph.artefact.pcr.project <- graph.artefact.pcr + facet_wrap(~ project)
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("summary.conta_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_summary.conta_",l, ".png")), 
        plot = graph.artefact  ,
        width = 8,
        height = 5,
        units = c("in"), bg = "white")
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("summary.conta_byProject_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_summary.conta_byProject_",l, ".png")), 
        plot = graph.artefact.pcr.project  ,
        width = 8,
        height = 8,
@@ -538,7 +538,7 @@ metabarlist.correct.int <- tagjumpslayer(metabarlist.int, thresholds.tag)
 
 summary_metabarlist(metabarlist.int)
 
-summary_metabarlist(tests.tagjump)
+summary_metabarlist(metabarlist.correct.int)
 
 
 # Subset on MOTUs and SAMPLE 
@@ -576,7 +576,7 @@ post.correction.gg <- ggplot(data = check.correction, aes(x = variable, y = valu
   ggtitle(paste("Comparison before/after correction for", l))
 
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("summary.postcorrection_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("06_summary.postcorrection_",l, ".png")), 
        plot = post.correction.gg,
        width = 6,
        height = 6,
@@ -637,13 +637,13 @@ final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Ta
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0),
         legend.position = "right")
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("overall.postcorrection_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("06_overall.postcorrection_",l, ".png")), 
        plot = final.correction.gg,
        width = 8,
        height = 8,
        units = c("in"), bg = "white")
 
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("overall.original_",l, ".png")), 
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("06_overall.original_",l, ".png")), 
        plot = final.ori.gg,
        width = 8,
        height = 8,
