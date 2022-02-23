@@ -173,8 +173,6 @@ assign(x = paste0("metabarlist.ori.", l),
 }
 
 
-
-
 # RUN METABAR -------------------------------------------------------------
 
 
@@ -355,11 +353,11 @@ for(l in LOCUS){
 
 
 #remove empty MOTUs
-metabarlist.int.clean <- subset_metabarlist(metabarlist.int, "reads", 
-                                             indices = (rowSums(metabarlist.int$reads)>0))
+#metabarlist.int.clean <- subset_metabarlist(metabarlist.int, "reads", 
+#                                             indices = (rowSums(metabarlist.int$reads)>0))
 
 # Run the tests and stores the results in a list
-tests.tagjump <- lapply(thresholds.tag.test, function(x) tagjumpslayer(metabarlist.int.clean, x))
+tests.tagjump <- lapply(thresholds.tag.test, function(x) tagjumpslayer(metabarlist.int, x))
 # method = "cut" vs. method = "substract"
 # tests2020_substract <-lapply(thresholds, function(x) tagjumpslayer(Fish2020_clean,x, method = "substract"))
 
@@ -379,7 +377,7 @@ tests.tagjump.long$richness <-
   }))))$value
 
 # Add control type information on pcrs and make data curation threshold numeric
-tests.tagjump.long$controls <- metabarlist.int.clean$pcrs$control[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+tests.tagjump.long$controls <- metabarlist.int$pcrs$control[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
 tests.tagjump.long$threshold <- as.numeric(gsub("t_", "", tests.tagjump.long$threshold))
 
 # New table formatting for ggplot
@@ -408,11 +406,11 @@ ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", p
 
 # Check
 
-metabarlist.int.clean2 <- tagjumpslayer(metabarlist.int.clean, 0.01)
+metabarlist.int.clean2 <- tagjumpslayer(metabarlist.int, 0.01)
 
 # identify occurrence of the most abundant OTU
-idx <- which.max(metabarlist.int.clean$motus$count)
-p1 <- ggpcrplate.modif(metabarlist.int.clean,
+idx <- which.max(metabarlist.int$motus$count)
+p1 <- ggpcrplate.modif(metabarlist.int,
                  legend_title = "# reads",
                  FUN = function(m) {
                    m$reads[, idx]
@@ -429,12 +427,12 @@ p2 <- ggpcrplate.modif(metabarlist.int.clean2,
                  }
 )
 
-p2 + scale_size(limits = c(1, max(metabarlist.int.clean$reads[, idx]))) +
+p2 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
   ggtitle("Distribution of the most abundant MOTU after curation")
 
-plate.tag.gg <- ggpubr::ggarrange(p1 + scale_size(limits = c(1, max(metabarlist.int.clean$reads[, idx]))) +
+plate.tag.gg <- ggpubr::ggarrange(p1 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
                                     ggtitle("Most abundant MOTU ori"),
-                                  p2 + scale_size(limits = c(1, max(metabarlist.int.clean$reads[, idx]))) +
+                                  p2 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
                                     ggtitle("Most abundant MOTU after tagjumpslayer"),
                                   nrow = 1, ncol = 2 , common.legend = T
                                   )
@@ -520,8 +518,152 @@ assign(x = paste0("metabarlist.ori.", l),
 
 # Apply the corrections ----------------------------------------------------
 
+# Step 1 : Take the right tagjumpslayer dataset
 
 
+#metabarlist.int.clean <- subset_metabarlist(metabarlist.int, "reads", 
+#                                            indices = (rowSums(metabarlist.int$reads)>0))
+thresholds.tag
+
+for(l in LOCUS){
+  
+  cat("\nFinal step for", l, "\n\n")  
+  
+  metabarlist.int <- get(paste0("metabarlist.ori.",l))
+  
+
+
+# Run the tests and stores the results in a list
+metabarlist.correct.int <- tagjumpslayer(metabarlist.int, thresholds.tag)
+
+summary_metabarlist(metabarlist.int)
+
+summary_metabarlist(tests.tagjump)
+
+
+# Subset on MOTUs and SAMPLE 
+
+metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+                                              indices = (metabarlist.correct.int$motus$artefact_type == "Not artefactual") )
+
+metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
+                                              indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual" &
+                                                           metabarlist.correct.int$pcrs$type == "sample" ) )
+
+# Add stats on filtration
+
+metabarlist.correct.int$motus$count = colSums(metabarlist.correct.int$reads)
+metabarlist.correct.int$pcrs$nb_reads_postmetabaR = rowSums(metabarlist.correct.int$reads)
+metabarlist.correct.int$pcrs$nb_motus_postmetabaR = rowSums(ifelse(metabarlist.correct.int$reads>0, T, F))
+
+
+
+summary_metabarlist(metabarlist.int)
+summary_metabarlist(metabarlist.correct.int)
+
+
+# 
+check.correction <- reshape2::melt(metabarlist.correct.int$pcrs[,c("nb_reads", "nb_reads_postmetabaR", 
+"nb_motus", "nb_motus_postmetabaR")])
+check.correction$type <- ifelse(grepl("motus", check.correction$variable), "richness", "abundance")
+
+post.correction.gg <- ggplot(data = check.correction, aes(x = variable, y = value)) +
+  geom_boxplot( color = "darkgrey") +
+  geom_jitter(alpha=0.1, color = "darkgrey") +
+  theme_bw() +
+  facet_wrap(~type, scales = "free", ncol = 5) +
+  theme(axis.text.x = element_text(angle=45, h=1)) +
+  ggtitle(paste("Comparison before/after correction for", l))
+
+
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("summary.postcorrection_",l, ".png")), 
+       plot = post.correction.gg,
+       width = 6,
+       height = 6,
+       units = c("in"), bg = "white")
+
+# Export the results 
+metabarlist.correct.int$reads %>% write.csv( file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("ESVtab.corrected_",l, ".csv")))
+
+metabarlist.int$motus %>% readr::write_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("MOTUs.Metabarinfo_",l, ".csv")))
+
+metabarlist.int$pcrs %>% readr::write_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("Samples.Metabarinfo.all_",l, ".csv")))
+metabarlist.correct.int$pcrs %>% readr::write_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("Samples.Metabarinfo.corrected_",l, ".csv")))
+
+# Final visualisation
+
+read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
+                 mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
+                 pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
+                 left_join(metabarlist.correct.int$motus %>% select(QueryAccVer, Taxon, phylum)) %>% 
+                 mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+                 group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
+                 left_join(data.info)
+
+read.ori.tidy <- metabarlist.int$reads %>% as.data.frame() %>% 
+                 mutate(ID_labo = row.names(metabarlist.int$reads)) %>% 
+                 pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
+                 left_join(metabarlist.int$motus %>% select(QueryAccVer, Taxon, phylum)) %>% 
+                 mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+                 group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
+                 left_join(data.info) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"))
+
+
+final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+  labs(x= "", y = "") + 
+  geom_bin2d(color = "darkgray")+
+  scale_fill_distiller(trans = "log10",
+                       palette = "Spectral",
+                       na.value = "gray95",
+                       breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")) +
+  theme_minimal()+
+  facet_grid(phylum ~ ID_projet, scale = "free", space = "free") + 
+  ggtitle(paste("Overall visualisation after correction for", l)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0),
+        legend.position = "right")
+
+final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+  labs(x= "", y = "") + 
+  geom_bin2d(color = "darkgray")+
+  scale_fill_distiller(trans = "log10",
+                       palette = "Spectral",
+                       na.value = "gray95",
+                       breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")) +
+  theme_minimal()+
+  facet_grid(phylum ~ ID_projet, scale = "free", space = "free") + 
+  ggtitle(paste("Overall visualisation before correction for", l)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0),
+        legend.position = "right")
+
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("overall.postcorrection_",l, ".png")), 
+       plot = final.correction.gg,
+       width = 8,
+       height = 8,
+       units = c("in"), bg = "white")
+
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("overall.original_",l, ".png")), 
+       plot = final.ori.gg,
+       width = 8,
+       height = 8,
+       units = c("in"), bg = "white")
+
+
+
+assign(x = paste0("metabarlist.correct.", l), 
+       value = metabarlist.correct.int )
+
+}
+
+
+
+# Save Rdata --------------------------------------------------------------
+
+rm(list = c("metabarlist.int", "metabarlist.correct.int", "metabarlist.int.clean2"))
+
+save(list = ls(pattern = "metabarlist"), 
+     file = file.path(here::here(), "02_Results/04_ESVtable_correction","metabarlist.Rdata"))
 
 
 
