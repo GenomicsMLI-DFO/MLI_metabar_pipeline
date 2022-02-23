@@ -106,6 +106,10 @@ install.packages("remotes")
 remotes::install_github("metabaRfactory/metabaR")
 ```
 
+ This script will generate, for all loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the metabar website how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
+
+You will also need to add 2 columns in the SeqInfo.csv, tag_fwd and tag_rev. 
+
 ## Example
 
 A test dataset is available with the template pipeline.
