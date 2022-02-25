@@ -280,6 +280,9 @@ common_contam.max$ESV <- row.names(common_contam.max)
 readr::write_csv(bind_rows(common_contam.all, common_contam.max) %>% arrange(desc(count)), 
     file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("02_conta_",l, ".csv")))
 
+assign(x = paste0("metabarlist.ori.", l), 
+       value = metabarlist.int )
+
 conta.gg <- ggpcrplate.cont(metabarlist.int, N = 20)
 
 n.plate <- plate.gg$data$plate_no %>% unique() %>% length()
@@ -291,8 +294,7 @@ ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", p
        height = 3 * n.plate,
        units = c("in"))
 
-assign(x = paste0("metabarlist.ori.", l), 
-       value = metabarlist.int )
+
 
 }
 
@@ -306,8 +308,20 @@ for(l in LOCUS){
   
    metabarlist.int <- get(paste0("metabarlist.ori.",l))
   
-Rel.conta.prop <- data.frame(conta.all.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_all_conta=="FALSE"]) / rowSums(metabarlist.int$reads),
-                             conta.max.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_max_conta=="FALSE"]) / rowSums(metabarlist.int$reads))
+
+if(is.null(nrow(metabarlist.int$reads[,metabarlist.int$motus$not_a_all_conta=="FALSE"])) |
+   is.null(nrow(metabarlist.int$reads[,metabarlist.int$motus$not_a_max_conta=="FALSE"])))      
+   
+Rel.conta.prop <- data.frame(conta.all.prop = metabarlist.int$reads[,metabarlist.int$motus$not_a_all_conta=="FALSE"] / rowSums(metabarlist.int$reads),
+                             conta.max.prop = metabarlist.int$reads[,metabarlist.int$motus$not_a_max_conta=="FALSE"] / rowSums(metabarlist.int$reads))
+
+else {
+  Rel.conta.prop <- data.frame(conta.all.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_all_conta=="FALSE"]) / rowSums(metabarlist.int$reads),
+                               conta.max.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_max_conta=="FALSE"]) / rowSums(metabarlist.int$reads))
+  
+  
+}
+
 
 # Add information on control types
 Rel.conta.prop$control_type <- metabarlist.int$pcrs$control_type[match(rownames(Rel.conta.prop), rownames(metabarlist.int$pcrs))]
@@ -386,15 +400,15 @@ tests.tagjump.long$threshold <- as.numeric(gsub("t_", "", tests.tagjump.long$thr
 tests.tagjump.long.2 <- reshape2::melt(tests.tagjump.long, id.vars=colnames(tests.tagjump.long)[-grep("abundance|richness", colnames(tests.tagjump.long))])
 
 tag.gg <- tests.tagjump.long.2 %>% mutate(controls = ifelse(is.na(controls), "sample", controls)) %>% 
-  ggplot(aes(x=as.factor(threshold), y=value)) + 
+  ggplot(aes(x=as.factor(threshold), y=value + 1)) + 
   geom_boxplot(color="grey40") + 
   geom_vline(xintercept =  factor(thresholds.tag), col="orange", lty=2) + 
   geom_jitter(aes(color=controls), height = 0, alpha=0.5) + 
   scale_color_manual(values = c("brown", "red", "cyan4","pink","green", "black","yellow","purple"), na.value = "darkgrey") +
   facet_grid(variable ~ controls, scale="free") + 
   theme_bw() + 
-  #scale_y_log10() +
-  labs(x="MOTU pcr : total abundance filtering threshold", y="MOTUs",
+  scale_y_log10() +
+  labs(x="MOTU pcr : total abundance filtering threshold", y="MOTUs + 1",
        title = paste("Tested threshold for", l)) + 
   theme(panel.grid = element_blank(), 
         strip.background = element_blank(), 
@@ -585,11 +599,15 @@ metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="mo
 if(pcr.correct == T){   
 
   metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
-                                              indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual" &
-                                                           metabarlist.correct.int$pcrs$type == "sample" ) )
+                                              indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual"))
 
 } 
 
+  # Keep only sample
+  metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
+                                                  indices = (metabarlist.correct.int$pcrs$type == "sample" ) )
+    
+    
 # Add stats on filtration
 
 metabarlist.correct.int$motus$count = colSums(metabarlist.correct.int$reads)
@@ -638,7 +656,7 @@ read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>%
                  left_join(metabarlist.correct.int$motus %>% select(QueryAccVer, Taxon, genus, phylum)) %>% 
                  mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
                  group_by(ID_labo, genus, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
-                 left_join(data.info)
+                 left_join(data.info) %>% filter(Type_echantillon %in% c("Echantillon", "ECH"))
 
 read.ori.tidy <- metabarlist.int$reads %>% as.data.frame() %>% 
                  mutate(ID_labo = row.names(metabarlist.int$reads)) %>% 
