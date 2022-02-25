@@ -33,8 +33,8 @@ ggpcrplate.modif <- function (metabarlist, legend_title = "well_values", FUN = f
       geom_tile(aes(fill = .data$control_type), height = 1, width = 1, na.rm = TRUE) + 
       facet_wrap(~.data$plate_no, scales = "free") + theme_bw() + 
       scale_y_reverse(breaks = 1:8, labels = LETTERS[1:8]) + 
-      scale_x_continuous(breaks = 1:12) + scale_fill_manual(values = c("brown", 
-                                                                       "red", "pink", "cyan4"), na.translate = FALSE) + 
+      scale_x_continuous(breaks = 1:12) + 
+      scale_fill_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey", na.translate = FALSE) + 
       geom_point(na.rm = TRUE, aes(size = .data$well_values)) + labs(x = NULL, y = NULL, 
                                       size = legend_title)
   }
@@ -51,7 +51,7 @@ ggpcrplate.cont <- function(metabarlist, N = Inf){
   
   metabarlist_contam <- metabarlist_generator(reads.common_contam, motus.common_contam, metabarlist$pcrs, metabarlist$samples)
   
-  title.int = ifelse(N > length(rownames(motus.common_contam)), "#reads of the ALL contaminants", paste("#reads of the", N, "most abundant contaminants") )
+  title.int = ifelse(N > length(rownames(motus.common_contam)), "ALL contaminants", paste(N, "<br>most abundant contaminants") )
   
   ggpcrplate.modif(metabarlist_contam, legend_title = title.int,
                    FUN = function(m){rowSums(m$reads)})

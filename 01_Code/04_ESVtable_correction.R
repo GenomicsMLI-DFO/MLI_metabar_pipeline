@@ -17,8 +17,6 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-
-
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "metabar.R"))
 
@@ -172,6 +170,11 @@ assign(x = paste0("metabarlist.ori.", l),
 
 }
 
+# Load metabar threshold
+
+metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+
+metabar.param
 
 # RUN METABAR -------------------------------------------------------------
 
@@ -193,10 +196,12 @@ metabarlist.int$motus$count   <- colSums(metabarlist.int$reads)
 
 plate.gg <- ggpcrplate.modif(metabarlist.int, legend_title = "N reads")
 
+n.plate <- plate.gg$data$plate_no %>% unique() %>% length()
+
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_plate_ori_",l, ".png")), 
-       plot = plate.gg ,
-       width = 6,
-       height = 6,
+       plot = plate.gg + ggtitle(paste("N reads by well for", l)),
+       width = 5,
+       height = 3 * n.plate,
        units = c("in"))
 
 
@@ -208,29 +213,35 @@ assign(x = paste0("metabarlist.ori.", l),
 
 # Flag low read depth outlier ---------------------------------------------
 
-depth.threshold <- 1000
-
-depth.gg <- list()
-
 for(l in LOCUS){
   
   cat("\nSequencing depth for", l, "\n\n")  
   
+  depth.threshold <- metabar.param %>% filter(Locus == l) %>% pull(depth.threshold)
+  
   metabarlist.int <- get(paste0("metabarlist.ori.",l))
   
-
-gg.int <- ggplot(metabarlist.int$pcrs, aes(x = nb_reads+1, fill = control_type)) +
+  
+depth.gg <-  metabarlist.int$pcrs %>%  mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+  ggplot(aes(x = nb_reads+1, fill = control_type)) +
   geom_histogram(bins=40, color="grey") + 
   geom_vline(xintercept = depth.threshold, lty=2, color="orange") + # threshold
   scale_x_log10() + 
-  scale_fill_manual(values = c("brown", "red", "cyan4","pink"), na.value = "darkgrey") +
+  scale_fill_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
   labs(x="N reads + 1 (log)", 
        y="N samples") +
   labs(title = paste("Sequencing depth for", l)) +
   theme_bw() + 
-  theme(panel.grid = element_blank())
+  theme(panel.grid = element_blank()) +
+  theme(axis.title = element_text(size = 8),
+        title = element_text(size = 10),
+        legend.title = element_blank())
 
-depth.gg[[2]] <- gg.int
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("01_depth_",l,".png")), 
+       plot = depth.gg,
+       width = 5,
+       height = 3,
+       units = c("in"))
 
 # Flag pcrs with an acceptable sequencing depth (TRUE) or inacceptable one (FALSE)
 metabarlist.int$pcrs$seqdepth_ok <- ifelse(metabarlist.int$pcrs$nb_reads < depth.threshold, F, T)
@@ -242,18 +253,7 @@ assign(x = paste0("metabarlist.ori.", l),
 }
 
 
-graph.depth <- ggpubr::ggarrange(plotlist = depth.gg)
-
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "01_depth_allsamples.png"), 
-       plot = graph.depth,
-       width = 6,
-       height = 6,
-       units = c("in"))
-
-
 # Flag contaminants -------------------------------------------------------
-
-#conta.gg <- list()
 
 for(l in LOCUS){
 
@@ -282,10 +282,13 @@ readr::write_csv(bind_rows(common_contam.all, common_contam.max) %>% arrange(des
 
 conta.gg <- ggpcrplate.cont(metabarlist.int, N = 20)
 
+n.plate <- plate.gg$data$plate_no %>% unique() %>% length()
+
+
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("02_plate_conta_",l, ".png")), 
-       plot = conta.gg ,
-       width = 6,
-       height = 6,
+       plot = conta.gg + ggtitle(paste("N contaminant reads by well for", l)),
+       width = 5,
+       height = 3 * n.plate,
        units = c("in"))
 
 assign(x = paste0("metabarlist.ori.", l), 
@@ -295,15 +298,13 @@ assign(x = paste0("metabarlist.ori.", l),
 
 # Flag high % contaminant samples -------------------------------------------------
 
-threshold.prop.cont <- 0.1
-
-conta.gg <- list()
-
 for(l in LOCUS){
   
   cat("\nLooking at samples with high contaminants for", l, "\n\n")  
+ 
+   threshold.prop.cont <- metabar.param %>% filter(Locus == l) %>% pull(prop.cont.threshold)
   
-  metabarlist.int <- get(paste0("metabarlist.ori.",l))
+   metabarlist.int <- get(paste0("metabarlist.ori.",l))
   
 Rel.conta.prop <- data.frame(conta.all.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_all_conta=="FALSE"]) / rowSums(metabarlist.int$reads),
                              conta.max.prop = rowSums(metabarlist.int$reads[,metabarlist.int$motus$not_a_max_conta=="FALSE"]) / rowSums(metabarlist.int$reads))
@@ -311,39 +312,40 @@ Rel.conta.prop <- data.frame(conta.all.prop = rowSums(metabarlist.int$reads[,met
 # Add information on control types
 Rel.conta.prop$control_type <- metabarlist.int$pcrs$control_type[match(rownames(Rel.conta.prop), rownames(metabarlist.int$pcrs))]
 
-conta.gg[[l]] <-  Rel.conta.prop %>% pivot_longer(cols = c(conta.max.prop, conta.all.prop)) %>% 
+conta.gg<-  Rel.conta.prop %>% pivot_longer(cols = c(conta.max.prop, conta.all.prop)) %>% 
+  mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
   ggplot(aes(x=control_type, y=value, color=control_type)) + 
   geom_boxplot() + geom_jitter(alpha=0.5) +
   geom_hline(yintercept = threshold.prop.cont, lty = "dashed", color="orange") +
-  scale_color_manual(values = c("brown", "red", "cyan4","pink"), na.value = "darkgrey") +
-  labs(x=NULL, y="Prop. reads flagged as contaminant by sample",
+  scale_color_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
+  labs(x=NULL, y="Prop. reads flagged as contaminant",
        title = paste("Abundance of flagged MOTUs for", l)) + 
   facet_grid(.~name) +
-  theme_bw() 
+  theme_bw() +
+  theme(axis.title = element_text(size = 8),
+        title = element_text(size = 10))
 
 metabarlist.int$pcrs$low_all_conta_level_10 <- ifelse(Rel.conta.prop$conta.all.prop[match(rownames(metabarlist.int$pcrs), rownames(Rel.conta.prop))]>0.1,  F, T)
 metabarlist.int$pcrs$low_max_conta_level_10 <- ifelse(Rel.conta.prop$conta.max.prop[match(rownames(metabarlist.int$pcrs), rownames(Rel.conta.prop))]>0.1,  F, T)
+
+ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_conta.prop_",l,".png")), 
+       plot = conta.gg ,
+       width = 5,
+       height = 3,
+       units = c("in"))
+
 
 assign(x = paste0("metabarlist.ori.", l), 
        value = metabarlist.int )
 
 }
 
-graph.prop.conta <- ggpubr::ggarrange(plotlist = conta.gg)
-
-ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", "03_conta.prop_allsamples.png"), 
-       plot = graph.prop.conta ,
-       width = 6,
-       height = 6,
-       units = c("in"))
-
-
 
 # Tag jump ----------------------------------------------------------------
 
 # Define a vector of thresholds to test
 thresholds.tag.test <- c(0, 0.0001, 0.001, 0.01, 0.03, 0.05) 
-thresholds.tag <- 0.01
+
 
 for(l in LOCUS){
   
@@ -351,7 +353,7 @@ for(l in LOCUS){
   
   metabarlist.int <- get(paste0("metabarlist.ori.",l))
 
-
+thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
 #remove empty MOTUs
 #metabarlist.int.clean <- subset_metabarlist(metabarlist.int, "reads", 
 #                                             indices = (rowSums(metabarlist.int$reads)>0))
@@ -383,14 +385,15 @@ tests.tagjump.long$threshold <- as.numeric(gsub("t_", "", tests.tagjump.long$thr
 # New table formatting for ggplot
 tests.tagjump.long.2 <- reshape2::melt(tests.tagjump.long, id.vars=colnames(tests.tagjump.long)[-grep("abundance|richness", colnames(tests.tagjump.long))])
 
-tag.gg <- ggplot(tests.tagjump.long.2, aes(x=as.factor(threshold), y=value)) + 
+tag.gg <- tests.tagjump.long.2 %>% mutate(controls = ifelse(is.na(controls), "sample", controls)) %>% 
+  ggplot(aes(x=as.factor(threshold), y=value)) + 
   geom_boxplot(color="grey40") + 
   geom_vline(xintercept =  factor(thresholds.tag), col="orange", lty=2) + 
   geom_jitter(aes(color=controls), height = 0, alpha=0.5) + 
   scale_color_manual(values = c("brown", "red", "cyan4","pink","green", "black","yellow","purple"), na.value = "darkgrey") +
-  facet_wrap(~variable+controls, scale="free_y", ncol=2) + 
+  facet_grid(variable ~ controls, scale="free") + 
   theme_bw() + 
-  scale_y_log10() +
+  #scale_y_log10() +
   labs(x="MOTU pcr : total abundance filtering threshold", y="MOTUs",
        title = paste("Tested threshold for", l)) + 
   theme(panel.grid = element_blank(), 
@@ -398,15 +401,17 @@ tag.gg <- ggplot(tests.tagjump.long.2, aes(x=as.factor(threshold), y=value)) +
         axis.text.x = element_text(angle=40, h=1), 
         legend.position = "none")
 
+n.sample <- tag.gg$data$controls %>% unique() %>% length()
+
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("04_tagjump.threshold_",l, ".png")), 
        plot = tag.gg ,
        width = 6,
-       height = 6,
+       height = 2*n.sample,
        units = c("in"))
 
 # Check
 
-metabarlist.int.clean2 <- tagjumpslayer(metabarlist.int, 0.01)
+metabarlist.int.clean2 <- tagjumpslayer(metabarlist.int, thresholds.tag )
 
 # identify occurrence of the most abundant OTU
 idx <- which.max(metabarlist.int$motus$count)
@@ -427,21 +432,18 @@ p2 <- ggpcrplate.modif(metabarlist.int.clean2,
                  }
 )
 
-p2 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
-  ggtitle("Distribution of the most abundant MOTU after curation")
-
 plate.tag.gg <- ggpubr::ggarrange(p1 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
                                     ggtitle("Most abundant MOTU ori"),
                                   p2 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
                                     ggtitle("Most abundant MOTU after tagjumpslayer"),
                                   nrow = 1, ncol = 2 , common.legend = T
                                   )
-
+n.plate <- p1$data$plate_no %>% unique() %>% length()
 
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("04_tagjump.plate_",l, ".png")), 
        plot = plate.tag.gg ,
        width = 8,
-       height = 8,
+       height = 4 * n.plate,
        units = c("in"), bg = "white")
 
 
@@ -460,11 +462,14 @@ metabarlist.int$motus <- metabarlist.int$motus %>% mutate(artefact_type = ifelse
                                                                           ifelse(not_a_all_conta == TRUE & not_a_max_conta == FALSE, "Control contamination (max)",
                                                                           ifelse(not_a_all_conta == TRUE & not_a_max_conta == TRUE, "Not artefactual", "Undefined??")))))
 
-graph.artefact.motus <- metabarlist.int$motus %>%  ggplot(aes(x=1, fill=artefact_type)) +
-  geom_bar() + # xlim(0, 2) +
+graph.artefact.motus <- metabarlist.int$motus %>%  
+  group_by(artefact_type) %>% summarise(N = n()) %>% 
+  mutate(prop = N / sum(N)) %>% 
+  ggplot(aes(x=1, y = prop, fill=artefact_type)) +
+  geom_bar(stat = "identity") +#  xlim(0, 1) +
   labs(fill="Artifact type") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_brewer(palette = "Set3") + 
+  #scale_fill_brewer(palette = "Set3") + 
   #theme(legend.direction = "vertical") + 
   ggtitle(paste("MOTUs artefacts overview for", l))
 
@@ -479,34 +484,49 @@ metabarlist.int$pcrs <-  metabarlist.int$pcrs %>% mutate(artefact_type = ifelse(
 
 
 graph.artefact.pcr <-  metabarlist.int$pcrs %>% dplyr::filter(type == "sample") %>% 
-  ggplot(aes(x=1, fill=artefact_type)) +
-  geom_bar() +#  xlim(0, 1) +
+  group_by(artefact_type) %>% summarise(N = n()) %>% 
+  mutate(prop = N / sum(N)) %>% 
+  ggplot(aes(x=1, y = prop, fill=artefact_type)) +
+  geom_bar(stat = "identity") +  #xlim(0, 1) +
   labs(fill="Artifact type") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_brewer(palette = "Set2") + 
+  #scale_fill_manual( ) + 
   #theme(legend.direction = "vertical") + 
   ggtitle(paste("Sample (pcr) artefacts overview for", l))
 
 graph.artefact.pcr
 
-graph.artefact.pcr + facet_wrap(~ project)
 
-graph.artefact <- ggpubr::ggarrange(graph.artefact.motus + theme(legend.position = "bottom"), 
-                  graph.artefact.pcr  + theme(legend.position = "bottom"), align = c("hv"))
+graph.artefact.pcr.project <-  metabarlist.int$pcrs %>% dplyr::filter(type == "sample") %>% 
+  group_by(project, artefact_type) %>% summarise(N = n()) %>% 
+  mutate(prop = N / sum(N)) %>% 
+  ggplot(aes(x=1, y = prop, fill=artefact_type)) +
+  geom_bar(stat = "identity") +  #xlim(0, 1) +
+  labs(fill="Artifact type") + 
+  coord_polar(theta="y") + theme_void() + 
+  facet_grid(project ~ .) +
+  #scale_fill_manual( ) + 
+  #theme(legend.direction = "vertical") + 
+  ggtitle(paste("Sample (pcr) artefacts overview for", l, "by project"))
 
+graph.artefact.pcr.project
+n.proj <- graph.artefact.pcr.project$data$project %>% unique() %>% length()
 
-graph.artefact.pcr.project <- graph.artefact.pcr + facet_wrap(~ project)
+graph.artefact <- ggpubr::ggarrange(graph.artefact.motus + theme(legend.position = "right"), 
+                  graph.artefact.pcr  + theme(legend.position = "right"),
+                  nrow = 2, align = "hv")
+
 
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_summary.conta_",l, ".png")), 
        plot = graph.artefact  ,
-       width = 8,
-       height = 5,
+       width = 5,
+       height = 6,
        units = c("in"), bg = "white")
 
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_summary.conta_byProject_",l, ".png")), 
        plot = graph.artefact.pcr.project  ,
-       width = 8,
-       height = 8,
+       width = 5,
+       height = 3 * n.proj,
        units = c("in"), bg = "white")
 
 assign(x = paste0("metabarlist.ori.", l), 
@@ -522,8 +542,7 @@ assign(x = paste0("metabarlist.ori.", l),
 
 
 #metabarlist.int.clean <- subset_metabarlist(metabarlist.int, "reads", 
-#                                            indices = (rowSums(metabarlist.int$reads)>0))
-thresholds.tag
+
 
 for(l in LOCUS){
   
@@ -531,24 +550,45 @@ for(l in LOCUS){
   
   metabarlist.int <- get(paste0("metabarlist.ori.",l))
   
+# Load parameters
+  
+  thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
+  motus.correct <- metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
+  pcr.correct <- metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
+  
+    tag.correct <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct)
+  
 
-
+  if(tag.correct == T){
+    
+    metabarlist.correct.int <- tagjumpslayer(metabarlist.int, thresholds.tag)
+  } else {
+    
+    metabarlist.correct.int <- metabarlist.int
+  } 
+  
 # Run the tests and stores the results in a list
-metabarlist.correct.int <- tagjumpslayer(metabarlist.int, thresholds.tag)
 
-summary_metabarlist(metabarlist.int)
-
-summary_metabarlist(metabarlist.correct.int)
+#summary_metabarlist(metabarlist.int)
+#summary_metabarlist(metabarlist.correct.int)
 
 
+if(motus.correct == T){ 
+  
 # Subset on MOTUs and SAMPLE 
 
 metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
                                               indices = (metabarlist.correct.int$motus$artefact_type == "Not artefactual") )
 
-metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
+}
+
+if(pcr.correct == T){   
+
+  metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
                                               indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual" &
                                                            metabarlist.correct.int$pcrs$type == "sample" ) )
+
+} 
 
 # Add stats on filtration
 
@@ -578,8 +618,8 @@ post.correction.gg <- ggplot(data = check.correction, aes(x = variable, y = valu
 
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("06_summary.postcorrection_",l, ".png")), 
        plot = post.correction.gg,
-       width = 6,
-       height = 6,
+       width = 5,
+       height = 3,
        units = c("in"), bg = "white")
 
 # Export the results 
@@ -595,21 +635,21 @@ metabarlist.correct.int$pcrs %>% readr::write_csv(file.path(here::here(), "02_Re
 read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
                  mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
                  pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-                 left_join(metabarlist.correct.int$motus %>% select(QueryAccVer, Taxon, phylum)) %>% 
+                 left_join(metabarlist.correct.int$motus %>% select(QueryAccVer, Taxon, genus, phylum)) %>% 
                  mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-                 group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
+                 group_by(ID_labo, genus, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
                  left_join(data.info)
 
 read.ori.tidy <- metabarlist.int$reads %>% as.data.frame() %>% 
                  mutate(ID_labo = row.names(metabarlist.int$reads)) %>% 
                  pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-                 left_join(metabarlist.int$motus %>% select(QueryAccVer, Taxon, phylum)) %>% 
+                 left_join(metabarlist.int$motus %>% select(QueryAccVer, Taxon, genus, phylum)) %>% 
                  mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-                 group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
+                 group_by(ID_labo, genus, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
                  left_join(data.info) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"))
 
 
-final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = genus)) +
   labs(x= "", y = "") + 
   geom_bin2d(color = "darkgray")+
   scale_fill_distiller(trans = "log10",
@@ -620,10 +660,10 @@ final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_
   facet_grid(phylum ~ ID_projet, scale = "free", space = "free") + 
   ggtitle(paste("Overall visualisation after correction for", l)) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0),
+  theme(axis.text.x = element_blank(),
         legend.position = "right")
 
-final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = genus)) +
   labs(x= "", y = "") + 
   geom_bin2d(color = "darkgray")+
   scale_fill_distiller(trans = "log10",
@@ -634,7 +674,7 @@ final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Ta
   facet_grid(phylum ~ ID_projet, scale = "free", space = "free") + 
   ggtitle(paste("Overall visualisation before correction for", l)) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0),
+  theme(axis.text.x = element_blank(),
         legend.position = "right")
 
 ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("06_overall.postcorrection_",l, ".png")), 

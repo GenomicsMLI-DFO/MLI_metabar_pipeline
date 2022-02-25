@@ -1,0 +1,9 @@
+Locus	depth.threshold	prop.cont.threshold	tag.threshold	motus.correct	pcr.correct	tag.correct
+COI	1000	0.1	0.01	TRUE	TRUE	TRUE
+12S	1000	0.1	0.01	TRUE	TRUE	TRUE
+MiFish	1000	0.1	0.01	TURE	TRUE	TRUE
+MiFishDFO	1000	0.1	0.01	TRUE	TRUE	TRUE
+Royce	1000	0.1	0.01	TRUE	TRUE	TRUE
+MiMam	1000	0.1	0.01	TRUE	TRUE	TRUE
+16S	1000	0.1	0.01	TRUE	TRUE	TRUE
+dloopDL	1000	0.1	0.01	TRUE	TRUE	TRUE
