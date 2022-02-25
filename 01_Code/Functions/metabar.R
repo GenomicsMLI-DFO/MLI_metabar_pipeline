@@ -48,6 +48,7 @@ ggpcrplate.cont <- function(metabarlist, N = Inf){
   motus.common_contam <- metabarlist$motus %>% filter(not_a_all_conta == F | not_a_max_conta == F)%>% arrange(desc(count)) %>% head(N)
   reads.common_contam <- metabarlist$reads[,rownames(motus.common_contam)]
   
+  if(is.null(nrow(reads.common_contam))) stop("No figure because there is 1 or less contaminant")
   
   metabarlist_contam <- metabarlist_generator(reads.common_contam, motus.common_contam, metabarlist$pcrs, metabarlist$samples)
   
