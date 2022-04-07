@@ -37,8 +37,6 @@ source(file.path(here::here(), "01_Code", "Functions", "dada2.R"))
 system2("cutadapt", "--help")
 system2("multiqc", "--help")
 
-#auto.folder()
-
 # Data --------------------------------------------------------------------
 
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
