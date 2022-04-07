@@ -80,6 +80,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"
 
 # We need to remove the adaptors, and discard reads untrimmed
 # this function can work with more than one loci
+# The option novaseq TRUE/FALSE allowed to used to option -nextseq-trim=20
 
 system2("cutadapt", "--help")
 

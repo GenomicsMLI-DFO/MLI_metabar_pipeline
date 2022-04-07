@@ -119,7 +119,8 @@ Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads
 
 These are the steps:
 1. fastQC and multiQC on raw reads
-2. Cutdapt to check for and remove adaptors (followed by a second fastQC/multiQC)
+2. Cutadapt to check for and remove adaptors (followed by a second fastQC/multiQC)
+	- The option novaseq TRUE/FALSE allowed to used to option -nextseq-trim=20
 3. dada2 filtering (followed by a third fastQC/multiQC)
 4. dada2 error rate assessment
 5. dada2 dereplication, sample inference and merging
