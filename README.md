@@ -1,9 +1,33 @@
 # MLI metabarcoding pipeline
+
+__Main author:__  Audrey Bourret  
+__Affiliation:__  Fisheries and Oceans Canada (DFO)   
+__Group:__        Laboratory of genomics   
+__Location:__     Maurice Lamontagne Institut  
+__Affiliated publication:__  
+__Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca 
+
+- [Description](#description)
+- [Status](#status)
+- [How to use the pipeline](#how-to-use-the-pipeline)
+  + [Pre-requisite](#pre-requisite)
+  + [Before starting an analysis](#before-starting-an-analysis)
+  + [Rename raw files](#rename-raw-files)
+  + [From raw reads to ESV table](#from-raw-reads-to-esv-table)
+  + [Taxonomic assignments](#taxonomic-assignments)
+  + [Deal with negative samples](#deal-with-negative-samples)
+- [Example](#example)
+- [Reference](#references)
+
+## Description 
+
 Template repository to perform metabarcoding analysis. 
 
 This pipeline is intended to run in R (and Rstudio), but need external programs (see pre-requisite section). 
+## Status
+In-development
 
-## How to use MLI_metabar_pipeline
+## How to use the pipeline
 
 ### Pre-requisite
 
