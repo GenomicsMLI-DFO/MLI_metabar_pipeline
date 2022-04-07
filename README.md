@@ -50,7 +50,20 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("Biostrings")
 BiocManager::install("dada2")
 ```
+ - Check that parameter sets in Option.txt are alright (Locus to perform, N cores available)
+ 
+ Current loci already set are the following :
 
+| Primer | F | R | Ref |
+--- | --- | --- | --- | 
+|COI|GGWACWGGWTGAACWGTWTAYCCYCC|TAIACYTCIGGRTGICCRAARAAYCA| |	
+|MiFishU|GTCGGTAAAACTCGTGCCAGC|CATAGTGGGGTATCTAATCCCAGTTTG| |	
+|MiMam|GGGTTGGTAAATTTCGTGCCAGC|CATAGTGGGGTATCTAATCCCAGTTTG| |	
+|12SElas02|GTTGGTHAATCTCGTGCCAGC|CATAGTAGGGTATCTAATCCTAGTTTG| |	
+|12SMarVer1|CGTGCCAGCCACCGCG|GGGTATCTAATCCYAGTTTG| |
+|16Schord|ATGCGAGAAGACCCTRTGGAGCT|CCTNGGTCGCCCCAAC| |	
+
+Other loci can be added, but you'll need to set new parameters in Options.txt, and 00_Code/Parameters folder.
 
 ### Rename raw files
 
