@@ -67,7 +67,8 @@ system2("multiqc", "--help")
 
 # FastQC
 fastqc(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
-       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"))
+       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"),
+       numCores = numCores)
 
 multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"),
         loci = LOCUS, 
