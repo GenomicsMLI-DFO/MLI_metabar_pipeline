@@ -94,6 +94,10 @@ cutadapt(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
 # Extract cutadapt res
 
 cutadapt.res <- read_csv(file.path(here::here(), "00_Data", "02a_Cutadapt", "log", "Cutadapt_Stats.csv"))
+
+# Copy in another folder
+write_csv(cutadapt.res, file = file.path(here::here(), "02_Results", "02_Filtrations","Cutadapt_Stats_Nreads.csv"))
+
 graph.cutadapt <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step", values_to = "Nreads") %>%
   mutate(Nreads1 = Nreads + 1 ,
          Step = factor(Step, levels = c("Raw", "Adapt"))) %>% 
@@ -157,6 +161,8 @@ dada2.summary <- dada2.summary %>% mutate(Dada2 = reads.out,
                                           Remove = reads.in - reads.out) %>% 
   select(-c(reads.in, reads.out)) %>% 
   tidyr::pivot_longer(cols = c(Dada2, Adapt), names_to = "Reads", values_to = "N")  
+
+write_csv(dada2.summary, file = file.path(here::here(), "02_Results", "02_Filtrations", "Dada2Filt_Stats_Nreads.csv"))
 
 graph.dada2 <- dada2.summary %>%  mutate(N1 = N + 1,
                                          #Reads = factor(Reads, levels = c("Remove", "Keep")),
@@ -371,6 +377,51 @@ for(l in LOCUS){
 }
 
 # Compute stats before and after chimera removal
+# From the N reads perspective
+
+Nread.summary <- data.frame(ID_labo = character(),
+                            Loci = character(),
+                            Merge = numeric(),
+                            Final = numeric(),
+                            stringsAsFactors = F)  
+
+for(l in LOCUS){
+  
+  RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
+                    Loci = l,
+                    Merge = rowSums(get(paste0("seqtab.",l,".int"))),
+                    Final =  rowSums(get(paste0("ESVtab.",l))) ,
+                    stringsAsFactors = F)  
+  
+  
+  Nread.summary   <- bind_rows(Nread.summary, RES)
+  
+}  
+
+Nread.summary
+
+write_csv(Nread.summary, file = file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_Nreads.csv"))
+
+
+graph.Nread <- Nread.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
+  mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
+         N1 = N + 1) %>%   
+  left_join(data.info) %>% 
+  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  geom_point() +
+  geom_line() + 
+  #geom_boxplot() +
+  scale_y_continuous(trans="log10") +
+  labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+  facet_grid(~Loci) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+
+graph.Nread
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Nreads_filt.png"), plot =  graph.Nread, height = 5, width = 6)
+
+# From the N ESV perspective    
 
 ESV.summary <- data.frame(ID_labo = character(),
                           Loci = character(),
@@ -382,8 +433,8 @@ for(l in LOCUS){
   
   RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
                     Loci = l,
-                    Merge = rowSums(get(paste0("seqtab.",l,".int"))),
-                    Final =  rowSums(get(paste0("ESVtab.",l))) ,
+                    Merge = apply(get(paste0("seqtab.",l,".int")), MARGIN = 1, FUN = function(x){length(x[x>0])}),
+                    Final =  apply(get(paste0("ESVtab.",l)), MARGIN = 1, FUN = function(x){length(x[x>0])}) ,
                     stringsAsFactors = F)  
   
   
@@ -393,19 +444,18 @@ for(l in LOCUS){
 
 ESV.summary
 
-write_csv(ESV.summary, file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2", "ESVtab_Stats.csv"))
+write_csv(ESV.summary, file = file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_NESV.csv"))
 
 
 graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
-  mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
-         N1 = N + 1) %>%   
+  mutate(Reads = factor(Reads, levels = c("Merge", "Final"))) %>%   
   left_join(data.info) %>% 
-  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Reads, y = N, col = Type_echantillon, group = ID_labo)) +
   geom_point() +
   geom_line() + 
   #geom_boxplot() +
-  scale_y_continuous(trans="log10") +
-  labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+  #scale_y_continuous(trans="log10") +
+  labs(y = "N ESV", x = "Pipeline step")+ 
   facet_grid(~Loci) +
   theme_bw()+
   theme(legend.position = "bottom")
