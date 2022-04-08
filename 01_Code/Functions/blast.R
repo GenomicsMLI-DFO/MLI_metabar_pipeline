@@ -29,9 +29,14 @@ quick.blastn <- function(fasta.file, out.file,
   A <-system2("blastn", cmd1, stdout=T, stderr=T,
               env = paste0("BLASTDB=", NCBI.path))
   
+}
+
+
+load.blast <- function(out.file, 
+                       ncbi.tax = ncbi.tax){
   cat("\nLoading Blast results\n")
   
-  RES.ncbi <- read.table(out.file, sep="\t")
+  RES.ncbi <- readr::read_tsv(out.file, comment = "#", col_names = F)
   
   names(RES.ncbi) <- c("QueryAccVer", "SubjectAccVer", "TaxoId","SciName", "SKindom", "Identity", "AlignmentLength", "mismatches", "gap opens", "q. start", "q. end", "s. start", "s. end", "evalue", "bit score")
   
@@ -39,7 +44,6 @@ quick.blastn <- function(fasta.file, out.file,
   
   return(RES.ncbi)
 }
-
 
 # Performed LCA at a given threshold, and return everything
 BLAST_LCA <- function(RES, threshold = 0.97){

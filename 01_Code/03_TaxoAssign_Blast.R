@@ -61,25 +61,42 @@ res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast")
 
 if(!file.exists(res.path)) dir.create(res.path)
 
+# Perform blast
+
 for(l in LOCUS){
   
   cat("\nWorking on " , l, "\n")
   
+  quick.blastn(fasta.file = file.path(here::here(),"00_Data/03c_ESV", paste0("ESV.",l,".fasta")), 
+               out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
+               perc_identity = get.blast.value(l, "perc_identity", PARAM.BLAST), 
+               qcov_hsp_perc = get.blast.value(l, "qcov_hsp_perc", PARAM.BLAST), 
+               max_target_seqs = get.blast.value(l, "max_target_seqs", PARAM.BLAST),
+               evalue = get.blast.value(l, "evalue", PARAM.BLAST),
+               NCBI.path = NCBI.path,
+               n.cores = numCores,
+               ncbi.tax = ncbi.tax)
+  
+  
+  
+  
+}
+
+# Load results
+
+for(l in LOCUS){
+  
   assign(x = paste0("RES.",l,".ncbi"), 
-         value = quick.blastn(fasta.file = file.path(here::here(),"00_Data/03c_ESV", paste0("ESV.",l,".fasta")), 
-                              out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
-                              perc_identity = get.blast.value(l, "perc_identity", PARAM.BLAST), 
-                              qcov_hsp_perc = get.blast.value(l, "qcov_hsp_perc", PARAM.BLAST), 
-                              max_target_seqs = get.blast.value(l, "max_target_seqs", PARAM.BLAST),
-                              evalue = get.blast.value(l, "evalue", PARAM.BLAST),
-                              NCBI.path = NCBI.path,
-                              n.cores = numCores,
-                              ncbi.tax = ncbi.tax)
+         value = load.blast(out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
+                            ncbi.tax = ncbi.tax)
          
   )
   
   
 }
+
+
+
 
 
 # Compute TOPHIT + LCA ---------------------------------------------------------
