@@ -193,57 +193,62 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada
 # 3.1 Compute error rate
 
 # Be careful, MUST include samples from the same RUN (cause errors can be run specific)
-# I was used to compute it by loci, but I don't think it's necessary
-# except if the error rate have something to do with the position and all markers don't have the same length
-# Some part are weird simply because it was in a loop previously
+# Unusure if it's alway necessary to compute error rate by amplicon, but given that
+# we run amplicon of various length, I think it's necessary
 
+for(l in LOCUS){
+  
+  cat("\nCalculting error rate for" , l, "- F\n")
+  
   # create files lists
   filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
-                 str_subset(paste0("_", SENS[1], "_"))
+    str_subset(paste0("_", SENS[1], "_")) %>% 
+    str_subset(paste0("_",l,"_")) 
   
   # Add a message to be sure that the right number of files were used
   cat(length(filesF.temp), "files were found\n")  
   
   #err.F.temp <- learnErrors(filesF.temp)
-  assign(x = paste0("err.F"), value = learnErrors(filesF.temp,
-                                                     nbases = 1e8, # 1e8 is the default - increase to sample more samples
-                                                     randomize = T,
-                                                     MAX_CONSIST = 10, # default - can be more if not reach
-                                                     multithread = ifelse(numCores > 1, T, F)))
+  assign(x = paste0("err.F.", l), value = learnErrors(filesF.temp,
+                                                      nbases = 1e8, # 1e8 is the default - increase to sample more samples
+                                                      randomize = T,
+                                                      MAX_CONSIST = 10, # default - can be more if not reach
+                                                      multithread = ifelse(numCores > 1, numCores, F)))
   
   #if(nrow(PARAM.temp == 2)){
-    filesR.temp <-  list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
-                    str_subset(paste0("_", SENS[2], "_"))
-    
-    # Add a message to be sure that the right number of files were used
-    cat(length(filesR.temp), "files were found\n")  
-    
-    assign(x = paste0("err.R"), value = learnErrors(filesR.temp,
-                                                       nbases = 1e8, # 1e8 is the default
-                                                       randomize = T,
-                                                       MAX_CONSIST = 10, # default - can be more if not reach
-                                                       multithread = ifelse(numCores > 1, T, F)))
-    
+  filesR.temp <-  list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
+    str_subset(paste0("_", SENS[2], "_")) %>% 
+    str_subset(paste0("_",l,"_")) 
+  
+  # Add a message to be sure that the right number of files were used
+  cat(length(filesR.temp), "files were found\n")  
+  
+  assign(x = paste0("err.R.", l), value = learnErrors(filesR.temp,
+                                                      nbases = 1e8, # 1e8 is the default
+                                                      randomize = T,
+                                                      MAX_CONSIST = 10, # default - can be more if not reach
+                                                      multithread = ifelse(numCores > 1, numCores, F)))
+  
   #} else {err.R.temp <- vector()}
   
   #  cat("\nPlotting error rate results for" , l, "\n")  
   
   # Print a PDF of error rate
-    
-  pdf(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", "ErrorsRate.pdf")) 
-    print(plotErrors(get(paste0("err.F")), nominalQ=TRUE))
-    print(plotErrors(get(paste0("err.R")), nominalQ=TRUE))
-  dev.off()
-
-  #cat("\nSaving error rate results for" , l, "\n") 
-    
-save(list = paste0("err.F"),
-     file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", paste0("err.F.Rdata")))
   
-#if(nrow(PARAM.temp == 2)){ 
-  save(list = paste0("err.R"),
-       file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2",paste0("err.R.Rdata")))
-#  }  
+  pdf(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", paste0("ErrorsRate.", l, ".pdf"))) 
+  suppressWarnings(print(plotErrors(get(paste0("err.F.",l)), nominalQ=TRUE)))
+  suppressWarnings(print(plotErrors(get(paste0("err.R.",l)), nominalQ=TRUE)))
+  dev.off()
+  
+  cat("\nSaving error rate results for" , l, "\n") 
+  
+  save(list = paste0("err.F.",l),
+       file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2", paste0("err.F.",l,".Rdata")))
+  
+  #if(nrow(PARAM.temp == 2)){ 
+  save(list = paste0("err.R.",l),
+       file = file.path(here::here(), "00_Data", "03a_ErrorRate_dada2",paste0("err.R.",l,".Rdata")))
+}  
 
 
 # 3.2 Dereplication and sample inference
@@ -252,14 +257,18 @@ save(list = paste0("err.F"),
 # to run it by locus most of the time. So this code run it by sample directly.
 
 # To reload error rate if necessary  
-for(x in list.files(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2"), full.names = T, pattern = ".Rdata")){
-  load(x)
+if(length(str_subset(ls(), "err.F.")) != length(LOCUS)){
+  
+  for(x in list.files(file.path(here::here(), "00_Data", "03a_ErrorRate_dada2"), full.names = T, pattern = ".Rdata")){
+    load(x)
+  }
+  
 }
 
 for(l in LOCUS){
   
   cat("\nWorking on " , l, "\n")
-
+  
   # create files lists
   filesF.temp <- list.files(file.path(here::here(), "00_Data", "02b_Filtered_dada2"), full.name =T, pattern = ".fastq") %>%
     str_subset(paste0("_",l,"_")) %>% # Updated 2020-06-12 for FishAB vs Fish 
@@ -269,10 +278,10 @@ for(l in LOCUS){
   
   # Add a message to be sure that the right number of files were used
   cat(length(filesF.temp), "files were found\n")  
-
+  
   mergers <- vector("list", length(filesF.temp))
   names(mergers) <- filesF.temp
-
+  
   # Set a progress bar
   pb <- txtProgressBar(min = 0, max = length(filesF.temp), style = 3)
   
@@ -282,7 +291,7 @@ for(l in LOCUS){
     samR <- samF %>% str_replace( paste0("_", SENS[1], "_"),  paste0("_", SENS[2], "_"))
     
     cat("\nProcessing:", samF ,"\n" )
-
+    
     cat("Dereplication\n" )
     
     # Dereplication
@@ -293,40 +302,40 @@ for(l in LOCUS){
     
     #Sample inference
     dada.F <-  dada(derep.F, 
-                     err =  get(paste0("err.F")), 
-                     multithread = ifelse(numCores > 1, T, F),
-                     pool=TRUE)
+                    err =  get(paste0("err.F.",l)), 
+                    multithread = ifelse(numCores > 1, numCores, F),
+                    pool=TRUE)
     
     dada.R <-  dada(derep.R, 
-                     err =  get(paste0("err.R")), 
-                     multithread = ifelse(numCores > 1, T, F),
-                     pool=TRUE)
-
+                    err =  get(paste0("err.R.",l)), 
+                    multithread = ifelse(numCores > 1, numCores, F),
+                    pool=TRUE)
+    
     cat("Merge paires\n" )
     
     merger <- mergePairs(dadaF = dada.F, 
-                              derepF = derep.F, 
-                              dadaR = dada.R, 
-                              derepR = derep.R, 
-                              minOverlap = 30, 
-                              maxMismatch = 0,
-                              returnRejects = FALSE,
-                              verbose=TRUE)
+                         derepF = derep.F, 
+                         dadaR = dada.R, 
+                         derepR = derep.R, 
+                         minOverlap = 30, 
+                         maxMismatch = 0,
+                         returnRejects = FALSE,
+                         verbose=TRUE)
     
     
-      mergers[[samF]] <- merger
-  
-  setTxtProgressBar(pb, i)
-      
+    mergers[[samF]] <- merger
+    
+    setTxtProgressBar(pb, i)
+    
   }
- 
+  
   rm(list = c("derep.F", "derep.R", "dada.F", "dada.R", "merger"))
   
   names(mergers) <-   names(mergers) %>% str_remove(file.path(here::here(), "00_Data", "02b_Filtered_dada2")) %>% 
-                                         str_remove(paste0("_", l, "_R1")) %>% 
-                                         str_remove("_cutadapt") %>% 
-                                         str_remove(".fastq.gz") %>% 
-                                         str_remove("/")
+    str_remove(paste0("_", l, "_R1")) %>% 
+    str_remove("_cutadapt") %>% 
+    str_remove(".fastq.gz") %>% 
+    str_remove("/")
   
   cat("\nMaking SeqTab for" , l, "\n")
   
@@ -341,9 +350,7 @@ for(l in LOCUS){
   
   close(pb)
   
- }
-
-
+}
 
 # 3.6 Remove chimera 
 
@@ -352,79 +359,79 @@ for(l in LOCUS){
   cat("\nRemoving chimera for" , l, "\n")
   
   assign(x = paste0("ESVtab.", l), value = removeBimeraDenovo(get(paste0("seqtab.",l,".int")), method = "consensus", 
-                                                              multithread = ifelse(numCores > 1, T, F), verbose = TRUE)
+                                                              multithread = ifelse(numCores > 1, numCores, F), verbose = TRUE)
   )
   
   cat("\nSaving SeqTab without chimera for" , l, "\n") 
   
   save(list = paste0("ESVtab.", l),
        file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("ESVtab.noCHIM.", l, ".Rdata")  ))
-
+  
   
 }
 
 # Compute stats before and after chimera removal
+
+ESV.summary <- data.frame(ID_labo = character(),
+                          Loci = character(),
+                          Merge = numeric(),
+                          Final = numeric(),
+                          stringsAsFactors = F)  
+
+for(l in LOCUS){
   
-  ESV.summary <- data.frame(ID_labo = character(),
-                            Loci = character(),
-                            Merge = numeric(),
-                            Final = numeric(),
-                            stringsAsFactors = F)  
-  
-  for(l in LOCUS){
-    
-    RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
-                      Loci = l,
-                      Merge = rowSums(get(paste0("seqtab.",l,".int"))),
-                      Final =  rowSums(get(paste0("ESVtab.",l))) ,
-                      stringsAsFactors = F)  
-    
-    
-    ESV.summary   <- bind_rows(ESV.summary, RES)
-    
-  }  
-  
-  ESV.summary
-  
-  write_csv(ESV.summary, file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2", "ESVtab_Stats.csv"))
+  RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
+                    Loci = l,
+                    Merge = rowSums(get(paste0("seqtab.",l,".int"))),
+                    Final =  rowSums(get(paste0("ESVtab.",l))) ,
+                    stringsAsFactors = F)  
   
   
-  graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
-    mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
-           N1 = N + 1) %>%   
-    left_join(data.info) %>% 
-    ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
-    geom_point() +
-    geom_line() + 
-    #geom_boxplot() +
-    scale_y_continuous(trans="log10") +
-    labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
-    facet_grid(~Loci) +
-    theme_bw()+
-    theme(legend.position = "bottom")
+  ESV.summary   <- bind_rows(ESV.summary, RES)
   
-  graph.ESV
-  
-  ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_filt.png"), plot =  graph.ESV, height = 5, width = 6)
-  
+}  
+
+ESV.summary
+
+write_csv(ESV.summary, file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2", "ESVtab_Stats.csv"))
+
+
+graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
+  mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
+         N1 = N + 1) %>%   
+  left_join(data.info) %>% 
+  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  geom_point() +
+  geom_line() + 
+  #geom_boxplot() +
+  scale_y_continuous(trans="log10") +
+  labs(y = "N reads + 1 (log)", x = "Pipeline step")+ 
+  facet_grid(~Loci) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+
+graph.ESV
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_filt.png"), plot =  graph.ESV, height = 5, width = 6)
+
 
 # Save ESV table and fasta file --------------------------------------
 
 
 for(l in LOCUS){
-
+  
   write.dada2.res(ESVtab = get(paste0("ESVtab.",l)), 
                   loci = l, 
                   folder = file.path(here::here(), "00_Data", "03c_ESV"))
-
+  
 }
 
 # Write a final log
-  
+
 cat("\nEND of 02_Process_RAW.R script\n",
     date(),
     "\n-------------------------\n", 
-   
+    
     paste("R version", devtools::session_info()$platform$version, sep = ": "),
     paste("OS", devtools::session_info()$platform$os, sep = ": "),
     paste("System", devtools::session_info()$platform$system, sep = ": "),    
@@ -433,7 +440,7 @@ cat("\nEND of 02_Process_RAW.R script\n",
     paste("dada2", packageVersion("dada2"), sep = ": "),     
     #paste("fastqcr", packageVersion("fastqcr"), sep = ": "),     
     paste("Biostrings", packageVersion("Biostrings"), sep = ": "),   
-
+    
     "\n~ External programs ~",
     paste("fastqc", system2("fastqc", "-v", stdout=T, stderr=T), sep = ": "),     
     paste("multiqc", system2("multiqc", "--version", stdout=T, stderr=T), sep = ": "),     
@@ -441,4 +448,4 @@ cat("\nEND of 02_Process_RAW.R script\n",
     
     # Add it to the log file
     file = file.path(here::here(), "00_Data", "03c_ESV", "Process_RAW.log"), 
-    append = F, sep = "\n")
+    append = T, sep = "\n")
