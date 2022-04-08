@@ -44,7 +44,7 @@ for(l in loci){
                                        minQ = PARAM.temp$minQ,
                                        maxEE=PARAM.temp$maxEE,
                                        compress = TRUE, # Voir si c'est OK de compresser spour JAMP
-                                       multithread=ifelse(numCores > 1, T, F), # TRUE on linux
+                                       multithread=ifelse(numCores > 1, numCores, F), # TRUE on linux
                                        verbose = TRUE) 
   
   filter.summary <- data.frame(ID = row.names(filter.summary.temp) %>% str_remove("_R1_cutadapt.fastq.gz"),
