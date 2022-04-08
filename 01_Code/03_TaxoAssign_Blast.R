@@ -53,23 +53,25 @@ ncbi.tax %>% head()
 
 system2("blastn", "-help")
 
-#PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
-#PARAM.BLAST
+PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
+PARAM.BLAST$evalue <- as.character(PARAM.BLAST$evalue )
+PARAM.BLAST
+
 res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast")
 
 if(!file.exists(res.path)) dir.create(res.path)
-    
-for(l in LOCUS){
 
+for(l in LOCUS){
+  
   cat("\nWorking on " , l, "\n")
   
-    assign(x = paste0("RES.",l,".ncbi"), 
+  assign(x = paste0("RES.",l,".ncbi"), 
          value = quick.blastn(fasta.file = file.path(here::here(),"00_Data/03c_ESV", paste0("ESV.",l,".fasta")), 
                               out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
-                              perc_perc_identity = 95, 
-                              qcov_hsp_perc = 95, 
-                              max_target_seqs = 500, 
-                              evalue = "1e-50",
+                              perc_identity = get.blast.value(l, "perc_identity", PARAM.BLAST), 
+                              qcov_hsp_perc = get.blast.value(l, "qcov_hsp_perc", PARAM.BLAST), 
+                              max_target_seqs = get.blast.value(l, "max_target_seqs", PARAM.BLAST),
+                              evalue = get.blast.value(l, "evalue", PARAM.BLAST),
                               NCBI.path = NCBI.path,
                               n.cores = numCores,
                               ncbi.tax = ncbi.tax)

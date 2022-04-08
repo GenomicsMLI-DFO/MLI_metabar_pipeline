@@ -1,9 +1,10 @@
 library(stringr)
 library(readr)
+
 # Function to call blastn
 
 quick.blastn <- function(fasta.file, out.file, 
-                         perc_perc_identity = 95, 
+                         perc_identity = 95, 
                          qcov_hsp_perc = 95, 
                          max_target_seqs = 500, 
                          evalue = "1e-50",
@@ -20,7 +21,7 @@ quick.blastn <- function(fasta.file, out.file,
                 
                 "-outfmt", "\"7 qseqid sacc staxid ssciname sskingdom pident length mismatch gapopen qstart qend sstart send evalue bitscore\"",
                 "-out", out.file, 
-                "-perc_identity", perc_perc_identity,
+                "-perc_identity", perc_identity,
                 "-num_threads", numCores,
                 "-max_target_seqs", max_target_seqs, 
                 sep = " ")# forward adapter
@@ -146,3 +147,8 @@ sum.BLAST <- function(DF){
   return(RES)
 }
 
+# Extract blast parameters
+get.blast.value <- function(Loci, value, df = PARAM.BLAST){
+  df %>% dplyr::filter(Locus == Loci) %>%  dplyr::pull(value)
+  
+}
