@@ -106,7 +106,7 @@ BLAST_TOPHIT <- function(RES, threshold = 0.95){
     RES.OK <- RES.OK %>% filter(str_detect(SciName, "environmental sample|uncultured|predicted", negate = T))
     RES.OK$species <- paste(sapply(str_split(RES.OK$SciName, " "),`[`,1),
                             sapply(str_split(RES.OK$SciName, " "),`[`,2))
-    RES.OK$genus <- sapply(str_split(RES.OK$specie, " "),`[`,1)
+    RES.OK$genus <- sapply(str_split(RES.OK$species, " "),`[`,1)
     RES.OK <- RES.OK %>% mutate(species = ifelse(str_detect(species, " sp[.]| cf[.]| aff."), NA, species))
   }
   
