@@ -1,6 +1,13 @@
 
 dada2.filter <- function(folder.in, folder.out, loci, sens, param.dada2, numCores) {
   
+  # Create output folder if it doesn't exist
+  
+  if(!file.exists(file.path(folder.out, "log"))){
+    file.create(file.exists(file.path(folder.out, "log")))
+    cat("\nFolder",file.path(folder.out, "log"), "was created\n")  
+  }
+  
 for(l in loci){
   
   cat("\nFiltering",l, "\n")  
