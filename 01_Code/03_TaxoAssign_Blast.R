@@ -229,3 +229,24 @@ graph1
 
 ggsave(filename = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "Comparison_Blast.png"), plot =  graph1, height = 8, width = 10)
 
+# Write a final log
+
+cat("\nEND of 03_TaxoAssign_Blast.R script\n",
+    date(),
+    "\n-------------------------\n", 
+    
+    paste("R version", devtools::session_info()$platform$version, sep = ": "),
+    paste("OS", devtools::session_info()$platform$os, sep = ": "),
+    paste("System", devtools::session_info()$platform$system, sep = ": "),    
+    
+    "\n~ Important R packages ~",
+    paste("Biostrings", packageVersion("Biostrings"), sep = ": "),     
+   
+    "\n~ External programs ~",
+    paste(system2("blastn", "-version", stdout=T, stderr=T), collapse = ("; ")),     
+    
+     # Add it to the log file
+    file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"), 
+    append = F, sep = "\n")
+
+
