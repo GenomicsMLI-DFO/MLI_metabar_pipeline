@@ -57,3 +57,34 @@ multiqc <- function(folder.out, loci, sens){
   
 }
 
+
+# Creating a FastQC report with MultiQC
+# but not by loci
+multiqc.multiplex <- function(folder.out, sens){
+  #for(l in loci){
+  #  print(l)
+    for(s in sens){
+      print(s)
+      cmd <- paste(list.files(folder.out, full.names = T) %>%
+                     #str_subset(paste0("_",l,"_")) %>% # update 2020-06-12 for FishAB vs Fish ...
+                     str_subset(paste0("_",s)) %>%
+                     str_subset(".zip"),
+                   "--outdir", file.path(folder.out, "MultiQC_report"),
+                   "--filename", paste0("multiqc_report_", s, ".html"),
+                   "-f" # to rewrite on previous data
+      )
+      
+      system2("multiqc", cmd)
+      
+   # }
+  }
+  
+  cat(paste("\nMultiQC is over, reported were saved in", paste0(folder.out,"/MultiQC_report")),
+      
+      "\nYou should check:",
+      "1. Read length", "2. Quality drops", "3. Adaptor content", sep = "\n"
+  )  
+  
+}
+
+
