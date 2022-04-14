@@ -84,12 +84,12 @@ multiqc.multiplex(folder.out = file.path(here::here(), "02_Results", "01_FastQC"
 
 system2("cutadapt", "--help")
 
-cutadapt(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"), 
-         folder.out = file.path(here::here(), "00_Data", "02a_Cutadapt"), 
-         loci = LOCUS, 
-         sens = SENS, 
-         numCores = numCores,
-         novaseq = FALSE) 
+cutadapt.multiplex(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"), 
+                   folder.out = file.path(here::here(), "00_Data", "02a_Cutadapt"), 
+                   loci = LOCUS, 
+                   sens = SENS, 
+                   numCores = numCores,
+                   novaseq = FALSE) 
 
 # Extract cutadapt res
 
