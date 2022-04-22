@@ -39,9 +39,17 @@ length(old.names)
 R1.old <- paste0("./00_Data/01a_RawData/", data.info$File, "_R1.fastq.gz")
 R2.old <- paste0("./00_Data/01a_RawData/", data.info$File, "_R2.fastq.gz")
 
-# There should be as many times duplicated values as multiplesex loci 
+# There should be as many times duplicated values as multiplexed loci 
 R1.old %>% length()
 R1.old %>% unique() %>% length()
+
+R2.old %>% length()
+R2.old %>% unique() %>% length()
+
+# Keep only unique R1 and R2 old value
+
+R1.old <- R1.old %>% unique()
+R2.old <- R2.old %>% unique()
 
 # Check that all is detected and TRUE
 old.names %>% str_detect(paste(paste(unique(R1.old), collapse = "|"), paste(unique(R2.old), collapse = "|"), sep = "|")) %>% table()
@@ -51,7 +59,10 @@ R2.new <- paste0("./00_Data/01b_RawData_rename/",data.info$ID_labo, "_multi_R2.f
 
 R1.new %>% head()
 
+# The old and new files should be the same length
+
 length(R1.old) == length(R1.new)
+length(R2.old) == length(R2.new)
  
 # Change files names ------------------------------------------------------
 
