@@ -1,0 +1,929 @@
+---
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = here::here())
+
+# Projet à analyser
+
+#projet <- c("BDA")  
+projet <- c("TE") 
+
+# Données initiales
+source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
+library(tidyverse)
+library(ggforce)
+
+LOCUS <- stringr::str_split(get.value("Loci", file = file.path(here::here(), "Options.txt")), pattern = ";")[[1]]
+
+SUBGROUP <- stringr::str_split(get.value("group.metabaR", file = file.path(here::here(), "Options.txt")), pattern = ";")[[1]]
+
+data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
+
+data.info <- data.info %>% mutate(Type_echantillon = factor(Type_echantillon, levels = c("ECH", "FNC", "SNC", "FNC_SNC", "SNC_FNC", "ENC", "PNC", "PPC")))
+
+# Create a list of which PCR to be considered in each SUBGROUP
+
+SUBGROUP.ls <- list()
+
+for(x in SUBGROUP){
+  
+  subgroup <- c(data.info %>% dplyr::filter(ID_subprojet == x) %>% pull(ID_subprojet) %>% unique(),
+                data.info %>% dplyr::filter(ID_subprojet == x) %>% pull(ID_projet) %>% unique(),                                                         
+                "ALL", "All", "all") %>% unique()
+  
+  id <- data.info %>% dplyr::filter(ID_subprojet %in% subgroup)  %>% pull(ID_labo) %>% unique()
+  
+  SUBGROUP.ls[[x]] <- id
+  
+  
+}
+
+
+```
+
+<!-- Page titre -->
+\clearpage
+\thispagestyle{empty}
+\centering
+&nbsp;
+\vfill
+\huge Rapport d'analyses post-séquençage de librairies de métacodage à barres
+
+\vfill
+\Large pour le projet `r projet`
+
+\vfill
+\normalsize
+Produit par le Laboratoire de génomique
+
+Institut Maurice-Lamontagne (IML) 
+
+Pêches et Océans Canada
+
+Mont-Joli, Canada
+
+\vfill
+Préparation des librairies: Piere-Jean Jacques, pierre-jean.jacques@dfo-mpo.gc.ca
+
+Analyses bioinformatiques:  Jane Doe, jane.doe@dfo-mpo.gc.ca
+
+Révision: John Doe, john.doe@dfo-mpo.gc.ca
+
+\vfill
+`r Sys.Date()`
+
+\raggedright
+
+
+\newpage
+
+\setcounter{tocdepth}{2}
+\renewcommand*\contentsname{Table des matières}
+\tableofcontents 
+
+\newpage
+
+# 1. Objectif général du rapport
+
+Ce rapport automatisé permet un survol qualitatif des données générées par le pipeline d’analyse en métacodage à barres  **[MLI_metabar_pipeline](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline)**. Il permet aussi d’avoir une description générales du jeu de données qui a été analysé, des étapes et des paramètres d'analyses dans le pipeline et des résultats préliminaires de détections d'ADNe pour guider les prochaines étapes du projet.
+
+Les résultats présentés ne peuvent être considérés comme finaux et ne peuvent être publiés. Ils devraient toujours être interprétés avec précaution.
+
+\newpage
+
+# 2. Description générale du jeux de données
+
+```{r echo=FALSE}
+n.samples.tot <- data.info %>% nrow()
+n.loc.tot <- data.info %>% pull(Loci) %>% unique() %>% length() 
+
+n.samples.projet <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]], Loci %in% LOCUS) %>% pull(ID_labo) %>% length()
+n.samples.ech <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]], Type_echantillon %in% c("ECH"), Loci %in% LOCUS) %>% pull(ID_labo) %>% length()
+n.samples.control <- n.samples.projet - n.samples.ech 
+
+```
+
+Les données ont été séquencées sur une run de *NovaSeq 6000 SP PE250* comportant au total **`r n.samples.tot`** échantillons (pcr) et `r n.loc.tot` locus. Le projet **`r projet`** comprend un total de **`r n.samples.projet`** échantillons (pcr; incluant `r n.samples.control` contrôles), et **`r length(LOCUS)`** locus (**`r paste(LOCUS, collapse = ", ")`**). 
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+if(length(SUBGROUP) == 1){
+   
+  project.text <- paste("Les échantillons de ce projet ont été analysés seuls (sans autres projets)")  
+  
+}
+
+if(length(SUBGROUP) == 2){
+  
+   project.text <- paste("Les échantillons de ce projet ont été analysés avec 1 autre projet (",  paste(SUBGROUP %>% str_subset(projet, negate = T), collapse = ", "), ").") 
+  
+}  
+
+if(length(SUBGROUP) > 1){
+  
+   project.text <- paste("Les échantillons de ce projet ont été analysés avec", length(SUBGROUP) - 1,
+                         "autres projets (",  paste(SUBGROUP %>% str_subset(projet, negate = T), collapse = ", "), ").") 
+  
+}  
+  
+```
+
+`r project.text`
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+summary.1 <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]],
+                     Loci %in% LOCUS) %>% 
+              group_by(Loci, Type_echantillon) %>% 
+              summarise(N = n()) %>% 
+               pivot_wider(names_from = Type_echantillon, values_from = N)
+
+
+summary.1  %>% ungroup() %>% mutate(Total = select(. , -1) %>% rowSums()) %>% 
+              knitr::kable(caption = "Nombre d'échantillons (pcrs) par locus et catégorie")
+
+
+```
+
+**Légende**
+
+ECH = Échantillon
+
+SNC = Contrôle négatif de terrain (*sampling negative control*)
+
+FNC = Contrôle négatif de filtration (*filtration negative control*)
+
+ENC = Contrôle négatif d'extraction (*extraction negative control*)
+
+PNC/NTC = Contrôle negatif de PCR (*PCR negatif control*)
+
+PPC = Contrôle positif de PCR (*PCR positive control*)
+
+\newpage
+
+# 3. Sommaire du pipeline d'analyse
+
+```{r nreads, echo=FALSE, message=FALSE, warning=FALSE}
+# Load cutadapt summary
+
+cutadapt.res <- read_csv(file.path(here::here(), "00_Data", "02a_Cutadapt", "log", "Cutadapt_Stats.csv"))
+
+esv.reads.res <- read_csv(file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_Nreads.csv"))
+names(esv.reads.res)[4] <- "ESVdada2"
+
+dada2.summary <- data.frame()
+
+for(l in LOCUS){
+  
+  dada2.int <- readr::read_csv(file.path(here::here(), "00_Data", "02b_Filtered_dada2", "log", paste0(l, "_dada2_summary.csv"))) 
+  dada2.int <- dada2.int %>% mutate(Loci = l)
+  dada2.summary <- bind_rows(dada2.summary, dada2.int)
+  
+}
+         
+dada2.summary <- dada2.summary %>% mutate(Trim = reads.out,
+                                          Adapt = reads.in
+                                          ) %>% 
+  select(-c(reads.in, reads.out))
+
+# Load post tag res
+
+tag.summary <- data.frame()
+
+for(l in LOCUS){
+
+  tag.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_", l, ".csv"))) 
+
+  tag.summary <- bind_rows(tag.summary, tag.int)
+  
+}
+
+metabar.summary <- data.frame()
+
+for(l in LOCUS){
+  metabar.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postMetabaR_", l, "_",projet, ".csv"))) 
+
+  metabar.summary <- bind_rows(metabar.summary, metabar.int)
+  
+}
+
+nreads.res <- cutadapt.res %>% left_join(dada2.summary %>% mutate( ID_labo = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
+                                select(ID_labo, Loci, Trim)) %>% 
+                               left_join(esv.reads.res) %>% 
+                               left_join(tag.summary %>% select(ID_labo = sample_id, ESVtagjump = nb_reads.tagjump, Loci)) %>% 
+   left_join(metabar.summary %>% select(ID_labo = sample_id, ESVfinal = nb_reads_postmetabaR, Loci)) %>% 
+               pivot_longer(c(Raw, Adapt, Trim, Merge, ESVdada2, ESVtagjump, ESVfinal), names_to = "Step", values_to = "Nreads") %>%
+  left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
+                           by = c("ID_labo", "Loci"))  %>%                           
+   mutate(Nreads = ifelse(is.na(Nreads), 0, Nreads),
+                                    Nreads = ifelse((Type_echantillon != "ECH" & Step == "ESVfinal"), NA, Nreads ),
+                                    Nreads1 = Nreads + 1 ,
+                        Step = factor(Step, levels = c("Raw", "Adapt", "Trim", "Merge", "ESVdada2", "ESVtagjump", "ESVfinal"))) 
+
+# git project
+
+git.url <- system2(command = "git", args = "remote get-url origin", stdout = T)
+
+```
+
+Le pipeline d'analyse se divise en différentes grandes étapes qui ont une influence à la fois sur le nombre de reads et le nombre de MOTUs (*Molecular operational taxnomique unit*, des OTUs, des ASVs, des ESVs ou autres) observé par échantillon. Dans le cas de ce rapport, les MOTUs sont en fait des ESVs. Ces grandes étapes sont :
+
+1. Les données brutes (*Raw*)
+2. Le retrait des adapteurs (*Adapt*)
+3. La filtration sur la qualité (*Trim*)
+4. La fusion des reads R1 et R2 (*Merge*)
+5. Le retrait des chimères et la création d'une première table de MOTUs (*ESVdada2*)
+6. La correction pour le tag-jumping (*ESVtagjump*)
+7. La correction pour les contaminants, et le retrait des échantillon contrôle (*ESVfinal*)
+
+Les scripts et résultats se trouvent sur GitHub dans le répertoire **[`r git.url %>% str_remove("https://github.com/")`](`r git.url`)**. Une description plus détaillée du pipeline utilisé est disponible à l'[Annexe I](#annexe-i).
+
+Le profil de variation en nombre de reads est différent selon l'étape du pipeline (généralement plus prononcé à étape 4), le locus et le type d'échantillon (contrôle ou non). 
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5,  fig.width=7}
+
+# Load post Metaba
+
+nreads.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
+                      Loci %in% LOCUS) %>% 
+  mutate(Cat_echantillon = ifelse(Type_echantillon %in% c("ECH"), "Échantillon", "Contrôle")
+        ) %>% 
+  ggplot(aes(x = Step, y = Nreads1, col = Type_echantillon, group = ID_labo)) +
+  #geom_jitter(height = 0) +
+  geom_point(alpha = 0.5) +
+  geom_line(alpha = 0.5) + 
+  #geom_boxplot() +
+  scale_y_continuous(trans="log10") +
+  facet_grid(Cat_echantillon ~ Loci) +
+    labs(y = "N reads + 1 (log)", x = "Étape du pipeline", title = "Variation en N reads entre les étapes du pipeline")+ 
+  theme_bw()+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+
+```
+
+Le patron variation en nombre de MOTUs est aussi différent selon l'étape du pipeline, le locus et le type d'échantillons (contrôle ou non). À noter que les MOTUs sont obtenus seulement à l'étape 4 lors de la fusion des reads R1 et R2.
+
+
+```{r nmotus, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.width=7}
+# Stats at the MOTUS level
+esv.motus.res <- read_csv(file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_NESV.csv"))
+names(esv.motus.res)[4] <- "ESVdada2"
+
+nmotus.res <- esv.motus.res %>% left_join(tag.summary %>% select(ID_labo = sample_id, ESVtagjump = nb_motus.tagjump, Loci)) %>% 
+     left_join(metabar.summary %>% select(ID_labo = sample_id, ESVfinal = nb_motus_postmetabaR, Loci)) %>% 
+               pivot_longer(c(Merge, ESVdada2, ESVtagjump, ESVfinal), names_to = "Step", values_to = "Nmotus") %>% 
+                 left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
+                           by = c("ID_labo", "Loci")) %>%
+                 mutate(Nmotus = ifelse(is.na(Nmotus), 0, Nmotus),
+                        Nmotus = ifelse((Type_echantillon != "ECH" & Step == "ESVfinal"), NA, Nmotus ),
+                        Nmotus1 = Nmotus + 1 ,
+                        Step = factor(Step, levels = c("Raw", "Adapt", "Trim", "Merge", "ESVdada2", "ESVtagjump", "ESVfinal"))) 
+
+
+nmotus.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
+                      Loci %in% LOCUS) %>% 
+    mutate(Cat_echantillon = ifelse(Type_echantillon %in% c("ECH"), "Échantillon", "Contrôle")
+        ) %>% 
+  ggplot(aes(x = Step, y = Nmotus1, col = Type_echantillon, group = ID_labo)) +
+  #geom_jitter(height = 0) +
+  geom_point(alpha = 0.5) +
+  geom_line(alpha = 0.5) + 
+  #geom_boxplot() +
+ scale_y_continuous(trans="log10") +
+  facet_grid(Cat_echantillon ~ Loci) +
+    labs(y = "N motus + 1 (log)", x = "Étape du pipeline", title = "Variation en N MOTUs entre les étapes du pipeline")+ 
+  theme_bw()+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+
+
+```
+
+\newpage
+
+# 4. Assignations taxonomiques
+
+Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminé comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsque la banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Les résultats d'assignations devraient être utilisés pour publication, ces derniers devraient êre révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
+
+\newpage
+
+# 5 Correction des tables d'ESV
+
+Différentes sources de contaminations des tables de MOTUS ont été revues au cours du pipeline d'analyse. De plus, les échantillons problématiques ont été identifés. Voici les grandes lignes des résultats. 
+
+## 5.1 Tag jumping
+
+Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point de bascule où il y a une diminution dans la diversité des MOTUS, mais non dans le nombre de reads (abundance). Augmenter ou diminuer ce seuil va avoir une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+metabar.param <- metabar.param %>% dplyr::filter(Locus %in% LOCUS)
+
+tag.param <- metabar.param %>% dplyr::filter(tag.correct == T)
+
+if(nrow(tag.param) == length(LOCUS)){
+  
+  tag.text <- "une correction pour le tag jumping a été appliquée à tous les locus"
+  
+} 
+
+if(nrow(tag.param) == 0){
+  
+  tag.text <- "aucune correction pour le tag jumping a été appliquée au jeu de données"
+  
+}
+
+if(between(nrow(tag.param), 1, length(LOCUS) -1 )){
+  
+  tag.text <- paste("une correction pour le tag jumping a été appliquée aux locus suivants :", paste(tag.param$Locus, collapse = ", "))
+  
+}  
+  
+```
+
+**Dans ce projet, `r tag.text`.**
+
+\newpage
+
+## 5.2 Profondeur de séquençage
+
+Les retraits des patrons de tag jumping, de même que les contaminants, vont avoir un certain effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple parce qu'il y a de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique et aucune amplification n'a eue lieu.   
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+depth.param <- metabar.param %>% dplyr::filter(pcr.correct == T)
+
+if(nrow(depth.param) == length(LOCUS)){
+  
+  depth.text <- "les échantillons identifiés comme problématique ont été retirés à tous les locus"
+  
+} 
+
+if(nrow(depth.param) == 0){
+  
+  depth.text <- "aucune correction pour les échantillons problématiques n'a été appliquée au jeu de données"
+  
+}
+
+if(between(nrow(depth.param), 1, length(LOCUS) -1 )){
+  
+  depth.text <- paste("les échantillons identifiés comme problématique ont été retirés aux locus suivants :", paste(depth.param$Locus, collapse = ", "))
+  
+}  
+
+
+nreads.res %>% filter(Step %in% c("ESVdada2", "ESVtagjump", "ESVfinal"),
+                      ID_labo %in% SUBGROUP.ls[[projet]]) %>% 
+  left_join(metabar.param, by = c("Loci" = "Locus")) %>% 
+  ggplot(aes(x = Nreads1, fill = Type_echantillon)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = depth.threshold), lty=2, color="orange") +
+  scale_x_continuous(trans="log10") +
+  facet_grid(Step ~ Loci, scales = "free_x") +
+    labs(x = "N reads + 1 (log)", title = "Profondeur de séquençage")+ 
+  theme_bw()+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+```
+
+Un seuil en dessus dequel le N de reads semble trop bas est déterminé par locus (ligne poitillée orangée). Les échantillons sous ce seuils sont identifiés, et leur nombre peut varier entre locus. Il est important de s'intérroger sur les causes probables de faible N reads par échantillons (e.g., inhibition, locus très spécifique).
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+low.depth.sample <- nreads.res %>% filter(Step %in% c("ESVtagjump"),
+                      ID_labo %in% SUBGROUP.ls[[projet]],
+                      Type_echantillon %in% c("ECH")) %>% 
+  left_join(metabar.param, by = c("Loci" = "Locus")) %>% 
+  group_by(Loci) %>% 
+  mutate(SUM = n()) %>% 
+  filter(Nreads < depth.threshold)
+
+data.frame(Loci = LOCUS) %>% left_join(low.depth.sample %>% group_by(Loci, SUM) %>% summarise(N = n()) %>% 
+                                         mutate(Proportion = N/SUM)) %>% 
+   mutate(N = ifelse(is.na(N), 0, N),
+          Proportion = ifelse(N == 0, 0, round(Proportion, 2))
+          ) %>%  arrange(Loci) %>% select(-SUM) %>% knitr::kable(caption = "Échantillons (pcr) sous le seuil de profondeur de séquençage")
+  
+```
+
+Les échantillons avec une forte proportion de contaminants (voir section suivante) sont également identifiés, ce qui permet de classer chaque échantillon en différentes catégories.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=7}
+
+summary.artefact.pcr <- data.frame(stringsAsFactors = F)
+
+for(l in LOCUS){
+
+  summary.artefact.pcr.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_Artefact_PCRs_",l, "_", projet,".csv")))
+
+summary.artefact.pcr.int <- summary.artefact.pcr.int %>% mutate(Loci = l)  
+  
+summary.artefact.pcr <- bind_rows(summary.artefact.pcr, summary.artefact.pcr.int)
+  
+}
+
+graph.artefact.pcr<-  summary.artefact.pcr  %>% 
+  filter(dataset == "tagjump") %>% 
+  ggplot(aes(x=1, y = prop, fill=artefact_type)) +
+  geom_bar(stat = "identity") +  #xlim(0, 1) +
+  labs(fill="Category") + 
+  coord_polar(theta="y") + theme_void() + 
+  scale_fill_manual(limits = c("Not artefactual", "Low sequencing depth", "Contamination > 10%", "Contamination > 10% and low sequencing depth"), values = c("deepskyblue1", "darkgoldenrod1", "darkorange1", "darkred" ), labels =  c("Acceptable depth", "Low depth", "Contamination > 10%", "Contamination > 10% and low depth")) + 
+  geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
+  facet_wrap( ~ Loci) +
+  ggtitle("Classification des différents échantillons")
+graph.artefact.pcr
+
+
+
+```
+
+**Dans ce projet, `r depth.text`.**
+
+\newpage
+
+## 5.3 Contaminants
+
+Les contaminants sont analysés en comparant les échantillons biologiques aux contrôles négatifs. Un MOTUs est identifié comme contaminants lorsqu'on observe une fréquence supérieure dans un témoin négatif par rapport à ce qui est observé dans les échantillons biologiques.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+conta.summary <- data.frame()
+
+for(l in LOCUS){
+  
+  conta.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_conta_",l,"_",projet, ".csv"))) 
+  conta.int <- conta.int %>% mutate(Loci = l)
+  conta.summary <- bind_rows(conta.summary, conta.int)
+  
+}
+
+conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+  filter(!is.na(sub.tagclean.max)) %>% 
+  group_by(Loci) %>% 
+  summarise(`N motus` = n(),
+            `N reads` = sum(sub.tagclean.max),
+            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+   knitr::kable(caption = "Information sur les contaminants identifiés")
+
+
+conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
+
+if(nrow(conta.param) == length(LOCUS)){
+  
+  conta.text <- "les MOTUs identifiés comme contaminants ont été retirés à tous les locus."
+  
+} 
+
+if(nrow(conta.param) == 0){
+  
+  conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données."
+  
+}
+
+if(between(nrow(conta.param), 1, length(LOCUS) -1 )){
+  
+  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "))
+  
+}  
+
+```
+
+Chaque MOTUs peut être classé en différentes catégories.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+summary.artefact.motus <- data.frame(stringsAsFactors = F)
+
+for(l in LOCUS){
+
+  summary.artefact.motus.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_Artefact_MOTUs_",l, "_", projet,".csv")))
+
+summary.artefact.motus.int <- summary.artefact.motus.int %>% mutate(Loci = l)  
+  
+summary.artefact.motus <- bind_rows(summary.artefact.motus, summary.artefact.motus.int)
+  
+}
+
+graph.artefact.motus <-  summary.artefact.motus  %>% 
+  filter(dataset == "tagjump") %>% 
+  ggplot(aes(x=1, y = prop, fill=artefact_type)) +
+  geom_bar(stat = "identity") +  #xlim(0, 1) +
+  labs(fill="Category") + 
+  coord_polar(theta="y") + theme_void() + 
+  scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" ), labels = c("Good MOTUs", "Contamination")) + 
+  geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 3) +
+  facet_grid(Loci ~ level) +
+  ggtitle("Classification des différents MOTUs")
+graph.artefact.motus
+
+
+
+```
+
+**Dans ce projet, `r conta.text`.**
+
+\newpage
+
+## 5.4 Autres aspects à considérer
+
+D'autres corrections pourraient être appliquées sur le jeu de données: 
+
+- Certains contaminants communs (*Homo sapiens*, *Sus scrofa*, *Bos*, *Canis lupus*) pourraient être retirés manuellement.
+- Les MOTUs pourraient être filtré sur la longueur de leur séquence.
+- Les singletons (MOTUS à 1 read) pourraientt être retirés
+- S'il y a des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.
+
+\newpage
+
+# 6. Évaluation sommaire du jeu de données final 
+
+## 6.1 Diversité observée
+
+Pour avoir une idée si la profondeur de séquençage est adéquate, il est possible d'étudier la relation entre la diversité (N MOTUs) et la profondeur de séquençage (N reads). En théorie, lorsqu'une profondeur de séquençage adéquate est atteinte, un plateau devrait être observé. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 3, fig.width=7}
+
+# for(l in LOCUS){
+#   
+#   esv.path <- file.path(here::here(), "00_Data", "03c_ESV", paste0("ESV.", l, "_table.txt"))
+#   
+#   seq.int <- readr::read_delim(esv.path, delim = " ", col_names = F, n_max = 1) %>% as.vector()
+#   esv.int <- readr::read_delim(esv.path, delim = " ", col_names = F, skip = 1) 
+#   names(esv.int) <- c("ID_labo", seq.int)
+#   esv.int <- esv.int %>% pivot_longer(-ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
+#                          mutate(Loci = l)
+#   
+#   ESV.table <- bind_rows(ESV.table, esv.int)
+# 
+# }
+#  
+##str(ESV.table)#
+#
+
+#ESV.table <- ESV.table %>% left_join(data.info %>% select(ID_labo, ID_projet, Loci, Type_echantillon))
+
+#ESV.table.summary <- ESV.table %>% group_by(ID_labo, Loci, Type_echantillon) %>% 
+#              summarise(NESV = length(SEQ[Nreads > 0]),
+#                        Nreads = sum(Nreads)) 
+
+metabar.summary %>%  
+  ggplot(aes(y = nb_motus_postmetabaR, x = nb_reads_postmetabaR)) +
+                    geom_point(alpha = 0.5) +
+    #scale_y_continuous(trans="log10") +
+    #scale_x_continuous(trans="log10") +
+  facet_grid(. ~ Loci, scale = "free_x") +
+  #geom_smooth(method = "lm") +
+   labs(y = "N motus ", x = "N reads", title = "Relation entre la diversité de MOTUs et la profondeur de séquençage")+ 
+  theme_bw()+
+  theme(#legend.position = "bottom",
+        axis.text.x = element_text(angle = 45, hjust =1, vjust = 1))
+
+
+```
+
+En pratique, les erreurs de PCRs et les approches ou paramètres utilisés pour obtenir les MOTUs peuvent créer des erreurs et certains MOTUs peuvent représenter des artéfacts d'analyse. Pour tenter de pallier ce problème, il est possible de regarder plutôt la relation avec le nombre de taxon unique détectés - même si une grande proportion n'a pas d'assignation taxonomique.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 3, fig.width=7}
+ESV.table.long <- data.frame(stringsAsFactors = F)
+
+for(l in LOCUS){
+
+MOTUs.table <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("MOTUs.Metabarinfo.corrected_",l, "_",projet, ".csv")))
+ESV.table   <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab.corrected_",l, "_",projet, ".csv")))
+names(ESV.table)[1] <- "ID_labo" 
+
+ESV.table.long.int <- ESV.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
+                  mutate(Loci = l) %>% 
+                  left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
+                  left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+ESV.table.long <- bind_rows(ESV.table.long, ESV.table.long.int)
+   
+}
+
+
+ESV.table.long %>% 
+  mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+  group_by(Loci, ID_labo) %>% 
+  summarise(nb_taxon_postmetabaR = length(unique(Taxon[Nreads>0])),
+            nb_reads_postmetabaR = sum(Nreads)) %>% 
+  ggplot(aes(y = nb_taxon_postmetabaR, x = nb_reads_postmetabaR)) +
+                    geom_point(alpha = 0.5) +
+    #scale_y_continuous(trans="log10") +
+    #scale_x_continuous(trans="log10") +
+  facet_grid(. ~ Loci, scale = "free_x") +
+  #geom_smooth(method = "lm") +
+   labs(y = "N Taxons", x = "N reads", title = "Relation entre la diversité de taxons et la profondeur de séquençage")+ 
+  theme_bw()+
+  theme(#legend.position = "bottom",
+        axis.text.x = element_text(angle = 45, hjust =001, vjust = 1))
+
+```
+
+La diversité peut aussi être évaluée à l'aide de différent métrique comme le N de MOTUs, de taxons ou de reads assignés à de grand groupes taxonomiques.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=6}
+
+
+# ESV.table.long %>% 
+#   mutate(group = ifelse(is.na(Taxon), "Unassigned", 
+#                         ifelse(Taxon == "Homo sapiens", "Human",
+#                         #is.na(phylum), "Unassigned", 
+#                         ifelse(phylum %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera"), phylum, "Others"))),
+#          group = factor(group, levels =  c("Arthropoda",  "Echinodermata", "Porifera", "Cnidaria", "Chordata",  "Human", "Others",  "Unassigned"))) %>% 
+#   group_by(Loci, group) %>% 
+#   summarise(motus = length(unique(ID)),
+#             reads = sum(Nreads),
+#             taxons = length(unique(Taxon))) %>% 
+#   pivot_longer(cols = c(motus, reads, taxons), names_to = "level", values_to = "N") %>% 
+#   ungroup() %>% 
+#   group_by(Loci, level) %>% 
+#   mutate(SUM = sum(N),
+#          prop = N/SUM,
+#          level = factor(level, levels = c("motus", "taxons", "reads"))) %>% 
+#   ggplot(aes(x=level, y = prop, fill = forcats::fct_rev(group))) +
+#   geom_bar(stat = "identity") +  #xlim(0, 1) +
+#   scale_fill_brewer(palette = "Set2", direction=-1) +
+#   labs(fill="Groupe") + 
+#   #coord_polar(theta="y") + theme_void() + 
+#   #scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+#   geom_text(aes(y = 0.75, x= 1, label = paste0("n=",SUM)), vjust = 1, hjust = 0, col = "black", cex = 3) +
+#   facet_grid(Loci ~ level) +
+#    ggforce::facet_zoom(y = group %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera"), zoom.size = 1) +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+#   ggtitle("Classification à différents groupes taxonomiques")
+# 
+
+for(l in LOCUS){
+
+data.int <- ESV.table.long %>% 
+  mutate(group = ifelse(is.na(Taxon), "Unassigned", 
+                        ifelse(Taxon == "Homo sapiens", "Human",
+                        #is.na(phylum), "Unassigned", 
+                        ifelse(phylum %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera"), phylum, "Others"))),
+         group = factor(group, levels =  c("Arthropoda",  "Echinodermata", "Porifera", "Cnidaria", "Chordata",  "Human", "Others",  "Unassigned"))) %>% 
+  group_by(Loci, group) %>% 
+  summarise(motus = length(unique(ID)),
+            reads = sum(Nreads),
+            taxons = length(unique(Taxon))) %>% 
+  pivot_longer(cols = c(motus, reads, taxons), names_to = "level", values_to = "N") %>% 
+  ungroup() %>% 
+  group_by(Loci, level) %>% 
+  mutate(SUM = sum(N),
+         prop = N/SUM,
+         level = factor(level, levels = c("motus", "taxons", "reads")),
+         SUM.text = ifelse(SUM > 1000000, paste(round(SUM/1000000,1), "M"), as.character(SUM))) %>% 
+  filter(Loci == l) 
+
+min.class <- data.int %>% filter(group %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera")) %>% 
+             pull(prop) %>% min()
+
+sum.class <- data.int %>% filter(group %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera")) %>% 
+            group_by(level) %>% summarise(sum = sum(prop))  %>% pull(sum) %>% max()
+
+graph.int <-  data.int %>% 
+  ggplot(aes(x=level, y = prop, fill = forcats::fct_rev(group))) +
+  geom_bar(stat = "identity") +  #xlim(0, 1) +
+  scale_fill_brewer(palette = "Set2", direction=1, limits = c("Arthropoda",  "Echinodermata", "Porifera", "Cnidaria", "Chordata",  "Human", "Others",  "Unassigned") ) +
+  #scale_y_continuous(limits = c(0,1.1), breaks = c(0,0.2,.4,.6,.8,1))+
+  labs(fill="Groupe") + 
+  #coord_polar(theta="y") + theme_void() + 
+  #scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+  geom_text(aes(y = 0.95, x= level, label = paste0("n=",SUM.text)), vjust = 0.5, hjust = 0.5, col = "black", cex = 3) +
+  #facet_grid(Loci ~ level) +
+   
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  ggtitle(paste("Classification à différents groupes taxonomiques pour", l))
+
+if(min.class < .10 & sum.class > .5){
+ graph.int <- graph.int  + ggforce::facet_zoom(y = group %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera"), zoom.size = 1, ylim = c(0, 0.5)) 
+}
+
+if(min.class < .10 & sum.class < .5){
+ graph.int <- graph.int  + ggforce::facet_zoom(y = group %in% c("Arthropoda", "Chordata", "Cnidaria", "Echinodermata", "Porifera"), zoom.size = 1, ylim = c(0, sum.class)) 
+}
+
+
+
+print(graph.int)
+
+}
+
+
+
+```
+
+\newpage
+
+## 6.2 Diversité par échantillon (PCR)
+
+Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **À noter que les singletons (N reads = 1) par échantillon ont été retirés de la figure, mais pas du jeu de données. De plus, les assignations taxonomiques n’ont pas été révisées par un expert.**
+
+```{r echo=FALSE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE}
+`%nin%` = Negate(`%in%`)
+
+n.stations <- ESV.table.long %>% pull(Station) %>% unique() %>% length()
+
+for(l in LOCUS){
+graph.int <-   ESV.table.long %>% 
+    mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
+         Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "16Schord"), class, phylum),
+         Nreads = ifelse(Nreads == 1, 0 , Nreads)) %>% 
+  filter(Loci == l,
+         Taxon %nin% c("Homo sapiens", "Unassigned", "Bos", "Sus", "Sus scrofa", "Canis lupus")) %>% 
+  group_by(Loci, ID_labo, Station, Taxon, Groupe) %>% 
+  summarise(Nreads = sum(Nreads)) %>% 
+  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+  labs(x= "", y = "") + 
+  geom_bin2d(color = "darkgray")+
+  scale_fill_distiller(trans = "log10",
+                       palette = "Spectral",
+                       na.value = "white"#,
+                       #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+                       ) +
+  theme_minimal()+
+  facet_grid(Groupe ~ ., scale = "free", space = "free") + 
+  ggtitle(paste("Détection par échantillon au locus", l)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        strip.text.y = element_text(angle = 0),
+        strip.text.x = element_text(angle = 90),
+        panel.spacing = unit(0, "in"),
+        legend.text = element_text(angle = 45, hjust = 1),
+        legend.title = element_text(angle = 0, vjust = 0.9),
+        legend.position = "bottom")
+
+if(n.stations > 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ ., scale = "free", space = "free")    
+}
+
+print(graph.int)
+
+}
+
+```
+\newpage
+
+
+# Annexe I
+## Détails sur le pipeline d'analyse
+
+Les scripts et résultats se trouvent sur GitHub dans le répertoire **[`r git.url %>% str_remove("https://github.com/")`](`r git.url`)**.
+
+### 1. Obtention d'une table d'ESV
+
+Script associé : **02_Process_RAW.R**
+
+Les étapes sont :
+
+1. `cutadapt` pour enlever les adapteurs
+
+2. `dada2::filterAndTrim` avec les paramètres suivants:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/dada2_param.tsv"))
+PARAM.DADA2 %>% dplyr::filter(Locus %in% LOCUS) %>%   knitr::kable()
+
+```
+3. `dada2::learnErrors` pour apprendre le taux d'erreur, par locus
+
+```
+nbases = 1e8
+randomize = T
+MAX_CONSIST = 10
+```
+
+4. `dada2::derepFastq` pour dérepliquer les échantillons
+
+5. `dada2::dada` pour inférer chaque échantillons
+
+6. `dada2::mergePairs` pour joindre les R1 et R2
+
+```
+minOverlap = 30 
+maxMismatch = 0
+```
+
+7. `dada2::removeBimeraDenovo`
+
+```
+method = "consensus"
+```
+
+Version des ressources utilisées:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+if(file.exists(file.path(here::here(), "00_Data/03c_ESV/Process_RAW.log"))){
+
+res <- readr::read_lines(file = file.path(here::here(), "00_Data/03c_ESV/Process_RAW.log"),
+                         skip = 7
+                         )
+
+
+cat(res, sep = "\n")
+}
+```
+
+
+
+
+### 2. Assignations taxonomiques
+
+Script associé : **03_TaxoAssign_Blast.R**
+
+Les assignations ont été faites à l'aide de `blastn` avec les paramètres suivants:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+blast.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
+
+blast.param <- blast.param  %>% mutate(evalue = as.character(evalue))
+blast.param %>% dplyr::filter(Locus %in% LOCUS) %>%   knitr::kable()
+
+
+```
+
+Par la suite, un script maison permet de faire des assignations avec une approche de LCA ou the TopHit à des seuils de 95, 97 et 99%.
+
+Version des ressources utilisées:
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+if(file.exists(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"))){
+
+res <- readr::read_lines(file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"),
+                         skip = 7
+                         )
+
+
+cat(res, sep = "\n")
+}
+```
+
+### 3. Correction des tables d'ESV
+
+Script associé : 04_ESVtable_correction.R
+
+Les corrections ont été fait à l'aide du paquet `metabaR` avec les paramètres suivants:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>%   knitr::kable()
+
+```
+
+Les étapes sont :
+
+1. Identifier le tagjumping sur l'ensemble des échantillons d'une même run à l'aide de la fonction `tagjumpslayer` (threshold = *tag.threshold*) et les enlever (__facultatif__, tag.correct = *TRUE*). 
+
+2. Identifier les échantillons (pcr) sur l'ensemble des échantillons d'une même run avec peu de profondeur de séquençage (threshold = *depth.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*).  
+
+3. Identifier les contaminants spécifiques à un projet à l'aide de la fonction `contaslayer` (method = max, control_types = c("pcr", "extraction")) et les enlever (__facultatif__, motus.correct = *TRUE*). 
+
+3. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*). 
+
+Version des ressources utilisées:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+if(file.exists("00_Data/04_ESVcorrected/ESVtab_correction.log")){
+
+res <- readr::read_lines(file = file.path(here::here(), "00_Data/04_ESVcorrected/ESVtab_correction.log"),
+                         skip = 7
+                         )
+
+
+cat(res, sep = "\n")
+}
+```
+
+
+\newpage
+
+# Annexe II
+## Correction pour le tag jumping
+
+Le choix de ce seuil (ligne orange pointillée) est important car devrait réfléter un point de bascule où il y a une diminution dans la diversité des MOTUS, mais non dans le nombre de reads (abundance). Une changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
+load( file.path(here::here(), "02_Results/04_ESVtable_correction", "00_tag.gg.Rdata"))
+
+for(l in LOCUS){
+print(get( paste0("tag.gg.", l))) 
+}
+
+```
+
+
+
+
+
+
+
+
+
