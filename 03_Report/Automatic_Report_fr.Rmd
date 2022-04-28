@@ -464,6 +464,9 @@ for(l in LOCUS){
   
 }
 
+# Rouler seulement s'il y a des contaminants
+if(nrow(conta.summary) >= 0){
+
 conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
   filter(!is.na(sub.tagclean.max)) %>% 
   group_by(Loci) %>% 
@@ -471,6 +474,7 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
             `N reads` = sum(sub.tagclean.max),
             Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
    knitr::kable(caption = "Information sur les contaminants identifiés")
+}
 
 
 conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
@@ -492,6 +496,13 @@ if(between(nrow(conta.param), 1, length(LOCUS) -1 )){
   conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "))
   
 }  
+
+if(nrow(conta.summary) == 0){
+
+conta.text <- "aucun MOTU n'a été identifié comme contaminant"  
+  
+}
+
 
 ```
 
