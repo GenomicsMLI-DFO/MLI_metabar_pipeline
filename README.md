@@ -16,6 +16,7 @@ __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca
   + [From raw reads to ESV table](#from-raw-reads-to-esv-table)
   + [Taxonomic assignments](#taxonomic-assignments)
   + [Deal with negative samples](#deal-with-negative-samples)
+  + [Create an automatic report](#create-an-automatic-report)
 - [Example](#example)
 - [Reference](#references)
 
@@ -58,12 +59,12 @@ Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
 
 SeqInfo.csv
 
-- Install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`
+- Install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
 
 This can be done all at once with this command line in R :
 
 ```{r}
-install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2"))
+install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2", "ggforce"))
 ```
 Somes are from biostrings : `dada2`, `Biostrings`
 
@@ -126,8 +127,6 @@ These are the steps:
 5. dada2 dereplication, sample inference and merging
 6. dada2 chimera removal
 
-Then you can run the **Raw_report.Rmd** within *02_Results/00_Report* folder to get a first view on what have been done.
-
 ### Taxonomic assignments
 
 Use the file **03_TaxoAssign_Blast.R** within *01_Code* folder to perform basic blast assignment with LCA and Tophit at 95, 97, and 99 thresholds. 
@@ -147,6 +146,10 @@ remotes::install_github("metabaRfactory/metabaR")
  This script will generate, for all loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the metabar website how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
 
 You will also need to add 2 columns in the SeqInfo.csv, tag_fwd and tag_rev. 
+
+### Create an automatic report
+
+Check the *03_Report* folder
 
 ## Example
 
