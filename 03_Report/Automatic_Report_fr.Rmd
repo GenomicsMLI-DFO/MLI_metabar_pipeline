@@ -7,7 +7,6 @@ knitr::opts_knit$set(root.dir = here::here())
 
 # Projet à analyser
 
-#projet <- c("BDA")  
 projet <- c("TE") 
 
 # Données initiales
@@ -534,7 +533,67 @@ graph.artefact.motus <-  summary.artefact.motus  %>%
   ggtitle("Classification des différents MOTUs")
 graph.artefact.motus
 
+```
 
+Au delà des reads considérés comme contaminants, il peut rester certaines détections dans les contrôles négatifs. Les MOTUs et leurs taxons associés détectés dans les échantillons contrôles sont les suivants: 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,  fig.height=5, fig.width=9,}
+ESV.table.control.long <- data.frame(stringsAsFactors = F)
+
+for(l in LOCUS){
+
+MOTUs.control.table <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("MOTUs.Metabarinfo.postTagjump_",l, "_ALL.csv")))
+ESV.control.table   <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab.postTagjump_",l, "_ALL.csv")))
+names(ESV.control.table)[1] <- "ID_labo" 
+
+ESV.table.control.long.int <- ESV.control.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
+                  mutate(Loci = l) %>% 
+                  left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
+  filter(ID_labo %in% SUBGROUP.ls[[projet]],
+         Type_echantillon %nin% c("ECH", "PPC")) %>% 
+        left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+ESV.table.control.long <- bind_rows(ESV.table.control.long, ESV.table.control.long.int)
+   
+}
+
+
+for(l in LOCUS){
+
+resi.int <-   ESV.table.control.long %>% 
+    mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
+           Category = ifelse(not_a_max_conta == "TRUE", "Good MOTUs", "Contaminants")) %>% 
+  filter(#Nreads > 0,
+         Loci == l) %>% 
+  group_by(Category, Loci, ID_labo, Type_echantillon, Taxon) %>% 
+  summarise(Nreads = sum(Nreads)) %>% 
+  mutate(Taxon_loci_Cat = paste(Taxon, Loci, Category))
+  
+focus.MOTUs <- resi.int %>% filter(Nreads > 0) %>% pull(Taxon_loci_Cat) %>% unique()
+ 
+graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>% 
+  ggplot(aes(fill = Nreads , x = ID_labo, y = Taxon)) +
+  labs(x= "", y = "") + 
+  geom_bin2d(color = "darkgray")+
+  scale_fill_distiller(trans = "log10",
+                       palette = "Spectral",
+                       na.value = "white"#,
+                       #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+                       ) +
+  theme_minimal()+
+  facet_grid(Category ~ Type_echantillon, scale = "free", space = "free") + 
+  ggtitle(paste("Détections dans les témoins négatifs au locus", l)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        strip.text.y = element_text(angle = 0),
+        strip.text.x = element_text(angle = 90),
+        panel.spacing = unit(0, "in"),
+        legend.text = element_text(angle = 45, hjust = 1),
+        legend.title = element_text(angle = 0, vjust = 0.9),
+        legend.position = "bottom")
+
+print(graph.resi)
+
+}
 
 ```
 
@@ -772,7 +831,7 @@ graph.int <-   ESV.table.long %>%
         legend.position = "bottom")
 
 if(n.stations > 1){
-  graph.int <- graph.int  + facet_grid(Groupe ~ ., scale = "free", space = "free")    
+  graph.int <- graph.int  + facet_grid(Groupe ~ Station, scale = "free", space = "free")    
 }
 
 print(graph.int)
@@ -878,7 +937,7 @@ cat(res, sep = "\n")
 
 ### 3. Correction des tables d'ESV
 
-Script associé : 04_ESVtable_correction.R
+Script associé : **04_ESVtable_correction.R**
 
 Les corrections ont été fait à l'aide du paquet `metabaR` avec les paramètres suivants:
 
