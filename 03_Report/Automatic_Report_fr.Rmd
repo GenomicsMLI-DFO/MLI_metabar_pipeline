@@ -800,6 +800,7 @@ Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **�
 `%nin%` = Negate(`%in%`)
 
 n.stations <- ESV.table.long %>% pull(Station) %>% unique() %>% length()
+n.sites <- ESV.table.long %>% pull(Site_echantillonnage) %>% unique() %>% length()
 
 for(l in LOCUS){
 graph.int <-   ESV.table.long %>% 
@@ -808,7 +809,7 @@ graph.int <-   ESV.table.long %>%
          Nreads = ifelse(Nreads == 1, 0 , Nreads)) %>% 
   filter(Loci == l,
          Taxon %nin% c("Homo sapiens", "Unassigned", "Bos", "Sus", "Sus scrofa", "Canis lupus")) %>% 
-  group_by(Loci, ID_labo, Station, Taxon, Groupe) %>% 
+  group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, Groupe) %>% 
   summarise(Nreads = sum(Nreads)) %>% 
   ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
   labs(x= "", y = "") + 
@@ -830,15 +831,25 @@ graph.int <-   ESV.table.long %>%
         legend.title = element_text(angle = 0, vjust = 0.9),
         legend.position = "bottom")
 
-if(n.stations > 1){
+if(n.stations > 1 & n.sites == 1){
   graph.int <- graph.int  + facet_grid(Groupe ~ Station, scale = "free", space = "free")    
 }
+
+if(n.sites > 1 & n.stations == 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ Site_echantillonnage, scale = "free", space = "free")    
+}
+
+if(n.sites > 1 & n.stations > 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ Station + Site_echantillonnage, scale = "free", space = "free")    
+}
+
 
 print(graph.int)
 
 }
 
 ```
+
 \newpage
 
 
