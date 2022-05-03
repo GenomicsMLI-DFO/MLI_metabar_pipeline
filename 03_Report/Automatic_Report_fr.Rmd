@@ -227,7 +227,7 @@ git.url <- system2(command = "git", args = "remote get-url origin", stdout = T)
 
 ```
 
-Le pipeline d'analyse se divise en grandes étapes qui ont une influence à la fois sur le nombre de reads (séquences) et le nombre de MOTUs (*Molecular operational taxnomique unit*, des OTUs, des ASVs, des ESVs ou autres) observé par échantillon. Dans le cas de ce rapport, les MOTUs sont des ESVs. Les grandes étapes sont :
+Le pipeline d'analyse se divise en sept grandes étapes qui ont une influence à la fois sur le nombre de reads (séquences) et le nombre de MOTUs (*Molecular operational taxnomique unit*, des OTUs, des ASVs, des ESVs ou autres) observé par échantillon. Dans le cas de ce rapport, les MOTUs sont des ESVs. Les grandes étapes sont :
 
 1. Les données brutes (*Raw*)
 2. Le retrait des adapteurs (*Adapt*)
@@ -318,7 +318,7 @@ Différentes sources de contaminations ont été revues au cours du pipeline d'a
 
 ## 5.1 Correction pour le tag jumping
 
-Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abundance) reste stable. Augmenter ou diminuer ce seuil va avoir une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abundance) reste stable. Augmenter ou diminuer ce seuil a une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
@@ -352,7 +352,7 @@ if(between(nrow(tag.param), 1, length(LOCUS) -1 )){
 
 ## 5.2 Classification des échantillons d'après la profondeur de séquençage et la contamination
 
-Le tag jumping et les contaminants ont un effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple, parce qu'il y a eu de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique.   
+Le tag jumping et les contaminants ont un effet plus marqué pour certains échantillons. Certains échantillons peuvent présenter très peu de reads, par exemple, parce qu'il y a eu de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique.    
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 depth.param <- metabar.param %>% dplyr::filter(pcr.correct == T)
@@ -478,33 +478,24 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
 
 if(nrow(conta.param) == length(LOCUS)){
-  
   conta.text <- "les MOTUs identifiés comme contaminants ont été retirés à tous les locus"
-  
 } 
 
 if(nrow(conta.param) == 0){
-  
   conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données"
-  
 }
 
 if(between(nrow(conta.param), 1, length(LOCUS) -1 )){
-  
   conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "))
-  
 }  
 
 if(nrow(conta.summary) == 0){
-
-conta.text <- "aucun MOTU n'a été identifié comme contaminant"  
-  
+  conta.text <- "aucun MOTU n'a été identifié comme contaminant"  
 }
-
 
 ```
 
-Chaque MOTU peut être classé dans une catégorie.
+Chaque MOTU est classé dans une catégorie.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
