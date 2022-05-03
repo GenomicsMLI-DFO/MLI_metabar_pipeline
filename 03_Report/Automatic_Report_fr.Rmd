@@ -352,7 +352,7 @@ if(between(nrow(tag.param), 1, length(LOCUS) -1 )){
 
 ## 5.2 Classification des échantillons d'après la profondeur de séquençage et la contamination
 
-Le tag jumping et les contaminants ont un effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple parce qu'il y a eu de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique.   
+Le tag jumping et les contaminants ont un effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple, parce qu'il y a eu de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique.   
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 depth.param <- metabar.param %>% dplyr::filter(pcr.correct == T)
@@ -391,7 +391,7 @@ nreads.res %>% filter(Step %in% c("ESVdada2", "ESVtagjump", "ESVfinal"),
 
 ```
 
-Un seuil en dessus dequel le N de reads semble trop bas est déterminé par locus (ligne poitillée orangée). Les échantillons sous ce seuils sont identifiés, et leur nombre peut varier entre locus. Il est important de s'intérroger sur les causes probables de faible N reads par échantillons (e.g., inhibition, locus très spécifique).
+Un seuil minimum de nombre de reads est déterminé par locus (ligne poitillée orangée). Les échantillons sous ce seuil sont identifiés, et leur nombre peut varier entre locus. Il est important de s'intérroger sur les causes possibles d'échantillons présentant un faible nombre de reads (e.g., inhibition, locus très spécifique).
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -407,11 +407,12 @@ data.frame(Loci = LOCUS) %>% left_join(low.depth.sample %>% group_by(Loci, SUM) 
                                          mutate(Proportion = N/SUM)) %>% 
    mutate(N = ifelse(is.na(N), 0, N),
           Proportion = ifelse(N == 0, 0, round(Proportion, 2))
-          ) %>%  arrange(Loci) %>% select(-SUM) %>% knitr::kable(caption = "Échantillons (pcr) sous le seuil de profondeur de séquençage")
+          ) %>%  arrange(Loci) %>% select(-SUM) %>% knitr::kable(caption = "Échantillons sous le seuil minimal de reads")
   
 ```
 
-Les échantillons avec une forte proportion de contaminants (voir section suivante) sont également identifiés, ce qui permet de classer chaque échantillon en différentes catégories.
+Un seuil de contamination maximale est déterminé afin d'identifier les échantillons plus problématique dans l'interprétation. Voir la section suivante plus de détails sur l'identification des contaminants.
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=7}
 
@@ -433,13 +434,11 @@ graph.artefact.pcr<-  summary.artefact.pcr  %>%
   geom_bar(stat = "identity") +  #xlim(0, 1) +
   labs(fill="Category") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_manual(limits = c("Not artefactual", "Low sequencing depth", "Contamination > 10%", "Contamination > 10% and low sequencing depth"), values = c("deepskyblue1", "darkgoldenrod1", "darkorange1", "darkred" ), labels =  c("Acceptable depth", "Low depth", "Contamination > 10%", "Contamination > 10% and low depth")) + 
+  scale_fill_manual(limits = c("Not artefactual", "Low sequencing depth", "Contamination > 10%", "Contamination > 10% and low sequencing depth"), values = c("deepskyblue1", "darkgoldenrod1", "darkorange1", "darkred" ), labels =  c("Acceptable depth", "Low depth", "High contamination", "High contamination and low depth")) + 
   geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
   facet_wrap( ~ Loci) +
   ggtitle("Classification des différents échantillons")
 graph.artefact.pcr
-
-
 
 ```
 
@@ -447,9 +446,9 @@ graph.artefact.pcr
 
 \newpage
 
-## 5.3 Contaminants
+## 5.3 Identification des MOTUs contaminant
 
-Les contaminants sont analysés en comparant les échantillons biologiques aux contrôles négatifs. Un MOTUs est identifié comme contaminants lorsqu'on observe une fréquence supérieure dans un témoin négatif par rapport à ce qui est observé dans les échantillons biologiques.
+Les contaminants sont analysés en comparant les échantillons biologiques aux contrôles négatifs. Un MOTUs est identifié comme contaminant lorsque la fréquence maximale observée dans un témoin négatif est supérieure à celle oberservée dans les échantillons.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -480,13 +479,13 @@ conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
 
 if(nrow(conta.param) == length(LOCUS)){
   
-  conta.text <- "les MOTUs identifiés comme contaminants ont été retirés à tous les locus."
+  conta.text <- "les MOTUs identifiés comme contaminants ont été retirés à tous les locus"
   
 } 
 
 if(nrow(conta.param) == 0){
   
-  conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données."
+  conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données"
   
 }
 
@@ -505,7 +504,7 @@ conta.text <- "aucun MOTU n'a été identifié comme contaminant"
 
 ```
 
-Chaque MOTUs peut être classé en différentes catégories.
+Chaque MOTU peut être classé dans une catégorie.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -527,7 +526,7 @@ graph.artefact.motus <-  summary.artefact.motus  %>%
   geom_bar(stat = "identity") +  #xlim(0, 1) +
   labs(fill="Category") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" ), labels = c("Good MOTUs", "Contamination")) + 
+  scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" ), labels = c("Detected MOTUs", "Contamination")) + 
   geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 3) +
   facet_grid(Loci ~ level) +
   ggtitle("Classification des différents MOTUs")
@@ -606,9 +605,9 @@ print(graph.resi)
 D'autres corrections pourraient être appliquées sur le jeu de données: 
 
 - Certains contaminants communs (*Homo sapiens*, *Sus scrofa*, *Bos*, *Canis lupus*) pourraient être retirés manuellement.
-- Les MOTUs pourraient être filtré sur la longueur de leur séquence.
-- Les singletons (MOTUS à 1 read) pourraientt être retirés
-- S'il y a des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.
+- Les MOTUs pourraient être filtrés sur la longueur de leur séquence.
+- Les singletons (MOTU à 1 read) pourraient être retirés.
+- S'il y avait des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.
 
 \newpage
 
@@ -616,7 +615,7 @@ D'autres corrections pourraient être appliquées sur le jeu de données:
 
 ## 6.1 Diversité observée
 
-Pour avoir une idée si la profondeur de séquençage est adéquate, il est possible d'étudier la relation entre la diversité (N MOTUs) et la profondeur de séquençage (N reads). En théorie, lorsqu'une profondeur de séquençage adéquate est atteinte, un plateau devrait être observé. 
+La relation entre la diversité (N MOTUs) et la profondeur de séquençage (N reads) permet d'évaluer si la profondeur de séquençage était suffisante. Un plateau devrait être observé lorsque la profondeur de séquençage nécessaire est atteinte. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 3, fig.width=7}
 
@@ -912,9 +911,6 @@ cat(res, sep = "\n")
 }
 ```
 
-
-
-
 ### 2. Assignations taxonomiques
 
 Script associé : **03_TaxoAssign_Blast.R**
@@ -983,13 +979,13 @@ cat(res, sep = "\n")
 }
 ```
 
-
 \newpage
 
 # Annexe II
+
 ## Correction pour le tag jumping
 
-Le choix de ce seuil (ligne orange pointillée) est important car devrait réfléter un point de bascule où il y a une diminution dans la diversité des MOTUS, mais non dans le nombre de reads (abundance). Une changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
+Le choix de ce seuil (ligne orange pointillée) est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs sans observer une diminution du nombre de reads (abundance). Une changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
 load( file.path(here::here(), "02_Results/04_ESVtable_correction", "00_tag.gg.Rdata"))
@@ -999,12 +995,3 @@ print(get( paste0("tag.gg.", l)))
 }
 
 ```
-
-
-
-
-
-
-
-
-
