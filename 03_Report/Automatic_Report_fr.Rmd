@@ -51,7 +51,7 @@ for(x in SUBGROUP){
 \huge Rapport d'analyses post-séquençage de librairies de métacodage à barres
 
 \vfill
-\Large pour le projet `r projet`
+\Large Projet `r projet`
 
 \vfill
 \normalsize
@@ -64,11 +64,11 @@ Pêches et Océans Canada
 Mont-Joli, Canada
 
 \vfill
-Préparation des librairies: Piere-Jean Jacques, pierre-jean.jacques@dfo-mpo.gc.ca
+Préparation des librairies : Piere-Jean Jacques, pierre-jean.jacques@dfo-mpo.gc.ca
 
-Analyses bioinformatiques:  Jane Doe, jane.doe@dfo-mpo.gc.ca
+Analyses bioinformatiques :  Jane Doe, jane.doe@dfo-mpo.gc.ca
 
-Révision: John Doe, john.doe@dfo-mpo.gc.ca
+Révision : John Doe, john.doe@dfo-mpo.gc.ca
 
 \vfill
 `r Sys.Date()`
@@ -227,7 +227,7 @@ git.url <- system2(command = "git", args = "remote get-url origin", stdout = T)
 
 ```
 
-Le pipeline d'analyse se divise en différentes grandes étapes qui ont une influence à la fois sur le nombre de reads et le nombre de MOTUs (*Molecular operational taxnomique unit*, des OTUs, des ASVs, des ESVs ou autres) observé par échantillon. Dans le cas de ce rapport, les MOTUs sont en fait des ESVs. Ces grandes étapes sont :
+Le pipeline d'analyse se divise en grandes étapes qui ont une influence à la fois sur le nombre de reads (séquences) et le nombre de MOTUs (*Molecular operational taxnomique unit*, des OTUs, des ASVs, des ESVs ou autres) observé par échantillon. Dans le cas de ce rapport, les MOTUs sont des ESVs. Les grandes étapes sont :
 
 1. Les données brutes (*Raw*)
 2. Le retrait des adapteurs (*Adapt*)
@@ -308,17 +308,17 @@ nmotus.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
 
 # 4. Assignations taxonomiques
 
-Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminé comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsque la banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Les résultats d'assignations devraient être utilisés pour publication, ces derniers devraient êre révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
+Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminée comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsqu'une banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Si les résultats d'assignations devaient être utilisés pour publication, ces derniers devraient être révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
 
 \newpage
 
-# 5 Correction des tables d'ESV
+# 5 Correction des tables de MOTUs
 
-Différentes sources de contaminations des tables de MOTUS ont été revues au cours du pipeline d'analyse. De plus, les échantillons problématiques ont été identifés. Voici les grandes lignes des résultats. 
+Différentes sources de contaminations ont été revues au cours du pipeline d'analyse. De plus, les échantillons problématiques ont été identifés. Voici les grandes lignes des résultats. 
 
-## 5.1 Tag jumping
+## 5.1 Correction pour le tag jumping
 
-Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point de bascule où il y a une diminution dans la diversité des MOTUS, mais non dans le nombre de reads (abundance). Augmenter ou diminuer ce seuil va avoir une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abundance) reste stable. Augmenter ou diminuer ce seuil va avoir une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
@@ -350,9 +350,9 @@ if(between(nrow(tag.param), 1, length(LOCUS) -1 )){
 
 \newpage
 
-## 5.2 Profondeur de séquençage
+## 5.2 Classification des échantillons d'après la profondeur de séquençage et la contamination
 
-Les retraits des patrons de tag jumping, de même que les contaminants, vont avoir un certain effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple parce qu'il y a de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique et aucune amplification n'a eue lieu.   
+Le tag jumping et les contaminants ont un effet sur le nombre de reads observés par échantillon. Certains échantillons peuvent présenter très peu de reads, par exemple parce qu'il y a eu de l'inhibition de la réaction PCR, ou que le locus utilisé est trop spécifique.   
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 depth.param <- metabar.param %>% dplyr::filter(pcr.correct == T)
