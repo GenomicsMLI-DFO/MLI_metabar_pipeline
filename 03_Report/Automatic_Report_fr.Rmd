@@ -2,7 +2,9 @@
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      dev = "png",
+                      dpi = 150)
 knitr::opts_knit$set(root.dir = here::here())
 
 # Projet à analyser
