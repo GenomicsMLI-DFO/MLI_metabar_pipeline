@@ -636,16 +636,21 @@ for(l in LOCUS){
   assign(x = paste0("metabarlist.tagclean.", l), 
          value = metabarlist.int.clean)
   
-  conta.ori.gg <- ggpcrplate.cont(metabarlist.int,  N = Inf)
+# NE pas faire les figures si il n'y a pas assez de contaminants
+if( (nrow(metabarlist.int$motus %>% filter(not_a_max_conta == F) ) & nrow(metabarlist.int.clean$motus %>% filter(not_a_max_conta == F) ))> 2) {
   
-  conta.clean.gg <- ggpcrplate.cont(metabarlist.int.clean,  N = Inf)
-  
+  conta.ori.gg <- ggpcrplate.cont(metabarlist.int, N = Inf)
+
+  conta.clean.gg <- ggpcrplate.cont(metabarlist.int.clean, N = Inf)
+
   n.plate <- conta.ori.gg $data$plate_no %>% unique() %>% length()
-  
+
   conta.gg <- ggpubr::ggarrange(conta.ori.gg,
                                 conta.clean.gg,
                                 nrow = 1, ncol = 2 , common.legend = T, legend = "right"
   )
+
+}
   
   ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_plate_conta_",l,".png")), 
          plot = conta.gg,
