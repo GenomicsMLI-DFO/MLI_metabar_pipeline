@@ -7,6 +7,8 @@ knitr::opts_chunk$set(echo = TRUE,
                       dpi = 150)
 knitr::opts_knit$set(root.dir = here::here())
 
+`%nin%` = Negate(`%in%`)
+
 # Projet à analyser
 
 projet <- c("TE") 
@@ -789,8 +791,6 @@ print(graph.int)
 Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **À noter que les singletons (N reads = 1) par échantillon ont été retirés de la figure, mais pas du jeu de données. De plus, les assignations taxonomiques n’ont pas été révisées par un expert.**
 
 ```{r echo=FALSE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE}
-`%nin%` = Negate(`%in%`)
-
 n.stations <- ESV.table.long %>% pull(Station) %>% unique() %>% length()
 n.sites <- ESV.table.long %>% pull(Site_echantillonnage) %>% unique() %>% length()
 
