@@ -1,5 +1,8 @@
 # MLI metabarcoding pipeline
 
+**Currrent version : 0.1.0**  
+Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous version of the pipeline
+
 __Main author:__  Audrey Bourret  
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
 __Group:__        Laboratory of genomics   
