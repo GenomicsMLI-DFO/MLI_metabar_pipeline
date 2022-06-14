@@ -162,9 +162,9 @@ Check the *03_Report* folder
 
 ## Example
 
-A test dataset is available with the template pipeline.
+A test dataset can be downloaded here: https://github.com/GenomicsMLI-DFO/MLI_metabar_example_dataset
 
-These files are withe the **00_Data/01a_Raw_Data** folder.
+Put these files within the **00_Data/01a_Raw_Data** folder.
 
 4 samples at the COI marker, both F (R1) and R (R2).
 
