@@ -160,7 +160,7 @@ FNC = Contrôle négatif de filtration (*filtration negative control*)
 
 ENC = Contrôle négatif d'extraction (*extraction negative control*)
 
-PNC/NTC = Contrôle negatif de PCR (*PCR negatif control*)
+PNC/NTC/MNC = Contrôle negatif de PCR (*PCR negatif control*)
 
 PPC = Contrôle positif de PCR (*PCR positive control*)
 

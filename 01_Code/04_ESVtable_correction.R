@@ -141,7 +141,7 @@ for(l in LOCUS){
                   project = ID_subprojet) %>% 
     dplyr::mutate (type = ifelse(Type_echantillon %in% c("Echantillon", "ECH"), "sample", "control"),
                    control_type = ifelse(type == "sample", NA,
-                                         ifelse(Type_echantillon %in% c("Neg_PCR", "PNC"),"pcr",
+                                         ifelse(Type_echantillon %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
                                                 ifelse(Type_echantillon %in% c("NTC"), "sequencing",
                                                        ifelse(Type_echantillon %in% c("PPC"), "positive", 
                                                               "extraction")))),
