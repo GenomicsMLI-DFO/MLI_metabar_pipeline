@@ -25,8 +25,9 @@ __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca
 Template repository to perform metabarcoding analysis. 
 
 This pipeline is intended to run in R (and Rstudio), but need external programs (see pre-requisite section). 
+
 ## Status
-In-development
+Ongoing-improvements
 
 ## How to use the pipeline
 
@@ -50,7 +51,7 @@ MultiQC and cutadapt can be installed in a python environment that should be add
 ```{r}
 Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
                           Sys.getenv("PATH")),
-                        collapse = .Platform$path.sep))
+                          collapse = .Platform$path.sep))
 ```
 ### Before starting an analysis
 
@@ -96,7 +97,7 @@ To be process, fastq files must be rename as **SAMPLENAME_MARKER_R1or2.fastq.gz*
 
 #### Rename option 1 : Only remove sequencer/run id pattern
 
-Use **01_Rename_RAW_SeqPattern.R** within *01_Code* folder to rename zipped fastq files. It will remove these patterns :
+Use **01_Rename_RAW_SeqPattern.R** within *01_Code* folder to rename zipped fastq files on demultiplexed data. It will remove these patterns :
 
 MiSeq
 
@@ -112,11 +113,16 @@ Other patterns or transformation can be implemented
 
 #### Rename option 2 : Start from file ID name 
 
-Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq files. It will used the metadata file (*SeqInfo.csv*) to create a new name. File name must exclude the **_R1orR2.fastq.gz** part.
+Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq files on demultiplexed data. It will used the metadata file (*SeqInfo.csv*) to create a new name. File name must exclude the **_R1orR2.fastq.gz** part.
+
+Use **01_Rename_RAW_FileName_Multiplex.R** within *01_Code* folder to rename zipped fastq files on multiplexed data (same sample but at different loci). It will used the metadata file (*SeqInfo.csv*) to create a new name. File name must exclude the **_R1orR2.fastq.gz** part, and should be repeated to all samples multiplexed together. 
 
 ### From **raw reads** to **ESV table**
 
-Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads into an ESV table. 
+Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads into an ESV table on demultiplex data. 
+
+Use the file **02_Process_RAW_Multiplexed.R** within *01_Code* folder to transform raw reads into an ESV table on multiplex data (same sample but at different loci). 
+
 
 These are the steps:
 1. fastQC and multiQC on raw reads
@@ -143,7 +149,7 @@ install.packages("remotes")
 remotes::install_github("metabaRfactory/metabaR")
 ```
 
- This script will generate, for all loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the metabar website how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
+This script will generate, for each loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the metabar website how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
 
 You will also need to add 2 columns in the SeqInfo.csv, tag_fwd and tag_rev. 
 
