@@ -21,13 +21,12 @@ __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca
   + [Deal with negative samples](#deal-with-negative-samples)
   + [Create an automatic report](#create-an-automatic-report)
 - [Example](#example)
+- [Limitation](#limitations)
 - [Reference](#references)
 
 ## Description 
 
-Template repository to perform metabarcoding analysis. 
-
-This pipeline is intended to run in R (and Rstudio), but need external programs (see pre-requisite section). 
+Welcome to the template repository to use the latest version of the MLI metabarcoding pipeline. This pipeline is intended to run in R (and Rstudio) using a few scripts, but need a few external programs too (see [pre-requisite section](#pre-requisite)). This pipeline can run on multiple pre-defined loci, or new ones too.
 
 <img src="Pipeline.png" alt="Pipeline"/>
 
@@ -39,10 +38,12 @@ Ongoing-improvements
 
 ### Pre-requisite
 
-- R and Rstudio
-- [fastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-- [multiqc](https://multiqc.info/)
-- [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
+- R and Rstudio.
+- External program :
+  - [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+  - [multiqc](https://multiqc.info/)
+  - [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
+  - [blast](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 
 To be sure that the external command are found by R, try to run these commands first:
 
@@ -50,6 +51,7 @@ To be sure that the external command are found by R, try to run these commands f
 system2("fastqc", "--help")
 system2("multiqc", "--help")
 system2("cutadapt", "--help")
+system2("blastn", "--help")
 ```
 
 MultiQC and cutadapt can be installed in a python environment that should be added to the R path. Can be done as:
@@ -61,19 +63,17 @@ Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
 ```
 ### Before starting an analysis
 
-- Put raw read files in 00_Data/01a_RawData (see examples)
-- Put metadata in 00_Data/00_FileInfos (see examples)
-
-SeqInfo.csv
-
-- Install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
+- Press the big **Use this template** button in the top of this page to get your own copy of this pipeline (or download the .zip version through the Code button if your are not familiar with github).
+- Put raw fastq files into the *00_Data/01a_RawData* folder (examples files can be found [here](https://github.com/GenomicsMLI-DFO/MLI_metabar_example_dataset))
+- Fill the [SeqInfo.csv](00_Data/00_FileInfos/SeqInfo.csv) file within  the 00_Data/00_FileInfos folder 
+- If the are not already present, install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
 
 This can be done all at once with this command line in R :
 
 ```{r}
 install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2", "ggforce"))
 ```
-Somes are from biostrings : `dada2`, `Biostrings`
+Somes are from biostrings : `dada2`, `Biostrings`, `biomformat`
 
 ```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -81,8 +81,17 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
  
 BiocManager::install("Biostrings")
 BiocManager::install("dada2")
+BiocManager::install("biomformat")
 ```
- - Check that parameter sets in Option.txt are alright (Locus to perform, N cores available)
+
+Others are on github : `metabaR`
+
+```{r}
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
+remotes::install_github("metabaRfactory/metabaR")
+```
+ - Check that parameter sets in [Option.txt](Option.txt) are alright (Locus to perform, N cores available)
  
  Current loci already set are the following :
 
@@ -143,6 +152,8 @@ These are the steps:
 
 Use the file **03_TaxoAssign_Blast.R** within *01_Code* folder to perform basic blast assignment with LCA and Tophit at 95, 97, and 99 thresholds. 
 
+You will need a local version of NCBI-nt database to run this script. Check [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download) for more info.  
+
 ### Deal with negative samples
 
 ```
@@ -155,7 +166,7 @@ install.packages("remotes")
 remotes::install_github("metabaRfactory/metabaR")
 ```
 
-This script will generate, for each loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the metabar website how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
+This script will generate, for each loci, ~ 10 figures + corrected output. Theses figures are not that easy to understand, but you can check on the [metabar website](https://metabarfactory.github.io/metabaR/articles/metabaRF-vignette.html) how they interpreted them. There's 2 parameters that needed to be set (at lines 211, 298 and 346), which are 1) the minimum number of reads for a sample to be keep (set to 1000), 2) the maximum proportion of contaminants a sample must have (set to 10%) and 3) the lower limit of relative frequence of a particular ESV must be (the tagjump parameters, set to 1%). 
 
 You will also need to add 2 columns in the SeqInfo.csv, tag_fwd and tag_rev. 
 
@@ -170,5 +181,12 @@ A test dataset can be downloaded here: https://github.com/GenomicsMLI-DFO/MLI_me
 Put these files within the **00_Data/01a_Raw_Data** folder.
 
 4 samples at the COI marker, both F (R1) and R (R2).
+
+## Limitations
+
+While entire R scripts can be send through the command line, sending lines by lines part of the script through Rstudio is prefered.
+
+
+
 
 ## References
