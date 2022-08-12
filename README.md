@@ -1,7 +1,7 @@
 # MLI metabarcoding pipeline
 
 **Currrent version : 0.1.0**  
-Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous version of the pipeline
+Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
 __Main author:__  Audrey Bourret  
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
@@ -28,6 +28,9 @@ __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca
 Template repository to perform metabarcoding analysis. 
 
 This pipeline is intended to run in R (and Rstudio), but need external programs (see pre-requisite section). 
+
+<img src="Pipeline.png" alt="Pipeline"/>
+
 
 ## Status
 Ongoing-improvements
