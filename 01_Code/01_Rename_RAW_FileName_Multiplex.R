@@ -67,7 +67,11 @@ length(R2.old) == length(R2.new)
 # Change files names ------------------------------------------------------
 
 for(i in seq_along(R1.old)){
-  file.copy(from = R1.old, to = R1.new)
-  file.copy(from = R2.old, to = R2.new)  
+  file.copy(from = R1.old[i], to = R1.new[i])
+  file.copy(from = R2.old[i], to = R2.new[i])  
 }
 
+#  Maybe this work also
+#   file.copy(from = R1.old, to = R1.new)
+#  file.copy(from = R2.old, to = R2.new)  
+#
