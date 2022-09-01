@@ -649,16 +649,15 @@ if( (nrow(metabarlist.int$motus %>% filter(not_a_max_conta == F) ) & nrow(metaba
                                 conta.clean.gg,
                                 nrow = 1, ncol = 2 , common.legend = T, legend = "right"
   )
-
-}
-  
+ 
   ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_plate_conta_",l,".png")), 
          plot = conta.gg,
          width = 8,
          height = 1.5 * n.plate,
          units = c("in"),
          bg = "white")
-  
+
+  }
   
 }
 
