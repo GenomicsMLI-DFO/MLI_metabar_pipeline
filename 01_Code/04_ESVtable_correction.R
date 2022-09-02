@@ -143,7 +143,7 @@ for(l in LOCUS){
                    control_type = ifelse(type == "sample", NA,
                                          ifelse(Type_echantillon %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
                                                 ifelse(Type_echantillon %in% c("NTC"), "sequencing",
-                                                       ifelse(Type_echantillon %in% c("PPC"), "positive", 
+                                                       ifelse(Type_echantillon %in% c("PPC", "MPC"), "positive", 
                                                               "extraction")))),
                    plate_row= str_sub(ID_puit, 1, 1),
                    plate_col= str_sub(ID_puit, 2,3) ,
