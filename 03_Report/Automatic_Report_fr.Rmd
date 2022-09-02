@@ -544,7 +544,7 @@ ESV.table.control.long.int <- ESV.control.table %>% pivot_longer(-ID_labo, names
                   mutate(Loci = l) %>% 
                   left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
   filter(ID_labo %in% SUBGROUP.ls[[projet]],
-         Type_echantillon %nin% c("ECH", "PPC")) %>% 
+         Type_echantillon %nin% c("ECH", "PPC", "MPC")) %>% 
         left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
 ESV.table.control.long <- bind_rows(ESV.table.control.long, ESV.table.control.long.int)
    
