@@ -118,7 +118,7 @@ for(t in c(95,97,99)){
   readr::write_csv(TOP.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("TopHit.", t, ".", l, ".csv")))
 
   # LCA
-  LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
+  LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_LCA(threshold = t) %>% 
                 sum.BLAST() %>% 
                 dplyr::mutate(Loci = l,
                               Method = "LCA",
