@@ -705,7 +705,8 @@ for(l in LOCUS){
   conta.gg.ori <-  Rel.conta.prop.ori %>% pivot_longer(cols = c(conta.max.prop)) %>% 
     mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x=control_type, y=value, color=control_type)) + 
-    geom_boxplot() + geom_jitter(alpha=0.5) +
+    geom_boxplot() + 
+    geom_jitter(alpha=0.5, height = 0) +
     geom_hline(yintercept = threshold.prop.cont, lty = "dashed", color="orange") +
     scale_color_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
     labs(x=NULL, y="Prop. reads flagged as contaminant",
@@ -719,7 +720,8 @@ for(l in LOCUS){
   conta.gg.clean <-  Rel.conta.prop.clean %>% pivot_longer(cols = c(conta.max.prop)) %>% 
     mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x=control_type, y=value, color=control_type)) + 
-    geom_boxplot() + geom_jitter(alpha=0.5) +
+    geom_boxplot() +
+    geom_jitter(alpha=0.5, height = 0) +
     geom_hline(yintercept = threshold.prop.cont, lty = "dashed", color="orange") +
     scale_color_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
     labs(x=NULL, y="Prop. reads flagged as contaminant",
@@ -807,7 +809,8 @@ for(l in LOCUS){
     conta.gg.ori.sub <-  Rel.conta.prop.ori.sub %>% pivot_longer(cols = c(conta.max.prop)) %>% 
       mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
       ggplot(aes(x=control_type, y=value, color=control_type)) + 
-      geom_boxplot() + geom_jitter(alpha=0.5) +
+      geom_boxplot() +       
+      geom_jitter(alpha=0.5, height = 0) +
       geom_hline(yintercept = threshold.prop.cont, lty = "dashed", color="orange") +
       scale_color_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
       labs(x=NULL, y="Prop. reads flagged as contaminant",
@@ -822,7 +825,8 @@ for(l in LOCUS){
     conta.gg.clean.sub <-  Rel.conta.prop.clean.sub %>% pivot_longer(cols = c(conta.max.prop)) %>% 
       mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
       ggplot(aes(x=control_type, y=value, color=control_type)) + 
-      geom_boxplot() + geom_jitter(alpha=0.5) +
+      geom_boxplot() +       
+      geom_jitter(alpha=0.5, height = 0) +
       geom_hline(yintercept = threshold.prop.cont, lty = "dashed", color="orange") +
       scale_color_manual(breaks = c("sample", "positive", "extraction", "pcr", "sequencing"), values = c("darkgray", "cyan4", "brown", "red", "pink"), na.value = "darkgrey") +
       labs(x=NULL, y="Prop. reads flagged as contaminant",
