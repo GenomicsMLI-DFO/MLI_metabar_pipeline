@@ -98,7 +98,7 @@ cutadapt.res <- read_csv(file.path(here::here(), "00_Data", "02a_Cutadapt", "log
 # Copy in another folder
 write_csv(cutadapt.res, file = file.path(here::here(), "02_Results", "02_Filtrations","Cutadapt_Stats_Nreads.csv"))
 
-graph.cutadapt <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step", values_to = "Nreads") %>%
+graph.cutadapt.1 <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step", values_to = "Nreads") %>%
   mutate(Nreads1 = Nreads + 1 ,
          Step = factor(Step, levels = c("Raw", "Adapt"))) %>% 
   left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
@@ -113,9 +113,30 @@ graph.cutadapt <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step"
   facet_grid(~Loci) +
   theme_bw()+
   theme(legend.position = "bottom")
-graph.cutadapt
+graph.cutadapt.1
 
-ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Cutadapt_filt.png"), plot =  graph.cutadapt, height = 5, width = 6)
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Cutadapt_filt.png"), plot =  graph.cutadapt.1, height = 5, width = 6)
+
+
+graph.cutadapt.2 <- cutadapt.res %>%  
+  mutate(Perc = Adapt / Raw) %>% 
+  left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
+            by = c("ID_labo", "Loci")) %>% 
+  ggplot(aes(x = ID_labo, y = Perc, fill = Loci)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 0.5, lty = "dashed")+
+  geom_hline(yintercept = 1, col = "red")+
+  #geom_jitter(height = 0) +
+  labs(y = "% of read recovery", x = "Library")+ 
+  facet_grid(~Type_echantillon, scale = "free", space = "free") +
+  theme_bw()+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+graph.cutadapt.2
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Cutadapt_prop_multiplex.png"), plot =  graph.cutadapt.2, height = 4, width = 10)
+
+
 
 
 # Running another fastqc following cutadapt
