@@ -842,6 +842,16 @@ print(graph.int)
 
 ```
 
+```{r include=FALSE}
+# En profiter pour extraire les données
+
+readr::write_csv(ESV.table.long %>% group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, class, phylum) %>% summarise(Nreads = sum(Nreads)), 
+                 file = paste0(projet, "_ESVtab_taxo_report.csv"))
+
+```
+
+
+
 \newpage
 
 
