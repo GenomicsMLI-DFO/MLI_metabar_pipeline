@@ -42,8 +42,11 @@ dloopDL.primers: ACTACGTCAGTATTAAATAAACCTATTTCCAATAC;GAAGTAAGAACCAGATGTCTTGTGAAG
 # 12S Marine Vertebrates
 12SMarVer1.primers: CGTGCCAGCCACCGCG;GGGTATCTAATCCYAGTTTG
 
+# Subgroup for ESV table correction
+group.metabaR: TE
+
 # Ref database path
 NCBI.path: /media/genobiwan/Fast_Storage/Projet/Banque_REF_NCBI.git/01_Data/01_blastdb
 
-# Subgroup for ESV table correction
-group.metabaR: TE
+# Python virtual environment
+PythonENV.path: /home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin

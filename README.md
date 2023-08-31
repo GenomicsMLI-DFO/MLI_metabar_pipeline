@@ -38,14 +38,13 @@ Ongoing-improvements
 
 ### Pre-requisite
 
-- R and Rstudio.
-- External program :
+The R scripts should be run line by line within an intregrated development environment (IDE) such as [Rstudio](https://posit.co/download/rstudio-desktop/). Some external programs are also required:
   - [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
   - [multiqc](https://multiqc.info/)
   - [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
   - [blast](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 
-To be sure that the external command are found by R, try to run these commands first:
+To be sure that the external command are found by R, try to run the test script **01_Code/00_Check_External_Program.R**, or these command directly:
 
 ```{r}
 system2("fastqc", "--help")
@@ -54,7 +53,7 @@ system2("cutadapt", "--help")
 system2("blastn", "--help")
 ```
 
-MultiQC and cutadapt can be installed in a python environment that should be added to the R path. Can be done as:
+MultiQC and cutadapt can be installed in a python environment that should be added to the R path through the  [Option.txt](Option.txt) file, or this command line:
 
 ```{r}
 Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",

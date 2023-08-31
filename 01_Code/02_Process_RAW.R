@@ -30,9 +30,14 @@ source(file.path(here::here(), "01_Code", "Functions", "cutadapt.R"))
 source(file.path(here::here(), "01_Code", "Functions", "dada2.R"))
 
 # Add python env to this specific project
-#Sys.setenv(PATH = paste(c("/home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin",
-#                          Sys.getenv("PATH")),
-#                        collapse = .Platform$path.sep))
+PythonENV.path <- get.value("PythonENV.path")
+PythonENV.path
+
+file.exists(PythonENV.path)
+
+Sys.setenv(PATH = paste(c(PythonENV.path,
+                          Sys.getenv("PATH")),
+                        collapse = .Platform$path.sep))
 
 system2("cutadapt", "--help")
 system2("multiqc", "--help")
