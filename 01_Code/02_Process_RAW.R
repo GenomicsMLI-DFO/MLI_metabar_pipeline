@@ -484,6 +484,7 @@ for(l in LOCUS){
 # Write a final log
 
 cat("\nEND of 02_Process_RAW.R script\n",
+    paste("Pipeline version:", get.value("MLI.version")),
     date(),
     "\n-------------------------\n", 
     

@@ -90,7 +90,7 @@ Révision : John Doe, john.doe@dfo-mpo.gc.ca
 
 # 1. Objectif général du rapport
 
-Ce rapport automatisé permet un survol qualitatif des données générées par le pipeline d’analyse en métacodage à barres  **[MLI_metabar_pipeline](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline)**. Il permet aussi d’avoir une description générales du jeu de données qui a été analysé, des étapes et des paramètres d'analyses dans le pipeline et des résultats préliminaires de détections d'ADNe pour guider les prochaines étapes du projet.
+Ce rapport automatisé permet un survol qualitatif des données générées par le pipeline d’analyse en métacodage à barres  **[MLI_metabar_pipeline](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline) (v.`r    get.value("MLI.version")`)**. Il permet aussi d’avoir une description générales du jeu de données qui a été analysé, des étapes et des paramètres d'analyses dans le pipeline et des résultats préliminaires de détections d'ADNe pour guider les prochaines étapes du projet.
 
 Les résultats présentés ne peuvent être considérés comme finaux et ne peuvent être publiés. Ils devraient toujours être interprétés avec précaution.
 

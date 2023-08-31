@@ -232,6 +232,7 @@ ggsave(filename = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "
 # Write a final log
 
 cat("\nEND of 03_TaxoAssign_Blast.R script\n",
+    paste("Pipeline version:", get.value("MLI.version")),
     date(),
     "\n-------------------------\n", 
     

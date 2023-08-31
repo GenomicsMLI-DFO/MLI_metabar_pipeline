@@ -1300,6 +1300,7 @@ for(l in LOCUS){
 # Write a final log
 
 cat("\nEND of 04_ESVtable_correction.R script\n",
+    paste("Pipeline version:", get.value("MLI.version")),
     date(),
     "\n-------------------------\n", 
     

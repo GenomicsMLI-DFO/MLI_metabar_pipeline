@@ -183,8 +183,7 @@ Put these files within the **00_Data/01a_Raw_Data** folder.
 
 ## Limitations
 
-While entire R scripts can be send through the command line, sending lines by lines part of the script through Rstudio is prefered.
-
+While entire R scripts can be send through the command line, sending lines by lines part of the script through Rstudio is preferred.
 
 
 
