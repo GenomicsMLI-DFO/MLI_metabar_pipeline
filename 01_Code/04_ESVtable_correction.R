@@ -6,7 +6,7 @@
 # Template pipeline
 # 
 # Audrey Bourret
-# 2022-02-21
+# 2022-2023
 
 # Library -----------------------------------------------------------------
 
@@ -191,18 +191,22 @@ for(l in LOCUS){
   
 }
 
+metabarlist.ori.COI$motus
+
 # Load metabar threshold
 
 metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
-
 metabar.param
+
+metabar.exclude.taxa <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_exclude_taxa.tsv"))
+metabar.exclude.taxa
 
 # Tag jump ----------------------------------------------------------------
 
 # Threshold tag can be defined in the file:  "01_Code/Parameters/metabar_param.tsv"
 # If you change the parameters, just rerun this part
 
-metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+#metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
 metabar.param %>% filter(Locus %in% LOCUS) %>%  select(Locus, tag.threshold)
 
 # Define a vector of thresholds to test
@@ -660,6 +664,128 @@ if( (nrow(metabarlist.int$motus %>% filter(not_a_max_conta == F) ) & nrow(metaba
   }
   
 }
+
+
+
+# Flag undesired taxa -----------------------------------------------------
+
+metabar.exclude.taxa
+
+# Will be performed overall and on subset 
+
+for(l in LOCUS){
+  
+  cat("\nLooking at undesirable taxa for", l, "\n\n")  
+  
+  metabarlist.int <- get(paste0("metabarlist.ori.",l))
+  metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
+  
+  metabarlist.int$motus$not_an_exclude_taxa <- TRUE
+  metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
+  
+  if(nrow(metabar.exclude.taxa) > 0){
+    
+    cat(nrow(metabar.exclude.taxa), "taxa to exclude detected in the file 01_Code/Parameters/metabar_exclude_taxa.csv\n\n")
+    
+
+    for(x in SUBGROUP){
+      
+      cat("Running on", x, "subgroup\n")  
+      
+      id.int <-  SUBGROUP.ls[[x]]
+      
+      metabarlist.int.sub <- subset_metabarlist(metabarlist.int, table="pcrs",
+                                                indices = metabarlist.int$pcrs$sample_id %in% id.int)
+      
+      metabarlist.int.clean.sub <- subset_metabarlist(metabarlist.int.clean, table="pcrs",
+                                                      indices = metabarlist.int.clean$pcrs$sample_id %in% id.int)
+
+      
+      metabarlist.int.sub$motus$not_an_exclude_taxa <- TRUE
+      metabarlist.int.clean.sub$motus$not_an_exclude_taxa <- TRUE
+      
+      for(n in 1:nrow(metabar.exclude.taxa)){
+        
+        n.flag <- length( metabarlist.int.sub$motus$not_an_exclude_taxa[!is.na(metabarlist.int.sub$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int.sub$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])]) 
+        
+        metabarlist.int.sub$motus$not_an_exclude_taxa[!is.na(metabarlist.int.sub$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int.sub$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])] <- FALSE
+        metabarlist.int.clean.sub$motus$not_an_exclude_taxa[!is.na(metabarlist.int.clean.sub$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int.clean.sub$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])] <- FALSE
+        
+        if(n.flag > 0)  {
+          cat(n.flag, "MOTUs of", metabar.exclude.taxa$ID[n], "flagged.\n" )
+        }  
+      }
+      
+      
+      taxa_contam.ori <- metabarlist.int.sub$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count = count, not_a_max_conta) %>% mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+      taxa_contam.ori$ESV <- row.names(taxa_contam.ori)
+      
+      taxa_contam.clean<- metabarlist.int.clean.sub$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+      taxa_contam.clean$ESV <- row.names(taxa_contam.clean)
+      
+      taxa_contam <- bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
+        dplyr::select(-not_a_max_conta) %>% 
+        pivot_wider(names_from = method, values_from = count)
+      
+      readr::write_csv(taxa_contam, 
+                       file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",x, ".csv")))
+      
+      cat("The list of identified undesired taxa is here:", paste0("02_Results/04_ESVtable_correction/03_exclude.taxa_",l,"_",x, ".csv"), "\n\n")
+
+      assign(x = paste0("metabarlist.ori.", l, ".", x), 
+             value = metabarlist.int.sub )
+      
+      assign(x = paste0("metabarlist.tagclean.", l, ".", x), 
+             value = metabarlist.int.clean.sub)
+      
+    }  
+    
+    
+    cat("Running on overall dataset\n")  
+
+    metabarlist.int$motus$not_an_exclude_taxa <- TRUE
+    metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
+    
+    for(n in 1:nrow(metabar.exclude.taxa)){
+    
+      n.flag <- length( metabarlist.int$motus$not_an_exclude_taxa[!is.na(metabarlist.int$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])]) 
+      
+      metabarlist.int$motus$not_an_exclude_taxa[!is.na(metabarlist.int$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])] <- FALSE
+      metabarlist.int.clean$motus$not_an_exclude_taxa[!is.na(metabarlist.int.clean$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int.clean$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])] <- FALSE
+      
+      if(n.flag > 0)  {
+        cat(n.flag, "MOTUs of", metabar.exclude.taxa$ID[n], "flagged.\n" )
+      }  
+    }
+   
+    
+    taxa_contam.ori <- metabarlist.int$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count = count, not_a_max_conta) %>% mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+    
+    taxa_contam.ori$ESV <- row.names(taxa_contam.ori)
+    
+    taxa_contam.clean<- metabarlist.int.clean$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+    
+    taxa_contam.clean$ESV <- row.names(taxa_contam.clean)
+    
+    taxa_contam <- bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
+      dplyr::select(-not_a_max_conta) %>% 
+      pivot_wider(names_from = method, values_from = count)
+    
+    readr::write_csv(taxa_contam, 
+                     file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l, "_Overall.csv")))
+    
+    cat("The list of identified undesired taxa is here:", paste0("02_Results/04_ESVtable_correction/03_exclude.taxa_",l,"_Overvall.csv"), "\n\n")
+    
+    assign(x = paste0("metabarlist.ori.", l), 
+         value = metabarlist.int )
+  
+    assign(x = paste0("metabarlist.tagclean.", l), 
+         value = metabarlist.int.clean)
+
+  } else(cat("No taxa to exclude detected in the file 01_Code/Parameters/metabar_exclude_taxa.csv\n"))
+  
+}
+
 
 # Flag high % contaminant samples -------------------------------------------------
 

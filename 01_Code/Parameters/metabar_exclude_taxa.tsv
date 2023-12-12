@@ -1,16 +1,16 @@
-Level ID
-genus Bos
-species Felis catus
-species Canis lupus
-species Cervus elaphus
-genus Capra
-family  Suidae
-family  Bovidae
-family  Canidae
-family  Felidae
-family  Hominidae
-class Aves
-class Lepidosauria
-class Amphibia
-order Primates
-order Rodentia
+Level	ID
+genus	Bos
+species	Felis catus
+species	Canis lupus
+species	Cervus elaphus
+genus	Capra
+family	Suidae
+family	Bovidae
+family	Canidae
+family	Felidae
+family	Hominidae
+class	Aves
+class	Lepidosauria
+class	Amphibia
+order	Primates
+order	Rodentia
