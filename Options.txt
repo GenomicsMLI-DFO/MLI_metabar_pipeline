@@ -52,4 +52,4 @@ NCBI.path: /media/genobiwan/Fast_Storage/Projet/Banque_REF_NCBI.git/01_Data/01_b
 PythonENV.path: /home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin
 
 # Actual pipeline version
-MLI.version: 0.1.1
+MLI.version: 0.2.0

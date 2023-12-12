@@ -20,6 +20,8 @@ library(ggplot2)
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "metabar.R"))
 
+colMax <- function(data) apply(data,2, max, na.rm=TRUE) # Also in metabarR
+
 # Dataset -----------------------------------------------------------------
 
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
@@ -222,6 +224,7 @@ for(l in LOCUS){
   metabarlist.int$pcrs$nb_motus <- rowSums(metabarlist.int$reads>0)
   metabarlist.int$motus$count   <- colSums(metabarlist.int$reads)
   metabarlist.int$motus$count.control <- colSums(metabarlist.int$reads[metabarlist.int$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+  metabarlist.int$motus$max.control   <-  colMax(metabarlist.int$reads[metabarlist.int$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
   
   
   assign(x = paste0("metabarlist.ori.", l), 
@@ -302,6 +305,7 @@ for(l in LOCUS){
   metabarlist.int.clean$pcrs$nb_motus.tagjump <- rowSums(metabarlist.int.clean$reads>0)
   metabarlist.int.clean$motus$count.tagjump   <- colSums(metabarlist.int.clean$reads)
   metabarlist.int.clean$motus$count.control.tagjump   <- colSums(metabarlist.int.clean$reads[metabarlist.int.clean$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+  metabarlist.int.clean$motus$max.control.tagjump   <- colMax(metabarlist.int.clean$reads[metabarlist.int.clean$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
   
   assign(x = paste0("metabarlist.tagclean.", l), 
          value = metabarlist.int.clean)
@@ -573,11 +577,13 @@ for(l in LOCUS){
     metabarlist.int.sub$pcrs$nb_motus.subgroup <- rowSums(metabarlist.int.sub$reads>0)
     metabarlist.int.sub$motus$count.subgroup   <- colSums(metabarlist.int.sub$reads)
     metabarlist.int.sub$motus$count.control.subgroup <- colSums(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+    metabarlist.int.sub$motus$max.control.subgroup   <- colMax(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
     
     metabarlist.int.clean.sub$pcrs$nb_reads.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads)
     metabarlist.int.clean.sub$pcrs$nb_motus.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads>0)
     metabarlist.int.clean.sub$motus$count.tagjump.subgroup   <- colSums(metabarlist.int.clean.sub$reads)
     metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup  <- colSums(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+    metabarlist.int.clean.sub$motus$max.control.tagjump.subgroup  <- colMax(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
     
     # Contaslayer
     
@@ -1296,9 +1302,11 @@ for(l in LOCUS){
   thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
   motus.correct  <-  metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
   taxa.correct   <-  metabar.param %>% filter(Locus == l) %>% pull(taxa.correct)
-  motus.control.remove    <-  metabar.param %>% filter(Locus == l) %>% pull( motus.control.remove)
-  pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
   
+# motus.control.subtract    <-  metabar.param %>% filter(Locus == l) %>% pull(motus.control.subtract)  
+  motus.control.remove    <-  metabar.param %>% filter(Locus == l) %>% pull(motus.control.remove)
+  
+  pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
   tag.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct) 
   
 
