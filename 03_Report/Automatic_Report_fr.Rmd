@@ -498,11 +498,13 @@ taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 
 
 
-conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
+conta.param <- metabar.param %>% dplyr::filter(motus.correct == T)
 taxa.param <- metabar.param %>% dplyr::filter(taxa.correct == T)
 
+control.param <- metabar.param %>% dplyr::filter(motus.control.remove == T)
 
-  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "), ", et ceux sur la la liste d'exclusion des taxons ont été retirés aux locus suivants :", paste(taxa.param$Locus, collapse = ", ") )
+
+  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "), ", et ceux sur la la liste d'exclusion des taxons ont été retirés aux locus suivants :", paste(taxa.param$Locus, collapse = ", ")  )
 
 if(nrow(conta.param) == length(LOCUS) & nrow(taxa.param) == length(LOCUS)){
   conta.text <- "les MOTUs identifiés comme contaminants et/ou sur la liste d'exclusion des taxons ont été retirés à tous les locus"
@@ -518,6 +520,17 @@ if(nrow(conta.param) == length(LOCUS) & nrow(taxa.param) == 0){
 
 if(nrow(conta.param) == 0 & nrow(taxa.param) == length(LOCUS)){
   conta.text <- "aucune correction pour la liste d'exclusion des taxons n'a été appliquée au jeu de données mais les MOTUs identifiés comme contaminants ont été retirés à tous les locus"
+}
+
+  
+conta.text2 <- paste("Les MOTUs observés dans les controles négatifs été retirés aux locus suivants :", paste(control.param$Locus, collapse = ", ")  )
+
+if(nrow(control.param) == length(LOCUS)){
+  conta.text2 <- "Les MOTUs observés dans les controles négatifs été retirés ont été retirés à tous les locus"
+} 
+
+if(nrow(control.param) == 0){
+  conta.text2 <- "Les MOTUs observés dans les controles négatifs n'ont pas été systématiquement exclu du jeu de données"
 }
 
 
@@ -544,7 +557,7 @@ graph.artefact.motus <-  summary.artefact.motus  %>%
   geom_bar(stat = "identity") +  #xlim(0, 1) +
   labs(fill="Category") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa", "Detected in controls only"), values = c("deepskyblue1", "brown","red" , "orange", "pink" )) + 
   geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 3) +
   facet_grid(Loci ~ level) +
   ggtitle("Classification des différents MOTUs")
@@ -619,7 +632,7 @@ print(graph.resi)
 
 ```
 
-**Dans ce projet, `r conta.text`.**
+**Dans ce projet, `r conta.text`. `r conta.text2`.**
 
 \newpage
 
@@ -986,7 +999,7 @@ Les corrections ont été fait à l'aide du paquet `metabaR`. Les étapes sont :
 
 4. Identifier les assignations de taxons sur la liste d'exlusion (Table 10) et les enlever (__facultatif__, taxa.correct = *TRUE*)
 
-5. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*). 
+5. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__, pcr.correct = *TRUE*). 
 
 Les paramètres utilisés sont les suivants:
 
@@ -997,7 +1010,7 @@ metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Paramet
 # Split into 3 tables (too big)
 metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, tag.threshold, tag.correct) %>% knitr::kable(caption = "Paramètres pour le tag jumping", col.names = str_replace_all(names(.), "[.]", " " ))
 
-metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, motus.correct, taxa.correct,	good.motus.contaminant.correct,	good.motus.contaminant.remove) %>% knitr::kable(caption = "Paramètres pour les MOTUs", col.names = str_replace_all(names(.), "[.]", " " ))
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, motus.correct, taxa.correct,	good.motus.contaminant.correct,	motus.control.remove) %>% knitr::kable(caption = "Paramètres pour les MOTUs", col.names = str_replace_all(names(.), "[.]", " " ))
 
 metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus,	depth.threshold,	prop.cont.threshold, pcr.correct) %>% knitr::kable(caption = "Paramètres pour les échantillons", col.names = str_replace_all(names(.), "[.]", " " ))
 

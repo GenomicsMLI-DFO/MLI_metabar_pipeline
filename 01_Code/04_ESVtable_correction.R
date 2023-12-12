@@ -221,6 +221,8 @@ for(l in LOCUS){
   metabarlist.int$pcrs$nb_reads <- rowSums(metabarlist.int$reads)
   metabarlist.int$pcrs$nb_motus <- rowSums(metabarlist.int$reads>0)
   metabarlist.int$motus$count   <- colSums(metabarlist.int$reads)
+  metabarlist.int$motus$count.control <- colSums(metabarlist.int$reads[metabarlist.int$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+  
   
   assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
@@ -299,6 +301,7 @@ for(l in LOCUS){
   metabarlist.int.clean$pcrs$nb_reads.tagjump <- rowSums(metabarlist.int.clean$reads)
   metabarlist.int.clean$pcrs$nb_motus.tagjump <- rowSums(metabarlist.int.clean$reads>0)
   metabarlist.int.clean$motus$count.tagjump   <- colSums(metabarlist.int.clean$reads)
+  metabarlist.int.clean$motus$count.control.tagjump   <- colSums(metabarlist.int.clean$reads[metabarlist.int.clean$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
   
   assign(x = paste0("metabarlist.tagclean.", l), 
          value = metabarlist.int.clean)
@@ -569,10 +572,12 @@ for(l in LOCUS){
     metabarlist.int.sub$pcrs$nb_reads.subgroup <- rowSums(metabarlist.int.sub$reads)
     metabarlist.int.sub$pcrs$nb_motus.subgroup <- rowSums(metabarlist.int.sub$reads>0)
     metabarlist.int.sub$motus$count.subgroup   <- colSums(metabarlist.int.sub$reads)
+    metabarlist.int.sub$motus$count.control.subgroup <- colSums(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
     
     metabarlist.int.clean.sub$pcrs$nb_reads.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads)
     metabarlist.int.clean.sub$pcrs$nb_motus.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads>0)
     metabarlist.int.clean.sub$motus$count.tagjump.subgroup   <- colSums(metabarlist.int.clean.sub$reads)
+    metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup  <- colSums(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
     
     # Contaslayer
     
@@ -685,13 +690,11 @@ for(l in LOCUS){
     for(x in SUBGROUP){
       
       cat("Running on", x, "subgroup\n")  
-      
-      id.int <-  SUBGROUP.ls[[x]]
-      
+
       metabarlist.int.sub <-  get(paste0("metabarlist.ori.",l,".", x))
       metabarlist.int.clean.sub <- get(paste0("metabarlist.tagclean.",l,".", x))
      
-       metabarlist.int.sub$motus$not_an_exclude_taxa <- TRUE
+      metabarlist.int.sub$motus$not_an_exclude_taxa <- TRUE
       metabarlist.int.clean.sub$motus$not_an_exclude_taxa <- TRUE
       
       for(n in 1:nrow(metabar.exclude.taxa)){
@@ -740,10 +743,6 @@ for(l in LOCUS){
     metabarlist.int$motus$not_an_exclude_taxa <- TRUE
     metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
     
-    
-    metabarlist.int$motus$not_an_exclude_taxa <- TRUE
-    metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
-    
     for(n in 1:nrow(metabar.exclude.taxa)){
     
       n.flag <- length( metabarlist.int$motus$not_an_exclude_taxa[!is.na(metabarlist.int$motus[,metabar.exclude.taxa$Level[n]]) & (metabarlist.int$motus[,metabar.exclude.taxa$Level[n]] == metabar.exclude.taxa$ID[n])]) 
@@ -783,6 +782,88 @@ for(l in LOCUS){
   } else(cat("No taxa to exclude detected in the file 01_Code/Parameters/metabar_exclude_taxa.csv\n"))
   
 }
+
+
+# Flag MOTUs observed in control samples ----------------------------------
+
+# Will be performed overall and on subset 
+
+for(l in LOCUS){
+  
+  cat("\nLooking at MOTUs observed in negative control taxa for", l, "\n\n")  
+  
+    for(x in SUBGROUP){
+      
+      cat("Running on", x, "subgroup\n")  
+      
+      metabarlist.int.sub <-  get(paste0("metabarlist.ori.",l,".", x))
+      metabarlist.int.clean.sub <- get(paste0("metabarlist.tagclean.",l,".", x))
+      
+      metabarlist.int.sub$motus$not_detected_in_control <- metabarlist.int.sub$motus$count.control.subgroup == 0
+      metabarlist.int.clean.sub$motus$not_detected_in_control <- metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup == 0
+     
+
+      all_contam.ori <- metabarlist.int.sub$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                       mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+      all_contam.ori$ESV <- row.names(all_contam.ori)
+      
+      all_contam.clean <- metabarlist.int.clean.sub$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                      mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+      all_contam.clean$ESV <- row.names(all_contam.clean)
+      
+      all_contam <- bind_rows(all_contam.ori, all_contam.clean) %>% 
+        dplyr::select(-c(not_a_max_conta,not_an_exclude_taxa)) %>% 
+        pivot_wider(names_from = method, values_from = count)
+      
+      readr::write_csv(all_contam, 
+                       file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_",x, ".csv")))
+      
+      cat("The list of MOTUs identified in controls is here:", paste0("02_Results/04_ESVtable_correction/03_detected.controls_",l,"_",x, ".csv"), "\n\n")
+      
+      assign(x = paste0("metabarlist.ori.", l, ".", x), 
+             value = metabarlist.int.sub )
+      
+      assign(x = paste0("metabarlist.tagclean.", l, ".", x), 
+             value = metabarlist.int.clean.sub)
+      
+    }  
+    
+    
+    cat("Running on overall dataset\n")  
+    
+    
+    metabarlist.int <- get(paste0("metabarlist.ori.",l))
+    metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
+    
+    metabarlist.int$motus$not_detected_in_control <- metabarlist.int$motus$count.control == 0
+    metabarlist.int.clean$motus$not_detected_in_control <- metabarlist.int.clean$motus$count.control.tagjump == 0
+    
+    
+    all_contam.ori <- metabarlist.int$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+      mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+    all_contam.ori$ESV <- row.names(all_contam.ori)
+    
+    all_contam.clean <- metabarlist.int.clean$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+      mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+    all_contam.clean$ESV <- row.names(all_contam.clean)
+    
+    all_contam <- bind_rows(all_contam.ori, all_contam.clean) %>% 
+      dplyr::select(-c(not_a_max_conta,not_an_exclude_taxa)) %>% 
+      pivot_wider(names_from = method, values_from = count)
+    
+    readr::write_csv(all_contam, 
+                     file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_Overall.csv")))
+    
+    cat("The list of MOTUs identified in controls is here:", paste0("02_Results/04_ESVtable_correction/03_detected.controls_",l,"_Overall.csv"), "\n\n")
+    
+    assign(x = paste0("metabarlist.ori.", l), 
+           value = metabarlist.int )
+    
+    assign(x = paste0("metabarlist.tagclean.", l), 
+           value = metabarlist.int.clean)
+  
+}
+
 
 
 # Flag high % contaminant samples -------------------------------------------------
@@ -995,15 +1076,16 @@ for(l in LOCUS){
     metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l, ".", x))
 
     metabarlist.int$motus <- metabarlist.int$motus %>%     mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
-                                                                                         ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
-                                                                                                ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa == FALSE, "Excluded taxa",       
-                                                                                                       ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE, "Good MOTU", "Undefined??")))))
+                                                                                  ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
+                                                                                  ifelse(not_an_exclude_taxa == FALSE, "Excluded taxa", 
+                                                                                  ifelse(not_detected_in_control  == FALSE & not_an_exclude_taxa == TRUE & not_a_max_conta == TRUE,  "Detected in controls only",
+                                                                                  ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE & not_detected_in_control  == TRUE, "Good MOTU", "Undefined??"))))))
     
-    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>%     mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contamination - not excluded taxa",
-                                                                                                     ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contamination - excluded taxa",
-                                                                                                            ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa == FALSE, "Excluded taxa not flagged as contaminant",       
-                                                                                                                   ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE, "Good MOTU", "Undefined??")))))
-    
+    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>%        mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
+                                                                                                        ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
+                                                                                                               ifelse(not_an_exclude_taxa == FALSE, "Excluded taxa", 
+                                                                                                                      ifelse(not_detected_in_control  == FALSE & not_an_exclude_taxa == TRUE & not_a_max_conta == TRUE,  "Detected in controls only",
+                                                                                                                             ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE & not_detected_in_control  == TRUE, "Good MOTU", "Undefined??"))))))
     
     summary.artefact.motus_N.ori <- metabarlist.int$motus %>%  
       group_by(artefact_type) %>% summarise(N = n()) %>% 
@@ -1044,7 +1126,7 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa", "Detected in controls only"), values = c("deepskyblue1", "brown","red" , "orange", "pink" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. MOTUs for", l))
     
@@ -1054,7 +1136,7 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa", "Detected in controls only"), values = c("deepskyblue1", "brown","red" , "orange", "pink" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. reads for", l))
     
@@ -1063,7 +1145,7 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa", "Detected in controls only"), values = c("deepskyblue1", "brown","red" , "orange", "pink" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. MOTUs for", l))
     
@@ -1072,7 +1154,7 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Category") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa", "Detected in controls only"), values = c("deepskyblue1", "brown","red" , "orange", "pink" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. reads for", l))
     
@@ -1214,9 +1296,12 @@ for(l in LOCUS){
   thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
   motus.correct  <-  metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
   taxa.correct   <-  metabar.param %>% filter(Locus == l) %>% pull(taxa.correct)
+  motus.control.remove    <-  metabar.param %>% filter(Locus == l) %>% pull( motus.control.remove)
   pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
   
-  tag.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct)
+  tag.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct) 
+  
+
   
   #singleton.correct <- metabar.param %>% filter(Locus == l) %>% pull(singleton.correct)
   
@@ -1253,7 +1338,7 @@ for(l in LOCUS){
                                                     indices = (metabarlist.correct.int$motus$not_a_max_conta == T) )
       
     } else{
-      cat("No filtration on MOTUs \n") 
+      cat("No filtration on artefactual MOTUs \n") 
     }  
     
     
@@ -1267,6 +1352,19 @@ for(l in LOCUS){
     } else{
       cat("No filtration on undesirable taxa \n") 
     }  
+    
+    if(motus.control.remove == T){ 
+      
+      # Subset on MOTUs and SAMPLE 
+      cat("Keeping MOTUs observed only in samples\n")  
+      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+                                                    indices = (metabarlist.correct.int$motus$not_detected_in_control == T) )
+      
+    } else{
+      cat("No filtration on MOTUs observed in controls \n") 
+    }  
+    
+    
     
     if(pcr.correct == T){   
       
