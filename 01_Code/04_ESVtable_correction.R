@@ -330,13 +330,17 @@ for(l in LOCUS){
   )
   
   plate.tag.gg <- ggpubr::ggarrange(p1 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
-                                      ggtitle("Most abundant MOTU ori"),
+                                      ggtitle(paste0(l, ": most abundant MOTU")),
                                     p2 + scale_size(limits = c(1, max(metabarlist.int$reads[, idx]))) +
-                                      ggtitle("Most abundant MOTU after tagjumpslayer"),
+                                      ggtitle(paste0("Impact of tagjumpslayer (threshold=", thresholds.tag ,")")),
                                     nrow = 1, ncol = 2 , common.legend = T, legend = "right")
   
   
   n.plate <- p1$data$plate_no %>% unique() %>% length()
+  
+  # Put in an object to be able to export it to the automatic report
+  assign(x = paste0("plate.tag.gg.", l), 
+         value = plate.tag.gg)
   
   ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.plate_",l, ".png")), 
          plot = plate.tag.gg ,
@@ -1212,8 +1216,9 @@ for(l in LOCUS){
   taxa.correct   <-  metabar.param %>% filter(Locus == l) %>% pull(taxa.correct)
   pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
   
-  tag.correct <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct)
+  tag.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct)
   
+  #singleton.correct <- metabar.param %>% filter(Locus == l) %>% pull(singleton.correct)
   
   for(x in SUBGROUP){
     

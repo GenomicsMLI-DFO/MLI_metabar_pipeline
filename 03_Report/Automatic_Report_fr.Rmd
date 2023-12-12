@@ -997,7 +997,7 @@ metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Paramet
 # Split into 3 tables (too big)
 metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, tag.threshold, tag.correct) %>% knitr::kable(caption = "Paramètres pour le tag jumping", col.names = str_replace_all(names(.), "[.]", " " ))
 
-metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, singleton.threshold, motus.correct, singleton.correct,	taxa.correct,	good.motus.contaminant.correct,	good.motus.contaminant.remove) %>% knitr::kable(caption = "Paramètres pour les MOTUs", col.names = str_replace_all(names(.), "[.]", " " ))
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, motus.correct, taxa.correct,	good.motus.contaminant.correct,	good.motus.contaminant.remove) %>% knitr::kable(caption = "Paramètres pour les MOTUs", col.names = str_replace_all(names(.), "[.]", " " ))
 
 metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus,	depth.threshold,	prop.cont.threshold, pcr.correct) %>% knitr::kable(caption = "Paramètres pour les échantillons", col.names = str_replace_all(names(.), "[.]", " " ))
 
@@ -1035,6 +1035,19 @@ load( file.path(here::here(), "02_Results/04_ESVtable_correction", "00_tag.gg.Rd
 
 for(l in LOCUS){
 print(get( paste0("tag.gg.", l))) 
+
+}
+
+```
+
+Il est possible de vérifier, pour le MOTUs le plus abondant, l'impact du seuil choisi
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=8}
+load( file.path(here::here(), "02_Results/04_ESVtable_correction", "00_tag.gg.Rdata"))
+
+for(l in LOCUS){
+print(get( paste0("plate.tag.gg.", l))) 
+
 }
 
 ```
