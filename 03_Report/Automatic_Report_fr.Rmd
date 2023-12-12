@@ -628,7 +628,7 @@ print(graph.resi)
 D'autres corrections pourraient être appliquées sur le jeu de données: 
 
 - Les MOTUs pourraient être filtrés sur la longueur de leur séquence.
-- Les singletons (MOTU à 1 read) pourraient être retirés.
+- Un minimum de reads par MOTUs par échantillon pourrait être ajouté selon les besoins d'analyses subséquents.
 - S'il y avait des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.
 
 \newpage
@@ -815,7 +815,7 @@ print(graph.int)
 
 ## 6.2 Diversité par échantillon (PCR)
 
-Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **À noter que les singletons (N reads = 1) par échantillon ont été retirés de la figure, mais pas du jeu de données. De plus, les assignations taxonomiques n’ont pas été révisées par un expert.**
+Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **À noter que les assignations taxonomiques n’ont pas été révisées par un expert.**
 
 ```{r echo=FALSE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE}
 n.stations <- ESV.table.long %>% pull(Station) %>% unique() %>% length()
@@ -824,10 +824,10 @@ n.sites <- ESV.table.long %>% pull(Site_echantillonnage) %>% unique() %>% length
 for(l in LOCUS){
 graph.int <-   ESV.table.long %>% 
     mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
-         Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "16Schord"), class, phylum),
-         Nreads = ifelse(Nreads == 1, 0 , Nreads)) %>% 
-  filter(Loci == l,
-         Taxon %nin% c("Homo sapiens", "Unassigned", "Bos", "Sus", "Sus scrofa", "Canis lupus")) %>% 
+         Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "16Schord"), class, phylum)#,
+         #Nreads = ifelse(Nreads == 1, 0 , Nreads)
+         ) %>% 
+  filter(Loci == l) %>% 
   group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, Groupe) %>% 
   summarise(Nreads = sum(Nreads)) %>% 
   ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
@@ -976,16 +976,7 @@ cat(res, sep = "\n")
 
 Script associé : **04_ESVtable_correction.R**
 
-Les corrections ont été fait à l'aide du paquet `metabaR` avec les paramètres suivants:
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
-metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>%   knitr::kable()
-
-```
-
-Les étapes sont :
+Les corrections ont été fait à l'aide du paquet `metabaR`. Les étapes sont :
 
 1. Identifier le tagjumping sur l'ensemble des échantillons d'une même run à l'aide de la fonction `tagjumpslayer` (threshold = *tag.threshold*) et les enlever (__facultatif__, tag.correct = *TRUE*). 
 
@@ -993,7 +984,29 @@ Les étapes sont :
 
 3. Identifier les contaminants spécifiques à un projet à l'aide de la fonction `contaslayer` (method = max, control_types = c("pcr", "extraction")) et les enlever (__facultatif__, motus.correct = *TRUE*). 
 
-3. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*). 
+4. Identifier les assignations de taxons sur la liste d'exlusion (Table 10) et les enlever (__facultatif__, taxa.correct = *TRUE*)
+
+5. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*). 
+
+Les paramètres utilisés sont les suivants:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+
+# Split into 3 tables (too big)
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, tag.threshold, tag.correct) %>% knitr::kable(caption = "Paramètres pour le tag jumping", col.names = str_replace_all(names(.), "[.]", " " ))
+
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, singleton.threshold, motus.correct, singleton.correct,	taxa.correct,	good.motus.contaminant.correct,	good.motus.contaminant.remove) %>% knitr::kable(caption = "Paramètres pour les MOTUs", col.names = str_replace_all(names(.), "[.]", " " ))
+
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus,	depth.threshold,	prop.cont.threshold, pcr.correct) %>% knitr::kable(caption = "Paramètres pour les échantillons", col.names = str_replace_all(names(.), "[.]", " " ))
+
+
+taxa.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_exclude_taxa.tsv"))
+
+taxa.param %>% mutate(Level = factor(Level, levels = c("kingdom", "phylum", "order", "class", "family", "genus", "species")) ) %>%  arrange(Level, ID) %>%  knitr::kable(caption = "Taxons présents sur la liste d'exclusion", col.names = str_replace_all(names(.), "[.]", " " ))
+
+```
 
 Version des ressources utilisées:
 
