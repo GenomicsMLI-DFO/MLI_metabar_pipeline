@@ -458,6 +458,7 @@ Les contaminants sont analysés en comparant les échantillons biologiques aux c
 
 conta.summary <- data.frame()
 taxa.summary <- data.frame()
+all.summary <- data.frame()
 
 for(l in LOCUS){
   
@@ -468,7 +469,12 @@ for(l in LOCUS){
     taxa.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",projet, ".csv"))) 
   taxa.int <- taxa.int %>% mutate(Loci = l)
   taxa.summary <- bind_rows(taxa.summary, taxa.int)
-    
+   
+  
+    all.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_",projet, ".csv"))) 
+  all.int <- all.int %>% mutate(Loci = l)
+  all.summary <- bind_rows(all.summary, all.int)
+   
 }
 
 # Rouler seulement s'il y a des contaminants
@@ -496,6 +502,18 @@ taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
    knitr::kable(caption = "Information sur les taxons sur la liste d'exclusion")
 }
 
+# Rouler seulement s'il y a des contaminants
+if(nrow(all.summary) >= 0){
+
+all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+  filter(!is.na(Tagjump.corrected)) %>% 
+  group_by(Loci,Contaminant, Exclude.taxa) %>% 
+  summarise(`N motus` = n(),
+            `N reads` = sum(Tagjump.corrected),
+            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+   knitr::kable(caption = "Information l'ensemble des MOTUs observés dans les controles négatifs")
+}
+
 
 
 conta.param <- metabar.param %>% dplyr::filter(motus.correct == T)
@@ -504,7 +522,7 @@ taxa.param <- metabar.param %>% dplyr::filter(taxa.correct == T)
 control.param <- metabar.param %>% dplyr::filter(motus.control.remove == T)
 
 
-  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "), ", et ceux sur la la liste d'exclusion des taxons ont été retirés aux locus suivants :", paste(taxa.param$Locus, collapse = ", ")  )
+  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "), ", et ceux sur la liste d'exclusion des taxons ont été retirés aux locus suivants :", paste(taxa.param$Locus, collapse = ", ")  )
 
 if(nrow(conta.param) == length(LOCUS) & nrow(taxa.param) == length(LOCUS)){
   conta.text <- "les MOTUs identifiés comme contaminants et/ou sur la liste d'exclusion des taxons ont été retirés à tous les locus"
