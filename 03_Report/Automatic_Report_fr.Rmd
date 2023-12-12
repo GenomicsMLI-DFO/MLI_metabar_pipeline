@@ -457,13 +457,18 @@ Les contaminants sont analysés en comparant les échantillons biologiques aux c
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 conta.summary <- data.frame()
+taxa.summary <- data.frame()
 
 for(l in LOCUS){
   
   conta.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_conta_",l,"_",projet, ".csv"))) 
   conta.int <- conta.int %>% mutate(Loci = l)
   conta.summary <- bind_rows(conta.summary, conta.int)
-  
+
+    taxa.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",projet, ".csv"))) 
+  taxa.int <- taxa.int %>% mutate(Loci = l)
+  taxa.summary <- bind_rows(taxa.summary, taxa.int)
+    
 }
 
 # Rouler seulement s'il y a des contaminants
@@ -479,26 +484,44 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 }
 
 
-conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
+# Rouler seulement s'il y a des contaminants
+if(nrow(taxa.summary) >= 0){
 
-if(nrow(conta.param) == length(LOCUS)){
-  conta.text <- "les MOTUs identifiés comme contaminants ont été retirés à tous les locus"
+taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+  filter(!is.na(Tagjump.corrected)) %>% 
+  group_by(Loci,Contaminant) %>% 
+  summarise(`N motus` = n(),
+            `N reads` = sum(Tagjump.corrected),
+            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+   knitr::kable(caption = "Information sur les taxons sur la liste d'exclusion")
+}
+
+
+
+conta.param <- metabar.param %>% dplyr::filter(tag.correct == T)
+taxa.param <- metabar.param %>% dplyr::filter(taxa.correct == T)
+
+
+  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "), ", et ceux sur la la liste d'exclusion des taxons ont été retirés aux locus suivants :", paste(taxa.param$Locus, collapse = ", ") )
+
+if(nrow(conta.param) == length(LOCUS) & nrow(taxa.param) == length(LOCUS)){
+  conta.text <- "les MOTUs identifiés comme contaminants et/ou sur la liste d'exclusion des taxons ont été retirés à tous les locus"
 } 
 
-if(nrow(conta.param) == 0){
-  conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données"
+if(nrow(conta.param) == 0 & nrow(taxa.param) == 0){
+  conta.text <- "aucune correction pour les contaminants identifiés et la liste d'exclusion des taxons n'a été appliquée au jeu de données"
 }
 
-if(between(nrow(conta.param), 1, length(LOCUS) -1 )){
-  conta.text <- paste("les MOTUs identifiés comme contaminants ont été retirés aux locus suivants :", paste(conta.param$Locus, collapse = ", "))
-}  
-
-if(nrow(conta.summary) == 0){
-  conta.text <- "aucun MOTU n'a été identifié comme contaminant"  
+if(nrow(conta.param) == length(LOCUS) & nrow(taxa.param) == 0){
+  conta.text <- "aucune correction pour les contaminants identifiés n'a été appliquée au jeu de données mais les MOTUs identifiés sur la liste d'exclusion des taxons ont été retirés à tous les locus"
 }
+
+if(nrow(conta.param) == 0 & nrow(taxa.param) == length(LOCUS)){
+  conta.text <- "aucune correction pour la liste d'exclusion des taxons n'a été appliquée au jeu de données mais les MOTUs identifiés comme contaminants ont été retirés à tous les locus"
+}
+
 
 ```
-
 Chaque MOTU est classé dans une catégorie.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -521,7 +544,7 @@ graph.artefact.motus <-  summary.artefact.motus  %>%
   geom_bar(stat = "identity") +  #xlim(0, 1) +
   labs(fill="Category") + 
   coord_polar(theta="y") + theme_void() + 
-  scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" ), labels = c("Detected MOTUs", "Contamination")) + 
+  scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
   geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 3) +
   facet_grid(Loci ~ level) +
   ggtitle("Classification des différents MOTUs")
@@ -555,7 +578,12 @@ for(l in LOCUS){
 
 resi.int <-   ESV.table.control.long %>% 
     mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
-           Category = ifelse(not_a_max_conta == "TRUE", "Good MOTUs", "Contaminants")) %>% 
+           Category = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant",
+                      ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant + exclusion taxa list",
+                      ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa == FALSE, "Exclusion taxa list only",       
+                      ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE, "Good MOTU", "Undefined??"))))
+    
+           ) %>% 
   filter(#Nreads > 0,
          Loci == l) %>% 
   group_by(Category, Loci, ID_labo, Type_echantillon, Taxon) %>% 
@@ -599,7 +627,6 @@ print(graph.resi)
 
 D'autres corrections pourraient être appliquées sur le jeu de données: 
 
-- Certains contaminants communs (*Homo sapiens*, *Sus scrofa*, *Bos*, *Canis lupus*) pourraient être retirés manuellement.
 - Les MOTUs pourraient être filtrés sur la longueur de leur séquence.
 - Les singletons (MOTU à 1 read) pourraient être retirés.
 - S'il y avait des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.

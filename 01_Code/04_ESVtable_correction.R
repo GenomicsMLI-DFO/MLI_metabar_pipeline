@@ -191,8 +191,6 @@ for(l in LOCUS){
   
 }
 
-metabarlist.ori.COI$motus
-
 # Load metabar threshold
 
 metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
@@ -602,8 +600,6 @@ for(l in LOCUS){
     assign(x = paste0("metabarlist.tagclean.", l, ".", x), 
            value = metabarlist.int.clean.sub)
     
-    
-    
   }  
   
   cat("Running on overall dataset\n")  
@@ -676,16 +672,10 @@ metabar.exclude.taxa
 for(l in LOCUS){
   
   cat("\nLooking at undesirable taxa for", l, "\n\n")  
-  
-  metabarlist.int <- get(paste0("metabarlist.ori.",l))
-  metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
-  
-  metabarlist.int$motus$not_an_exclude_taxa <- TRUE
-  metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
-  
+
   if(nrow(metabar.exclude.taxa) > 0){
     
-    cat(nrow(metabar.exclude.taxa), "taxa to exclude detected in the file 01_Code/Parameters/metabar_exclude_taxa.csv\n\n")
+    cat(nrow(metabar.exclude.taxa), "taxa to exclude listed in the file 01_Code/Parameters/metabar_exclude_taxa.csv\n\n")
     
 
     for(x in SUBGROUP){
@@ -694,14 +684,10 @@ for(l in LOCUS){
       
       id.int <-  SUBGROUP.ls[[x]]
       
-      metabarlist.int.sub <- subset_metabarlist(metabarlist.int, table="pcrs",
-                                                indices = metabarlist.int$pcrs$sample_id %in% id.int)
-      
-      metabarlist.int.clean.sub <- subset_metabarlist(metabarlist.int.clean, table="pcrs",
-                                                      indices = metabarlist.int.clean$pcrs$sample_id %in% id.int)
-
-      
-      metabarlist.int.sub$motus$not_an_exclude_taxa <- TRUE
+      metabarlist.int.sub <-  get(paste0("metabarlist.ori.",l,".", x))
+      metabarlist.int.clean.sub <- get(paste0("metabarlist.tagclean.",l,".", x))
+     
+       metabarlist.int.sub$motus$not_an_exclude_taxa <- TRUE
       metabarlist.int.clean.sub$motus$not_an_exclude_taxa <- TRUE
       
       for(n in 1:nrow(metabar.exclude.taxa)){
@@ -743,6 +729,14 @@ for(l in LOCUS){
     
     cat("Running on overall dataset\n")  
 
+    
+    metabarlist.int <- get(paste0("metabarlist.ori.",l))
+    metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
+    
+    metabarlist.int$motus$not_an_exclude_taxa <- TRUE
+    metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
+    
+    
     metabarlist.int$motus$not_an_exclude_taxa <- TRUE
     metabarlist.int.clean$motus$not_an_exclude_taxa <- TRUE
     
@@ -995,13 +989,16 @@ for(l in LOCUS){
     
     metabarlist.int <- get(paste0("metabarlist.ori.",l, ".", x))
     metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l, ".", x))
+
+    metabarlist.int$motus <- metabarlist.int$motus %>%     mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
+                                                                                         ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
+                                                                                                ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa == FALSE, "Excluded taxa",       
+                                                                                                       ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE, "Good MOTU", "Undefined??")))))
     
-    
-    metabarlist.int$motus <- metabarlist.int$motus %>% mutate(artefact_type = ifelse(not_a_max_conta == FALSE, "Contamination",
-                                                                                     ifelse(not_a_max_conta == TRUE, "Not artefactual", "Undefined??")))
-    
-    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>% mutate(artefact_type = ifelse(not_a_max_conta == FALSE, "Contamination",
-                                                                                                 ifelse(not_a_max_conta == TRUE, "Not artefactual", "Undefined??")))
+    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>%     mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contamination - not excluded taxa",
+                                                                                                     ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contamination - excluded taxa",
+                                                                                                            ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa == FALSE, "Excluded taxa not flagged as contaminant",       
+                                                                                                                   ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE, "Good MOTU", "Undefined??")))))
     
     
     summary.artefact.motus_N.ori <- metabarlist.int$motus %>%  
@@ -1043,16 +1040,17 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. MOTUs for", l))
     
+
     graph.artefact.motus_reads.ori <- summary.artefact.motus_reads.ori %>% 
       ggplot(aes(x=1, y = prop, fill=artefact_type)) +
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. reads for", l))
     
@@ -1061,7 +1059,7 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Artifact type") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. MOTUs for", l))
     
@@ -1070,19 +1068,19 @@ for(l in LOCUS){
       geom_bar(stat = "identity") +#  xlim(0, 1) +
       labs(fill="Category") + 
       coord_polar(theta="y") + theme_void() + 
-      scale_fill_manual(limits = c("Not artefactual", "Contamination"), values = c("deepskyblue1", "darkorange1" )) + 
+      scale_fill_manual(limits = c("Good MOTU", "Contaminant - excluded taxa", "Contaminant - included taxa", "Excluded taxa"), values = c("deepskyblue1", "brown","red" , "orange" )) + 
       geom_text(aes(y = 0, label = paste0("n=",SUM)), vjust = 1, col = "black", cex = 5) +
       ggtitle(paste("Prop. reads for", l))
     
     
     graph.artefact.motus.ori <- ggpubr::ggarrange(graph.artefact.motus_N.ori,
                                                   graph.artefact.motus_reads.ori,
-                                                  nrow = 1, ncol = 2 , common.legend = T, legend = "bottom"
+                                                  nrow = 1, ncol = 2 , common.legend = T, legend = "right"
     )
     
     graph.artefact.motus.clean <- ggpubr::ggarrange(graph.artefact.motus_N.clean,
                                                     graph.artefact.motus_reads.clean,
-                                                    nrow = 1, ncol = 2 , common.legend = T, legend = "bottom"
+                                                    nrow = 1, ncol = 2 , common.legend = T, legend = "right"
     )
     
     ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction",  paste0("05_Artefact_MOTUs_original_",l, "_", x,".png")), 
@@ -1210,8 +1208,9 @@ for(l in LOCUS){
   # Load parameters
   
   thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
-  motus.correct <- metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
-  pcr.correct <- metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
+  motus.correct  <-  metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
+  taxa.correct   <-  metabar.param %>% filter(Locus == l) %>% pull(taxa.correct)
+  pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
   
   tag.correct <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct)
   
@@ -1246,10 +1245,22 @@ for(l in LOCUS){
       # Subset on MOTUs and SAMPLE 
       cat("Keeping only not artefactual MOTUs\n")  
       metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
-                                                    indices = (metabarlist.correct.int$motus$artefact_type == "Not artefactual") )
+                                                    indices = (metabarlist.correct.int$motus$not_a_max_conta == T) )
       
     } else{
       cat("No filtration on MOTUs \n") 
+    }  
+    
+    
+    if(taxa.correct == T){ 
+      
+      # Subset on MOTUs and SAMPLE 
+      cat("Keeping only MOTUs not in the undesirable taxa list\n")  
+      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+                                                    indices = (metabarlist.correct.int$motus$not_an_exclude_taxa == T) )
+      
+    } else{
+      cat("No filtration on undesirable taxa \n") 
     }  
     
     if(pcr.correct == T){   

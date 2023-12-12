@@ -1,4 +1,4 @@
-Locus	depth.threshold	prop.cont.threshold	tag.threshold	singleton.threshold	motus.correct	pcr.correct	tag.correct	singleton.correct	current.contaminant.correct	good.motus.contaminant.correct	good.motus.contaminant.remove
+Locus	depth.threshold	prop.cont.threshold	tag.threshold	singleton.threshold	motus.correct	pcr.correct	tag.correct	singleton.correct	taxa.correct	good.motus.contaminant.correct	good.motus.contaminant.remove
 COI	1000	0.1	0.01	1	TRUE	FALSE	TRUE	TRUE	TRUE	TRUE	FALSE
 12S	1000	0.1	0.01	1	TRUE	FALSE	TRUE	TRUE	TRUE	TRUE	FALSE
 MiFishU	1000	0.1	0.01	1	TRUE	FALSE	TRUE	TRUE	TRUE	TRUE	FALSE
