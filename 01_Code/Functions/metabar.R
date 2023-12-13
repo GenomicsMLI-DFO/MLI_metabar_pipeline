@@ -2,9 +2,8 @@
 
 ggpcrplate.modif <- function (metabarlist, legend_title = "well_values", FUN = function(metabarlist) {
   rowSums(metabarlist$reads)
-}) 
-{
-  if (suppressWarnings(check_metabarlist(metabarlist))) {
+}) {
+  if (suppressWarnings(metabaR::check_metabarlist(metabarlist))) {
     function_values <- FUN(metabarlist)
     if (length(function_values) != nrow(metabarlist$pcrs)) {
       stop("provided information should have the length of pcrs")
@@ -69,4 +68,4 @@ ggpcrplate.cont <- function(metabarlist, N = Inf){
   
 }
 
-colMax <- function(data) sapply(data, max, na.rm=TRUE)
+colMax <- function(data) apply(data, 2, max, na.rm=TRUE)
