@@ -103,7 +103,7 @@ remotes::install_github("metabaRfactory/metabaR")
 |12SMarVer1|CGTGCCAGCCACCGCG|GGGTATCTAATCCYAGTTTG| |
 |16Schord|ATGCGAGAAGACCCTRTGGAGCT|CCTNGGTCGCCCCAAC| |	
 
-Other loci can be added, but you'll need to set new parameters in Options.txt, and 00_Code/Parameters folder.
+Other loci can be added, but you'll need to set new parameters in *Options.txt*, and *00_Code/Parameters* folder.
 
 ### Rename raw files
 
@@ -113,7 +113,7 @@ Use **01_Rename_RAW_FileName.R** within *01_Code* folder to rename zipped fastq 
 
 Use **01_Rename_RAW_FileName_Multiplex.R** within *01_Code* folder to rename zipped fastq files on multiplexed data (same sample but at different loci). It will used the metadata file (*SeqInfo.csv*) to create a new name. File name must exclude the **_R1orR2.fastq.gz** part, and should be repeated to all samples multiplexed together. 
 
-### From raw reads** to **MOTUs tables
+### From raw reads to MOTUs tables
 
 Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads into an ESV table on demultiplex data. 
 
