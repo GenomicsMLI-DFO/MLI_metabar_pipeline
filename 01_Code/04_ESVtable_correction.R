@@ -20,8 +20,6 @@ library(ggplot2)
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "metabar.R"))
 
-colMax <- function(data) apply(data,2, max, na.rm=TRUE) # Also in metabarR
-
 # Dataset -----------------------------------------------------------------
 
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
@@ -41,11 +39,11 @@ SUBGROUP.ls <- list()
 
 for(x in SUBGROUP){
   
-  subgroup <- c(data.info %>% dplyr::filter(ID_subprojet == x) %>% pull(ID_subprojet) %>% unique(),
-                data.info %>% dplyr::filter(ID_subprojet == x) %>% pull(ID_projet) %>% unique(),                                                         
+  subgroup <- c(data.info %>% dplyr::filter(ID_subprojet == x) %>% dplyr::pull(ID_subprojet) %>% unique(),
+                data.info %>% dplyr::filter(ID_subprojet == x) %>% dplyr::pull(ID_projet) %>% unique(),                                                         
                 "ALL", "All", "all") %>% unique()
   
-  id <- data.info %>% dplyr::filter(ID_subprojet %in% subgroup)  %>% pull(ID_labo) %>% unique()
+  id <- data.info %>% dplyr::filter(ID_subprojet %in% subgroup)  %>% dplyr::pull(ID_labo) %>% unique()
   
   SUBGROUP.ls[[x]] <- id
   
@@ -90,9 +88,9 @@ for(l in LOCUS){
 }
 
 tidy.ESV <- function(ESVtab, DNA.seq) {
-  DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
+  DNA.tidy <- tibble::tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
   
-  ESV.tidy <- ESVtab %>% as_tibble() %>% 
+  ESV.tidy <- ESVtab %>% tibble::as_tibble() %>% 
     dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
     tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
     dplyr::left_join(DNA.tidy)
@@ -106,8 +104,8 @@ for(l in LOCUS){
   reads.int <- tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% 
     dplyr::select(ID_labo, ESV, Nreads) %>% tidyr::pivot_wider(names_from = ESV, values_from = Nreads)
   
-  reads <- as.matrix(reads.int %>% select(-ID_labo))
-  dimnames(reads)[[1]] <- reads.int %>% pull(ID_labo)
+  reads <- as.matrix(reads.int %>% dplyr::select(-ID_labo))
+  dimnames(reads)[[1]] <- reads.int %>% dplyr::pull(ID_labo)
   
   assign(x = paste0("reads.", l), 
          value = reads)
@@ -123,7 +121,7 @@ for(l in LOCUS){
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
                           QueryAccVer = names(get(paste0("DNA.",l)))) 
   
-  motus <-   motus.int %>% left_join(RES.all.ncbi %>% filter(Loci == l, Method == "TOP", Threshold == 95) %>% distinct(QueryAccVer, .keep_all = T) )
+  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == "TOP", Threshold == 95) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
   row.names(motus) <- names(get(paste0("DNA.",l)))
   
   assign(x = paste0("motus.", l), 
@@ -147,8 +145,8 @@ for(l in LOCUS){
                                                 ifelse(Type_echantillon %in% c("NTC"), "sequencing",
                                                        ifelse(Type_echantillon %in% c("PPC", "MPC"), "positive", 
                                                               "extraction")))),
-                   plate_row= str_sub(ID_puit, 1, 1),
-                   plate_col= str_sub(ID_puit, 2,3) ,
+                   plate_row= stringr::str_sub(ID_puit, 1, 1),
+                   plate_col= stringr::str_sub(ID_puit, 2,3) ,
                    plate_col = as.numeric(as.character(plate_col)),
                    #tag_fwd = Sequence_i7,
                    #tag_rev = Sequence_i5,
@@ -169,7 +167,7 @@ for(l in LOCUS){
 
 for(l in LOCUS){
   
-  samples.int <- data.frame(sample_id =  data.info %>% dplyr::filter(Loci == l) %>% pull(ID_labo), info = NA) 
+  samples.int <- data.frame(sample_id =  data.info %>% dplyr::filter(Loci == l) %>% dplyr::pull(ID_labo), info = NA) 
   row.names(samples.int )<- samples.int$sample_id
   
   assign(x = paste0("samples.", l), 
@@ -182,7 +180,7 @@ for(l in LOCUS){
 
 for(l in LOCUS){
   
-  metabarlist.int <- metabarlist_generator(reads = get(paste0("reads.", l)), 
+  metabarlist.int <- metabaR::metabarlist_generator(reads = get(paste0("reads.", l)), 
                                            motus = get(paste0("motus.", l)), 
                                            pcrs = get(paste0("pcr.", l)), 
                                            samples = get(paste0("samples.", l)))
@@ -205,9 +203,9 @@ metabar.exclude.taxa
 
 # Threshold tag can be defined in the file:  "01_Code/Parameters/metabar_param.tsv"
 # If you change the parameters, just rerun this part
+# metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
 
-#metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
-metabar.param %>% filter(Locus %in% LOCUS) %>%  select(Locus, tag.threshold)
+metabar.param %>% dplyr::filter(Locus %in% LOCUS) %>% dplyr::select(Locus, tag.threshold)
 
 # Define a vector of thresholds to test
 thresholds.tag.test <- c(0, 0.0001, 0.001, 0.003, 0.005, 0.01, 0.03, 0.05) 
@@ -231,7 +229,7 @@ for(l in LOCUS){
          value = metabarlist.int )
   
   # Load threshold
-  thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
+  thresholds.tag <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(tag.threshold)
   
   cat("Current threshold :", thresholds.tag , "\n")  
   
@@ -240,7 +238,7 @@ for(l in LOCUS){
   #                                             indices = (rowSums(metabarlist.int$reads)>0))
   
   # Run the tests and stores the results in a list
-  tests.tagjump <- lapply(thresholds.tag.test, function(x) tagjumpslayer(metabarlist.int, x))
+  tests.tagjump <- lapply(thresholds.tag.test, function(x) metabaR::tagjumpslayer(metabarlist.int, x))
   # method = "cut" vs. method = "substract"
   # tests2020_substract <-lapply(thresholds, function(x) tagjumpslayer(Fish2020_clean,x, method = "substract"))
   
@@ -266,7 +264,7 @@ for(l in LOCUS){
   # New table formatting for ggplot
   tests.tagjump.long.2 <- reshape2::melt(tests.tagjump.long, id.vars=colnames(tests.tagjump.long)[-grep("abundance|richness", colnames(tests.tagjump.long))])
   
-  tag.gg <- tests.tagjump.long.2 %>% mutate(controls = ifelse(is.na(controls), "sample", controls)) %>% 
+  tag.gg <- tests.tagjump.long.2 %>% dplyr::mutate(controls = ifelse(is.na(controls), "sample", controls)) %>% 
     ggplot(aes(x=as.factor(threshold), y=value + 1)) + 
     geom_jitter(aes(color=controls), height = 0, alpha=0.5) + 
     geom_boxplot(color="grey40", fill = "white", alpha = 0) + 
@@ -299,7 +297,7 @@ for(l in LOCUS){
   # Check
   cat("Threshold MUST be validated with the graph ", paste0("02_Results/04_ESVtable_correction/00_tagjump.threshold_",l, ".png") , "\n")  
   
-  metabarlist.int.clean <- tagjumpslayer(metabarlist.int, thresholds.tag )
+  metabarlist.int.clean <- metabaR::tagjumpslayer(metabarlist.int, thresholds.tag )
   
   metabarlist.int.clean$pcrs$nb_reads.tagjump <- rowSums(metabarlist.int.clean$reads)
   metabarlist.int.clean$pcrs$nb_motus.tagjump <- rowSums(metabarlist.int.clean$reads>0)
@@ -312,8 +310,8 @@ for(l in LOCUS){
   #
   # Save a summary to compute stat later on
   
-  summary.int <- metabarlist.int.clean$pcrs %>% select(sample_id, nb_reads, nb_motus, nb_reads.tagjump, nb_motus.tagjump) %>% 
-    mutate(Loci = l) 
+  summary.int <- metabarlist.int.clean$pcrs %>% dplyr::select(sample_id, nb_reads, nb_motus, nb_reads.tagjump, nb_motus.tagjump) %>% 
+    dplyr::mutate(Loci = l) 
   
   if(!file.exists(file.path(here::here(), "00_Data", "04_ESVcorrected"))){dir.create(file.path(here::here(), "00_Data", "04_ESVcorrected"))}  
   readr::write_csv(summary.int, file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_", l, ".csv")))
@@ -369,11 +367,11 @@ for(l in LOCUS){
   
   cat("\nStatistic for", l, "original\n")  
   metabarlist.int       <- get(paste0("metabarlist.ori.",l))
-  print(summary_metabarlist(metabarlist.int))
+  print(metabaR::summary_metabarlist(metabarlist.int))
   
   cat("\nStatistic for", l, "after tag jump correction \n")  
   metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
-  print(summary_metabarlist(metabarlist.int.clean))
+  print(metabaR::summary_metabarlist(metabarlist.int.clean))
   
   # Save image
   
@@ -412,13 +410,13 @@ for(l in LOCUS){
   
   cat("\nSequencing depth for", l, "\n")  
   
-  depth.threshold <- metabar.param %>% filter(Locus == l) %>% pull(depth.threshold)
+  depth.threshold <- metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(depth.threshold)
   
   metabarlist.int <- get(paste0("metabarlist.ori.",l))
   
   metabarlist.int.clean  <- get(paste0("metabarlist.tagclean.",l))
   
-  depth.ori.gg <-  metabarlist.int$pcrs %>%  mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+  depth.ori.gg <-  metabarlist.int$pcrs %>% dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x = nb_reads+1, fill = control_type)) +
     geom_histogram(bins=40, color="grey") + 
     geom_vline(xintercept = depth.threshold, lty=2, color="orange") + # threshold
@@ -434,7 +432,7 @@ for(l in LOCUS){
           title = element_text(size = 10),
           legend.title = element_blank())
   
-  depth.gg.ori.project <-  metabarlist.int$pcrs %>%  mutate(control_type = ifelse(is.na(control_type), "sample",
+  depth.gg.ori.project <-  metabarlist.int$pcrs %>% dplyr::mutate(control_type = ifelse(is.na(control_type), "sample",
                                                                                   ifelse(control_type == "extraction", "field/lab",      
                                                                                          control_type))) %>% 
     ggplot(aes(x = nb_reads+1, fill = control_type)) +
@@ -466,7 +464,7 @@ for(l in LOCUS){
   #       height = 5,
   #      units = c("in"))
   
-  depth.clean.gg <-  metabarlist.int.clean$pcrs %>%  mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+  depth.clean.gg <-  metabarlist.int.clean$pcrs %>% dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x = nb_reads+1, fill = control_type)) +
     geom_histogram(bins=40, color="grey") + 
     geom_vline(xintercept = depth.threshold, lty=2, color="orange") + # threshold
@@ -482,7 +480,7 @@ for(l in LOCUS){
           title = element_text(size = 10),
           legend.title = element_blank())
   
-  depth.gg.clean.project <-  metabarlist.int.clean$pcrs %>%  mutate(control_type = ifelse(is.na(control_type), "sample",
+  depth.gg.clean.project <-  metabarlist.int.clean$pcrs %>%  dplyr::mutate(control_type = ifelse(is.na(control_type), "sample",
                                                                                           ifelse(control_type == "extraction", "field/lab",      
                                                                                                  control_type))) %>% 
     ggplot(aes(x = nb_reads+1, fill = control_type)) +
@@ -566,10 +564,10 @@ for(l in LOCUS){
     
     id.int <-  SUBGROUP.ls[[x]]
     
-    metabarlist.int.sub <- subset_metabarlist(metabarlist.int, table="pcrs",
+    metabarlist.int.sub <- metabaR::subset_metabarlist(metabarlist.int, table="pcrs",
                                               indices = metabarlist.int$pcrs$sample_id %in% id.int)
     
-    metabarlist.int.clean.sub <- subset_metabarlist(metabarlist.int.clean, table="pcrs",
+    metabarlist.int.clean.sub <- metabaR::subset_metabarlist(metabarlist.int.clean, table="pcrs",
                                                     indices = metabarlist.int.clean$pcrs$sample_id %in% id.int)
     
     # Recompute basic stats by subgroup
@@ -587,22 +585,29 @@ for(l in LOCUS){
     
     # Contaslayer
     
-    metabarlist.int.sub  <- contaslayer(metabarlist.int.sub , method="max",
+    metabarlist.int.sub  <- metabaR::contaslayer(metabarlist.int.sub , method="max",
                                         control_types = c("pcr", "extraction"),
                                         output_col = "not_a_max_conta")
     
-    metabarlist.int.clean.sub  <- contaslayer(metabarlist.int.clean.sub , method="max",
+    metabarlist.int.clean.sub  <- metabaR::contaslayer(metabarlist.int.clean.sub , method="max",
                                               control_types = c("pcr", "extraction"),
                                               output_col = "not_a_max_conta")
     
-    common_contam.ori.max <- metabarlist.int.sub$motus %>% filter(not_a_max_conta == F) %>% select(Taxon, Levels, count = count.subgroup) %>% mutate(method = "sub.ori.max") %>% arrange(desc(count))
+    common_contam.ori.max <- metabarlist.int.sub$motus %>% dplyr::filter(not_a_max_conta == F) %>% 
+                                                           dplyr::select(Taxon, Levels, count = count.subgroup) %>% 
+                                                           dplyr::mutate(method = "sub.ori.max") %>% 
+                                                           dplyr::arrange(desc(count))
     common_contam.ori.max$ESV <- row.names(common_contam.ori.max)
     
-    common_contam.clean.max <- metabarlist.int.clean.sub$motus %>% filter(not_a_max_conta == F) %>% select(Taxon, Levels, count = count.tagjump.subgroup) %>% mutate(method = "sub.tagclean.max") %>% arrange(desc(count))
+    common_contam.clean.max <- metabarlist.int.clean.sub$motus %>% dplyr::filter(not_a_max_conta == F) %>% 
+                                                                   dplyr::select(Taxon, Levels, count = count.tagjump.subgroup) %>% 
+                                                                   dplyr::mutate(method = "sub.tagclean.max") %>% 
+                                                                   dplyr::arrange(desc(count))
+    
     common_contam.clean.max$ESV <- row.names(common_contam.clean.max)
     
-    common_contam <- bind_rows(common_contam.ori.max, common_contam.clean.max) %>% 
-      pivot_wider(names_from = method, values_from = count)
+    common_contam <- dplyr::bind_rows(common_contam.ori.max, common_contam.clean.max) %>% 
+      tidyr::pivot_wider(names_from = method, values_from = count)
     
     readr::write_csv(common_contam, 
                      file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_conta_",l,"_",x, ".csv")))
@@ -621,24 +626,30 @@ for(l in LOCUS){
   
   # Run contaslayer on the overall dataset
   
-  metabarlist.int  <- contaslayer(metabarlist.int, method = "max",
+  metabarlist.int  <- metabaR::contaslayer(metabarlist.int, method = "max",
                                   control_types = c("pcr", "extraction"),
                                   output_col = "not_a_max_conta")
   
-  metabarlist.int.clean  <- contaslayer(metabarlist.int.clean, method = "max",
+  metabarlist.int.clean  <- metabaR::contaslayer(metabarlist.int.clean, method = "max",
                                         control_types = c("pcr", "extraction"),
                                         output_col = "not_a_max_conta")
   
-  common_contam.ori.max <- metabarlist.int$motus %>% filter(not_a_max_conta == F) %>% select(Taxon, Levels, count = count) %>% mutate(method = "ori.max") %>% arrange(desc(count))
+  common_contam.ori.max <- metabarlist.int$motus %>% dplyr::filter(not_a_max_conta == F) %>% 
+                                                     dplyr::select(Taxon, Levels, count = count) %>% 
+                                                     dplyr::mutate(method = "ori.max") %>% 
+                                                     dplyr::arrange(desc(count))
   
   common_contam.ori.max$ESV <- row.names(common_contam.ori.max)
   
-  common_contam.clean.max <- metabarlist.int.clean$motus %>% filter(not_a_max_conta == F) %>% select(Taxon, Levels, count =count.tagjump) %>% mutate(method = "tagclean.max") %>% arrange(desc(count))
+  common_contam.clean.max <- metabarlist.int.clean$motus %>% dplyr::filter(not_a_max_conta == F) %>% 
+                                                             dplyr::select(Taxon, Levels, count =count.tagjump) %>% 
+                                                             dplyr::mutate(method = "tagclean.max") %>% 
+                                                             dplyr::arrange(desc(count))
   
   common_contam.clean.max$ESV <- row.names(common_contam.clean.max)
   
-  common_contam <- bind_rows( common_contam.ori.max, common_contam.clean.max) %>% 
-    pivot_wider(names_from = method, values_from = count)
+  common_contam <- dplyr::bind_rows( common_contam.ori.max, common_contam.clean.max) %>% 
+    tidyr::pivot_wider(names_from = method, values_from = count)
   
   readr::write_csv(common_contam, 
                    file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_conta_",l, "_Overall.csv")))
@@ -652,13 +663,13 @@ for(l in LOCUS){
          value = metabarlist.int.clean)
   
 # NE pas faire les figures si il n'y a pas assez de contaminants
-if( (nrow(metabarlist.int$motus %>% filter(not_a_max_conta == F) ) & nrow(metabarlist.int.clean$motus %>% filter(not_a_max_conta == F) ))> 2) {
+if( (nrow(metabarlist.int$motus %>% dplyr::filter(not_a_max_conta == F) ) & nrow(metabarlist.int.clean$motus %>% dplyr::filter(not_a_max_conta == F) ))> 2) {
   
   conta.ori.gg <- ggpcrplate.cont(metabarlist.int, N = Inf)
 
   conta.clean.gg <- ggpcrplate.cont(metabarlist.int.clean, N = Inf)
 
-  n.plate <- conta.ori.gg $data$plate_no %>% unique() %>% length()
+  n.plate <- conta.ori.gg$data$plate_no %>% unique() %>% length()
 
   conta.gg <- ggpubr::ggarrange(conta.ori.gg,
                                 conta.clean.gg,
@@ -715,22 +726,31 @@ for(l in LOCUS){
         }  
       }
       
+      # Compute statistics
       
-      taxa_contam.ori <- metabarlist.int.sub$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count = count, not_a_max_conta) %>% mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+      taxa_contam.ori <- metabarlist.int.sub$motus %>% dplyr::filter(not_an_exclude_taxa == F) %>% 
+                                                       dplyr::select(Taxon, Levels, count = count, not_a_max_conta) %>% 
+                                                       dplyr::mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% 
+                                                       dplyr::arrange(desc(count))
       taxa_contam.ori$ESV <- row.names(taxa_contam.ori)
       
-      taxa_contam.clean<- metabarlist.int.clean.sub$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+      taxa_contam.clean<- metabarlist.int.clean.sub$motus %>% dplyr::filter(not_an_exclude_taxa == F) %>% 
+                                                              dplyr::select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% 
+                                                              dplyr::mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% 
+                                                              dplyr::arrange(desc(count))
       taxa_contam.clean$ESV <- row.names(taxa_contam.clean)
       
-      taxa_contam <- bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
+      taxa_contam <- dplyr::bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
         dplyr::select(-not_a_max_conta) %>% 
-        pivot_wider(names_from = method, values_from = count)
+        tidyr::pivot_wider(names_from = method, values_from = count)
       
       readr::write_csv(taxa_contam, 
                        file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",x, ".csv")))
       
       cat("The list of identified undesired taxa is here:", paste0("02_Results/04_ESVtable_correction/03_exclude.taxa_",l,"_",x, ".csv"), "\n\n")
 
+      # Reassigned the modified object into the R environment
+      
       assign(x = paste0("metabarlist.ori.", l, ".", x), 
              value = metabarlist.int.sub )
       
@@ -742,7 +762,6 @@ for(l in LOCUS){
     
     cat("Running on overall dataset\n")  
 
-    
     metabarlist.int <- get(paste0("metabarlist.ori.",l))
     metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
     
@@ -761,23 +780,32 @@ for(l in LOCUS){
       }  
     }
    
-    
-    taxa_contam.ori <- metabarlist.int$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count = count, not_a_max_conta) %>% mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+    # Compute statistics
+        
+    taxa_contam.ori <- metabarlist.int$motus %>% dplyr::filter(not_an_exclude_taxa == F) %>% 
+                                                 dplyr::select(Taxon, Levels, count = count, not_a_max_conta) %>% 
+                                                 dplyr::mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% 
+                                                 dplyr::arrange(desc(count))
     
     taxa_contam.ori$ESV <- row.names(taxa_contam.ori)
     
-    taxa_contam.clean<- metabarlist.int.clean$motus %>% filter(not_an_exclude_taxa == F) %>% select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% arrange(desc(count))
+    taxa_contam.clean<- metabarlist.int.clean$motus %>% dplyr::filter(not_an_exclude_taxa == F) %>% 
+                                                        dplyr::select(Taxon, Levels, count =count.tagjump, not_a_max_conta) %>% 
+                                                        dplyr::mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes")) %>% 
+                                                        dplyr::arrange(desc(count))
     
     taxa_contam.clean$ESV <- row.names(taxa_contam.clean)
     
-    taxa_contam <- bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
-      dplyr::select(-not_a_max_conta) %>% 
-      pivot_wider(names_from = method, values_from = count)
+    taxa_contam <- dplyr::bind_rows( taxa_contam.ori, taxa_contam.clean) %>% 
+                   dplyr::select(-not_a_max_conta) %>% 
+                   tidyr::pivot_wider(names_from = method, values_from = count)
     
     readr::write_csv(taxa_contam, 
                      file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l, "_Overall.csv")))
     
     cat("The list of identified undesired taxa is here:", paste0("02_Results/04_ESVtable_correction/03_exclude.taxa_",l,"_Overvall.csv"), "\n\n")
+    
+    # Re-assigned into the R environment
     
     assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
@@ -792,7 +820,9 @@ for(l in LOCUS){
 
 # Flag MOTUs observed in control samples ----------------------------------
 
-# Will be performed overall and on subset 
+# This step will add a flag into the column "not_detected_in_control" for all MOTUs observed into
+# negative controls (extraction, pcr, sequencing), apply in both the overall and subset dataset,
+# and before/after tag jumping
 
 for(l in LOCUS){
   
@@ -802,24 +832,31 @@ for(l in LOCUS){
       
       cat("Running on", x, "subgroup\n")  
       
+      
+      
       metabarlist.int.sub <-  get(paste0("metabarlist.ori.",l,".", x))
       metabarlist.int.clean.sub <- get(paste0("metabarlist.tagclean.",l,".", x))
       
       metabarlist.int.sub$motus$not_detected_in_control <- metabarlist.int.sub$motus$count.control.subgroup == 0
       metabarlist.int.clean.sub$motus$not_detected_in_control <- metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup == 0
      
-
-      all_contam.ori <- metabarlist.int.sub$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
-                                                       mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+      # Compute statistics
+      
+      all_contam.ori <- metabarlist.int.sub$motus %>% dplyr::filter(not_detected_in_control == F) %>% 
+                                                      dplyr::select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                      dplyr::mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% 
+                                                      dplyr::arrange(desc(count))
       all_contam.ori$ESV <- row.names(all_contam.ori)
       
-      all_contam.clean <- metabarlist.int.clean.sub$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
-                                                      mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+      all_contam.clean <- metabarlist.int.clean.sub$motus %>% dplyr::filter(not_detected_in_control == F) %>% 
+                                                              dplyr::select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                              dplyr::mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% 
+                                                              dplyr::arrange(desc(count))
       all_contam.clean$ESV <- row.names(all_contam.clean)
       
-      all_contam <- bind_rows(all_contam.ori, all_contam.clean) %>% 
+      all_contam <- dplyr::bind_rows(all_contam.ori, all_contam.clean) %>% 
         dplyr::select(-c(not_a_max_conta,not_an_exclude_taxa)) %>% 
-        pivot_wider(names_from = method, values_from = count)
+        tidyr::pivot_wider(names_from = method, values_from = count)
       
       readr::write_csv(all_contam, 
                        file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_",x, ".csv")))
@@ -841,26 +878,35 @@ for(l in LOCUS){
     metabarlist.int <- get(paste0("metabarlist.ori.",l))
     metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l))
     
+    # Add the flag column
+    
     metabarlist.int$motus$not_detected_in_control <- metabarlist.int$motus$count.control == 0
     metabarlist.int.clean$motus$not_detected_in_control <- metabarlist.int.clean$motus$count.control.tagjump == 0
     
+    # Compute statistics
     
-    all_contam.ori <- metabarlist.int$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
-      mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+    all_contam.ori <- metabarlist.int$motus %>% dplyr::filter(not_detected_in_control == F) %>% 
+                                                dplyr::select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                dplyr::mutate(method = "Original", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% 
+                                                dplyr::arrange(desc(count))
     all_contam.ori$ESV <- row.names(all_contam.ori)
     
-    all_contam.clean <- metabarlist.int.clean$motus %>% filter(not_detected_in_control == F) %>% select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
-      mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% arrange(desc(count))
+    all_contam.clean <- metabarlist.int.clean$motus %>% dplyr::filter(not_detected_in_control == F) %>% 
+                                                        dplyr::select(Taxon, Levels, count = count, not_a_max_conta, not_an_exclude_taxa) %>% 
+                                                        dplyr::mutate(method = "Tagjump.corrected", Contaminant = ifelse(not_a_max_conta == T, "No", "Yes"), Exclude.taxa = ifelse(not_an_exclude_taxa == T, "No", "Yes")) %>% 
+                                                        dplyr::arrange(desc(count))
     all_contam.clean$ESV <- row.names(all_contam.clean)
     
-    all_contam <- bind_rows(all_contam.ori, all_contam.clean) %>% 
+    all_contam <- dplyr::bind_rows(all_contam.ori, all_contam.clean) %>% 
       dplyr::select(-c(not_a_max_conta,not_an_exclude_taxa)) %>% 
-      pivot_wider(names_from = method, values_from = count)
+      tidyr::pivot_wider(names_from = method, values_from = count)
     
     readr::write_csv(all_contam, 
                      file = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_Overall.csv")))
     
     cat("The list of MOTUs identified in controls is here:", paste0("02_Results/04_ESVtable_correction/03_detected.controls_",l,"_Overall.csv"), "\n\n")
+    
+    # Reassigned the modified object into R environment
     
     assign(x = paste0("metabarlist.ori.", l), 
            value = metabarlist.int )
@@ -878,7 +924,7 @@ for(l in LOCUS){
   
   cat("\nLooking at samples with high contaminants for", l, "\n")  
   
-  threshold.prop.cont <- metabar.param %>% filter(Locus == l) %>% pull(prop.cont.threshold)
+  threshold.prop.cont <- metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(prop.cont.threshold)
   
   cat("Running on overall dataset\n")  
   
@@ -913,8 +959,8 @@ for(l in LOCUS){
   # Add information on control types
   Rel.conta.prop.clean$control_type <- metabarlist.int.clean$pcrs$control_type[match(rownames(Rel.conta.prop.clean), rownames(metabarlist.int.clean$pcrs))]
   
-  conta.gg.ori <-  Rel.conta.prop.ori %>% pivot_longer(cols = c(conta.max.prop)) %>% 
-    mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+  conta.gg.ori <-  Rel.conta.prop.ori %>% tidyr::pivot_longer(cols = c(conta.max.prop)) %>% 
+    dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x=control_type, y=value, color=control_type)) + 
     geom_boxplot() + 
     geom_jitter(alpha=0.5, height = 0) +
@@ -928,8 +974,8 @@ for(l in LOCUS){
     theme(axis.title = element_text(size = 8),
           title = element_text(size = 10))
   
-  conta.gg.clean <-  Rel.conta.prop.clean %>% pivot_longer(cols = c(conta.max.prop)) %>% 
-    mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+  conta.gg.clean <-  Rel.conta.prop.clean %>% tidyr::pivot_longer(cols = c(conta.max.prop)) %>% 
+    dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
     ggplot(aes(x=control_type, y=value, color=control_type)) + 
     geom_boxplot() +
     geom_jitter(alpha=0.5, height = 0) +
@@ -962,6 +1008,8 @@ for(l in LOCUS){
   
   metabarlist.int$pcrs$low_max_conta_level_10[metabarlist.int$pcrs$nb_reads == 0] <- FALSE
   metabarlist.int.clean$pcrs$low_max_conta_level_10[metabarlist.int.clean$pcrs$nb_reads.tagjump == 0] <- FALSE
+  
+  # Reassigned the object into the R environment
   
   assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
@@ -1011,14 +1059,16 @@ for(l in LOCUS){
     metabarlist.int.sub$pcrs$low_max_conta_level_10[metabarlist.int.sub$pcrs$nb_reads.subgroup == 0] <- FALSE
     metabarlist.int.clean.sub$pcrs$low_max_conta_level_10[metabarlist.int.clean.sub$pcrs$nb_reads.tagjump.subgroup == 0] <- FALSE
     
+    # Reassigned the modified objects into R envrionment
+    
     assign(x = paste0("metabarlist.ori.", l, ".", x), 
            value = metabarlist.int.sub )
     
     assign(x = paste0("metabarlist.tagclean.", l, ".", x), 
            value = metabarlist.int.clean.sub)
     
-    conta.gg.ori.sub <-  Rel.conta.prop.ori.sub %>% pivot_longer(cols = c(conta.max.prop)) %>% 
-      mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+    conta.gg.ori.sub <-  Rel.conta.prop.ori.sub %>% tidyr::pivot_longer(cols = c(conta.max.prop)) %>% 
+      dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
       ggplot(aes(x=control_type, y=value, color=control_type)) + 
       geom_boxplot() +       
       geom_jitter(alpha=0.5, height = 0) +
@@ -1033,8 +1083,8 @@ for(l in LOCUS){
             title = element_text(size = 10))
     
     
-    conta.gg.clean.sub <-  Rel.conta.prop.clean.sub %>% pivot_longer(cols = c(conta.max.prop)) %>% 
-      mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
+    conta.gg.clean.sub <-  Rel.conta.prop.clean.sub %>% tidyr::pivot_longer(cols = c(conta.max.prop)) %>% 
+      dplyr::mutate(control_type = ifelse(is.na(control_type), "sample", control_type)) %>% 
       ggplot(aes(x=control_type, y=value, color=control_type)) + 
       geom_boxplot() +       
       geom_jitter(alpha=0.5, height = 0) +
@@ -1081,48 +1131,48 @@ for(l in LOCUS){
     metabarlist.int <- get(paste0("metabarlist.ori.",l, ".", x))
     metabarlist.int.clean <- get(paste0("metabarlist.tagclean.",l, ".", x))
 
-    metabarlist.int$motus <- metabarlist.int$motus %>%     mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
+    metabarlist.int$motus <- metabarlist.int$motus %>% dplyr::mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
                                                                                   ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
                                                                                   ifelse(not_an_exclude_taxa == FALSE, "Excluded taxa", 
                                                                                   ifelse(not_detected_in_control  == FALSE & not_an_exclude_taxa == TRUE & not_a_max_conta == TRUE,  "Detected in controls only",
                                                                                   ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE & not_detected_in_control  == TRUE, "Good MOTU", "Undefined??"))))))
     
-    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>%        mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
+    metabarlist.int.clean$motus <- metabarlist.int.clean$motus %>%  dplyr::mutate(artefact_type = ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == TRUE, "Contaminant - included taxa",
                                                                                                         ifelse(not_a_max_conta == FALSE & not_an_exclude_taxa == FALSE, "Contaminant - excluded taxa",
                                                                                                                ifelse(not_an_exclude_taxa == FALSE, "Excluded taxa", 
                                                                                                                       ifelse(not_detected_in_control  == FALSE & not_an_exclude_taxa == TRUE & not_a_max_conta == TRUE,  "Detected in controls only",
                                                                                                                              ifelse(not_a_max_conta == TRUE & not_an_exclude_taxa== TRUE & not_detected_in_control  == TRUE, "Good MOTU", "Undefined??"))))))
     
     summary.artefact.motus_N.ori <- metabarlist.int$motus %>%  
-      group_by(artefact_type) %>% summarise(N = n()) %>% 
-      mutate(SUM  = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = dplyr::n()) %>% 
+      dplyr::mutate(SUM  = sum(N),
              prop = N / sum(N),
              dataset = "original",
              level = "motus")
     
     summary.artefact.motus_reads.ori <- metabarlist.int$motus %>%  
-      group_by(artefact_type) %>% summarise(N = sum(count.subgroup)) %>% 
-      mutate(SUM  = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = sum(count.subgroup)) %>% 
+      dplyr::mutate(SUM  = sum(N),
              prop = N / sum(N),
              dataset = "original",
              level = "reads")
     
     summary.artefact.motus_N.clean <- metabarlist.int.clean$motus %>%  
-      group_by(artefact_type) %>% summarise(N = n()) %>% 
-      mutate(SUM  = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = dplyr::n()) %>% 
+      dplyr::mutate(SUM  = sum(N),
              prop = N / sum(N),
              dataset = "tagjump",
              level = "motus")
     
     summary.artefact.motus_reads.clean <- metabarlist.int.clean$motus %>%  
-      group_by(artefact_type) %>% summarise(N = sum(count.tagjump.subgroup)) %>% 
-      mutate(SUM  = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = sum(count.tagjump.subgroup)) %>% 
+      dplyr::mutate(SUM  = sum(N),
              prop = N / sum(N),
              dataset = "tagjump",
              level = "reads")
     
     
-    readr::write_csv(bind_rows(summary.artefact.motus_N.ori, summary.artefact.motus_reads.ori, summary.artefact.motus_N.clean, summary.artefact.motus_reads.clean), 
+    readr::write_csv(dplyr::bind_rows(summary.artefact.motus_N.ori, summary.artefact.motus_reads.ori, summary.artefact.motus_N.clean, summary.artefact.motus_reads.clean), 
                      file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_Artefact_MOTUs_",l, "_", x,".csv")))
     
     
@@ -1193,24 +1243,24 @@ for(l in LOCUS){
     
     cat("Figure saved:", paste0("02_Results/04_ESVtable_correction/05_Artefact_MOTUs_tagjump_",l, "_", x,".png"), "\n")  
     
-    metabarlist.int$pcrs <-  metabarlist.int$pcrs %>% mutate(artefact_type = ifelse(seqdepth_ok == FALSE & low_max_conta_level_10 == TRUE, "Low sequencing depth",
+    metabarlist.int$pcrs <-  metabarlist.int$pcrs %>% dplyr::mutate(artefact_type = ifelse(seqdepth_ok == FALSE & low_max_conta_level_10 == TRUE, "Low sequencing depth",
                                                                                     ifelse(low_max_conta_level_10 == FALSE& seqdepth_ok == TRUE, "Contamination > 10%",
                                                                                            ifelse(low_max_conta_level_10 == FALSE & seqdepth_ok == FALSE, "Contamination > 10% and low sequencing depth",        
                                                                                                   ifelse(low_max_conta_level_10 == TRUE & low_max_conta_level_10 == TRUE, "Not artefactual", "Undefined??")))))
     
-    metabarlist.int.clean$pcrs <-  metabarlist.int.clean$pcrs %>% mutate(artefact_type = ifelse(seqdepth_ok == FALSE & low_max_conta_level_10 == TRUE, "Low sequencing depth",
+    metabarlist.int.clean$pcrs <-  metabarlist.int.clean$pcrs %>% dplyr::mutate(artefact_type = ifelse(seqdepth_ok == FALSE & low_max_conta_level_10 == TRUE, "Low sequencing depth",
                                                                                                 ifelse(low_max_conta_level_10 == FALSE& seqdepth_ok == TRUE, "Contamination > 10%",
                                                                                                        ifelse(low_max_conta_level_10 == FALSE & seqdepth_ok == FALSE, "Contamination > 10% and low sequencing depth",        
                                                                                                               ifelse(low_max_conta_level_10 == TRUE & low_max_conta_level_10 == TRUE, "Not artefactual", "Undefined??")))))
     
     
-    metabarlist.int.clean$pcrs %>% pull(artefact_type) %>% table()
+    #metabarlist.int.clean$pcrs %>% dplyr::pull(artefact_type) %>% table()
     
     summary.artefact.pcr.ori <- metabarlist.int.clean$pcrs %>% dplyr::filter(type == "sample") %>% 
-      group_by(artefact_type) %>% summarise(N = n()) %>% 
-      mutate(SUM = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = dplyr::n()) %>% 
+      dplyr::mutate(SUM = sum(N),
              prop = N / sum(N)) %>% 
-      mutate(dataset = "original")
+      dplyr::mutate(dataset = "original")
     
     graph.artefact.pcr.ori <-  summary.artefact.pcr.ori  %>% 
       ggplot(aes(x=1, y = prop, fill=artefact_type)) +
@@ -1222,10 +1272,10 @@ for(l in LOCUS){
       ggtitle(paste("Prop. sample (pcr) for", l))
     
     summary.artefact.pcr.clean <- metabarlist.int.clean$pcrs %>% dplyr::filter(type == "sample") %>% 
-      group_by(artefact_type) %>% summarise(N = n()) %>% 
-      mutate(SUM = sum(N),
+      dplyr::group_by(artefact_type) %>% dplyr::summarise(N = dplyr::n()) %>% 
+      dplyr::mutate(SUM = sum(N),
              prop = N / sum(N)) %>% 
-      mutate(dataset = "tagjump")
+      dplyr::mutate(dataset = "tagjump")
     
     graph.artefact.pcr.clean <-  summary.artefact.pcr.clean  %>% 
       ggplot(aes(x=1, y = prop, fill=artefact_type)) +
@@ -1238,7 +1288,7 @@ for(l in LOCUS){
     graph.artefact.pcr.clean
     
     # Save summary for the automatic report
-    readr::write_csv(bind_rows(summary.artefact.pcr.ori, summary.artefact.pcr.clean), 
+    readr::write_csv(dplyr::bind_rows(summary.artefact.pcr.ori, summary.artefact.pcr.clean), 
                      file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_Artefact_PCRs_",l, "_", x,".csv")))
     
     ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("05_Artefact_PCRs_original_",l, "_", x,".png")), 
@@ -1279,10 +1329,7 @@ for(l in LOCUS){
     metabarlist.int.clean$pcrs %>% readr::write_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("Samples.Metabarinfo.postTagjump_",l, "_",x, ".csv")))
     
     cat("Data (.csv) are exported here:", paste0("00_Data/04_ESVcorrected/") , "\n")  
-    
-    
-    
-    
+  
   }
 }
 
@@ -1298,18 +1345,15 @@ for(l in LOCUS){
   cat("\nFinal step for", l, "\n\n")  
   
   # Load parameters
-  
-  thresholds.tag <-  metabar.param %>% filter(Locus == l) %>% pull(tag.threshold)
-  motus.correct  <-  metabar.param %>% filter(Locus == l) %>% pull(motus.correct)
-  taxa.correct   <-  metabar.param %>% filter(Locus == l) %>% pull(taxa.correct)
+  thresholds.tag <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(tag.threshold)
+  motus.correct  <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(motus.correct)
+  taxa.correct   <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(taxa.correct)
   
 # motus.control.subtract    <-  metabar.param %>% filter(Locus == l) %>% pull(motus.control.subtract)  
-  motus.control.remove    <-  metabar.param %>% filter(Locus == l) %>% pull(motus.control.remove)
+  motus.control.remove    <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(motus.control.remove)
   
-  pcr.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(pcr.correct)
-  tag.correct    <-  metabar.param %>% filter(Locus == l) %>% pull(tag.correct) 
-  
-
+  pcr.correct    <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(pcr.correct)
+  tag.correct    <-  metabar.param %>% dplyr::filter(Locus == l) %>% dplyr::pull(tag.correct) 
   
   #singleton.correct <- metabar.param %>% filter(Locus == l) %>% pull(singleton.correct)
   
@@ -1323,7 +1367,7 @@ for(l in LOCUS){
     
     #metabarlist.int.sub$pcrs$type
     
-    metabarlist.int.sub <- subset_metabarlist(  metabarlist.int.sub, table="pcrs", 
+    metabarlist.int.sub <- metabaR::subset_metabarlist(  metabarlist.int.sub, table="pcrs", 
                                                 indices = (metabarlist.int.sub$pcrs$type == "sample" ) ) 
     
     
@@ -1342,7 +1386,7 @@ for(l in LOCUS){
       
       # Subset on MOTUs and SAMPLE 
       cat("Keeping only not artefactual MOTUs\n")  
-      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+      metabarlist.correct.int <- metabaR::subset_metabarlist(metabarlist.correct.int, table="motus", 
                                                     indices = (metabarlist.correct.int$motus$not_a_max_conta == T) )
       
     } else{
@@ -1354,7 +1398,7 @@ for(l in LOCUS){
       
       # Subset on MOTUs and SAMPLE 
       cat("Keeping only MOTUs not in the undesirable taxa list\n")  
-      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+      metabarlist.correct.int <- metabaR::subset_metabarlist(metabarlist.correct.int, table="motus", 
                                                     indices = (metabarlist.correct.int$motus$not_an_exclude_taxa == T) )
       
     } else{
@@ -1365,7 +1409,7 @@ for(l in LOCUS){
       
       # Subset on MOTUs and SAMPLE 
       cat("Keeping MOTUs observed only in samples\n")  
-      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="motus", 
+      metabarlist.correct.int <- metabaR::subset_metabarlist(metabarlist.correct.int, table="motus", 
                                                     indices = (metabarlist.correct.int$motus$not_detected_in_control == T) )
       
     } else{
@@ -1376,7 +1420,7 @@ for(l in LOCUS){
     
     if(pcr.correct == T){   
       
-      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
+      metabarlist.correct.int <- metabaR::ubset_metabarlist(metabarlist.correct.int, table="pcrs", 
                                                     indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual"))
       
     }  else {
@@ -1387,7 +1431,7 @@ for(l in LOCUS){
     if(nrow(metabarlist.correct.int$pcrs) >0) { # Stop here if no sample were keep
       
       # Keep only sample
-      metabarlist.correct.int <- subset_metabarlist(metabarlist.correct.int, table="pcrs", 
+      metabarlist.correct.int <- metabaR::subset_metabarlist(metabarlist.correct.int, table="pcrs", 
                                                     indices = (metabarlist.correct.int$pcrs$type == "sample" ) )  
       
       
@@ -1400,11 +1444,9 @@ for(l in LOCUS){
         metabarlist.correct.int$pcrs$nb_reads_postmetabaR = rowSums(metabarlist.correct.int$reads)
         metabarlist.correct.int$pcrs$nb_motus_postmetabaR = rowSums(ifelse(metabarlist.correct.int$reads>0, T, F))
         
-        
-        summary.int <- metabarlist.correct.int$pcrs %>% select(sample_id, nb_motus, nb_reads, nb_reads_postmetabaR, nb_motus_postmetabaR) %>% 
-          mutate(Loci = l,
+        summary.int <- metabarlist.correct.int$pcrs %>% dplyr::select(sample_id, nb_motus, nb_reads, nb_reads_postmetabaR, nb_motus_postmetabaR) %>% 
+          dplyr::mutate(Loci = l,
                  ID_subproject = x)
-        
         
         readr::write_csv(summary.int, file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postMetabaR_", l, "_",x, ".csv")))
         cat("Summary stats were saved here:", paste0("00_Data/04_ESVcorrected/ESVtab_Stats_postMetabaR_", l, "_",x, ".csv") , "\n")  
@@ -1442,20 +1484,21 @@ for(l in LOCUS){
         # Final visualisation
         
         read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
-          mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
-          pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          left_join(metabarlist.correct.int$motus %>% select(QueryAccVer, Taxon, genus, phylum)) %>% 
-          mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-          group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
-          left_join(data.info %>% dplyr::filter(Loci == l)) %>% filter(Type_echantillon %in% c("Echantillon", "ECH"))
+          dplyr::mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+          dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
+          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% 
+          dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"))
         
         read.ori.tidy <- metabarlist.int.sub$reads %>% as.data.frame() %>% 
-          mutate(ID_labo = row.names(metabarlist.int.sub$reads)) %>% 
-          pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          left_join(metabarlist.int.sub$motus %>% select(QueryAccVer, Taxon, genus, phylum)) %>% 
-          mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-          group_by(ID_labo, Taxon, phylum) %>% summarise(Nreads = sum(Nreads)) %>% 
-          left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
+          dplyr::mutate(ID_labo = row.names(metabarlist.int.sub$reads)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
+          dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
+          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
                                                                               Nreads > 0)
         
         if(nrow( read.correct.tidy) > 0){
