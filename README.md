@@ -1,6 +1,6 @@
 # MLI metabarcoding pipeline
 
-**Currrent version : 0.2.0**  
+**Current version : 0.2.0**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
 __Main author:__  Audrey Bourret  
