@@ -41,7 +41,7 @@ data.info
 data.info %>% dplyr::pull(Run) %>% table()
 
 # Check that the structure is alright
-data.info %>%dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
+data.info %>% dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
 
 RUN <- "MI_3992"
 
