@@ -517,8 +517,9 @@ all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
   filter(!is.na(Tagjump.corrected)) %>% 
   group_by(Loci,Contaminant, Exclude.taxa) %>% 
   summarise(`N motus` = n(),
-            `N reads` = sum(Tagjump.corrected),
-            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+            `N reads` = sum(Tagjump.corrected)#,
+            #Taxon = paste(unique(Taxon), collapse = ", ")
+) %>% 
    knitr::kable(caption = "Information sur l'ensemble des MOTUs observés dans les controles négatifs")
 
 }
