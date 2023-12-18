@@ -33,6 +33,15 @@ cat(length(SUBGROUP), "subgroup will be considered(", paste(SUBGROUP, collapse =
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
 
+# Which assignation method (RPD, NCBI) and threshold should be used
+
+PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
+METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
+THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
+
+cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
+
+
 # Create a list of which PCR to be considered in each SUBGROUP
 
 SUBGROUP.ls <- list()
@@ -114,14 +123,21 @@ for(l in LOCUS){
 
 # Motus
 
-load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))
+if(PROG.ASSIGN == "Blast"){
+load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))  
+RES.all <-  RES.all.ncbi
+  }
+if(PROG.ASSIGN == "RDP"){
+load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
+RES.all <- RES.all.rdp
+  }
 
 for(l in LOCUS){
   
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
                           QueryAccVer = names(get(paste0("DNA.",l)))) 
   
-  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == "TOP", Threshold == 95) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
+  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == METHOD.ASSIGN, Threshold == as.numeric(THRESH.ASSIGN)) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
   row.names(motus) <- names(get(paste0("DNA.",l)))
   
   assign(x = paste0("motus.", l), 
@@ -1600,7 +1616,8 @@ cat("\nEND of 04_ESVtable_correction.R script\n",
     paste("System", devtools::session_info()$platform$system, sep = ": "),    
     
     "\n~ Important R packages ~",
-    paste("metabaR", packageVersion("metabaR"), sep = ": "),     
-    # Add it to the log file
+    paste("metabaR", packageVersion("metabaR"), sep = ": "),
+    
+     # Add it to the log file
     file = file.path(here::here(), "00_Data", "04_ESVcorrected", "ESVtab_correction.log"), 
     append = F, sep = "\n")

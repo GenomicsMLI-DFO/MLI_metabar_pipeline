@@ -38,9 +38,19 @@ cat("The run(s)", paste( stringr::str_split(get.value("Run"), pattern = ";")[[1]
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
 
-data.info %>% dplyr::pull(Run) %>% table()
+
+# Which assignation method (RPD, NCBI) and threshold should be used
+
+PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
+METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
+THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
+
+cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
+
 
 # Check that the structure is alright
+data.info %>% dplyr::pull(Run) %>% table()
+
 data.info %>% dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
 
 RUN <- "MI_3992"
@@ -140,14 +150,21 @@ for(l in LOCUS){
 
 # Motus
 
-load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))
+if(PROG.ASSIGN == "Blast"){
+  load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))  
+  RES.all <-  RES.all.ncbi
+}
+if(PROG.ASSIGN == "RDP"){
+  load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
+  RES.all <- RES.all.rdp
+}
 
 for(l in LOCUS){
   
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
                           QueryAccVer = names(get(paste0("DNA.",l)))) 
   
-  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == "TOP", Threshold == 95) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
+  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == METHOD.ASSIGN, Threshold == as.numeric(THRESH.ASSIGN)) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
   row.names(motus) <- names(get(paste0("DNA.",l)))
   
   assign(x = paste0("motus.", l), 

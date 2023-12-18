@@ -4,27 +4,38 @@ library(readr)
 # Function to call blastn
 
 quick.blastn <- function(fasta.file, out.file, 
+                         db = "nt",
                          perc_identity = 95, 
                          qcov_hsp_perc = 95, 
                          max_target_seqs = 500, 
                          evalue = "1e-50",
                          NCBI.path = NCBI.path,
-                         n.cores = numCores,
-                         ncbi.tax = ncbi.tax){
+                         n.cores = numCores
+                         ){
   
-  cat("\nPerforming Blast over NCBI nt\n")
-  cmd1 <- paste("-db", "nt", # echo $BLASTDB
+  cat("\nPerforming Blast over NCBI", db, "\n")
+  cmd1 <- paste("-db", db, # echo $BLASTDB
                 
                 "-query",  fasta.file,
                 "-evalue", evalue,
-                "-qcov_hsp_perc", qcov_hsp_perc, # QUERY LENGTH
-                
-                "-outfmt", "\"7 qseqid sacc staxid ssciname sskingdom pident length mismatch gapopen qstart qend sstart send evalue bitscore\"",
+                "-qcov_hsp_perc", qcov_hsp_perc, 
                 "-out", out.file, 
                 "-perc_identity", perc_identity,
                 "-num_threads", numCores,
                 "-max_target_seqs", max_target_seqs, 
                 sep = " ")# forward adapter
+  
+
+  if(db %in% c("nt")){
+  cmd1 <- paste(cmd1, 
+        "-outfmt", "\"7 qseqid sacc staxid ssciname sskingdom pident length mismatch gapopen qstart qend sstart send evalue bitscore\"", 
+         sep = " ")  
+  } else {
+  cmd1 <-  paste(cmd1, 
+          "-outfmt", "7", 
+          sep = " ")           
+         }
+  
   
   A <-system2("blastn", cmd1, stdout=T, stderr=T,
               env = paste0("BLASTDB=", NCBI.path))

@@ -1,10 +1,11 @@
 # Info --------------------------------------------------------------------
 
 # Simplest taxonomic assignment
+# Designed to work with NCBI nt but could work with a local DB
 # Blast + both top hit vs LCA
 # 
 # Audrey Bourret
-# 2022-02-20
+# 2022-2023
 #
 
 # Library -----------------------------------------------------------------
@@ -14,9 +15,14 @@ library(magrittr)
 library(dplyr)
 library(Biostrings)
 
-
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "blast.R"))
+
+
+
+res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast")
+
+if(!file.exists(res.path)) dir.create(res.path)blast.res.path 
 
 # Dataset -----------------------------------------------------------------
 
@@ -57,9 +63,7 @@ PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast
 PARAM.BLAST$evalue <- as.character(PARAM.BLAST$evalue )
 PARAM.BLAST
 
-res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast")
 
-if(!file.exists(res.path)) dir.create(res.path)
 
 # Perform blast
 
@@ -68,21 +72,21 @@ for(l in LOCUS){
   cat("\nWorking on " , l, "\n")
   
   quick.blastn(fasta.file = file.path(here::here(),"00_Data/03c_ESV", paste0("ESV.",l,".fasta")), 
+               db = get.blast.value(l, "db", PARAM.BLAST),
                out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
                perc_identity = get.blast.value(l, "perc_identity", PARAM.BLAST), 
                qcov_hsp_perc = get.blast.value(l, "qcov_hsp_perc", PARAM.BLAST), 
                max_target_seqs = get.blast.value(l, "max_target_seqs", PARAM.BLAST),
                evalue = get.blast.value(l, "evalue", PARAM.BLAST),
                NCBI.path = NCBI.path,
-               n.cores = numCores,
-               ncbi.tax = ncbi.tax)
+               n.cores = numCores)
   
   
   
   
 }
 
-# Load results
+# Load results and add taxonomical information
 
 for(l in LOCUS){
   
@@ -96,12 +100,7 @@ for(l in LOCUS){
 }
 
 
-
-
-
 # Compute TOPHIT + LCA ---------------------------------------------------------
-
-library(dplyr)
 
 RES.all.ncbi <- tibble()
 
@@ -115,7 +114,7 @@ for(t in c(95,97,99)){
                               Method = "TOP",
                               Threshold = t)
   
-  readr::write_csv(TOP.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("TopHit.", t, ".", l, ".csv")))
+  readr::write_csv(TOP.int, file = file.path( res.path, paste0("TopHit.", t, ".", l, ".csv")))
 
   # LCA
   LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_LCA(threshold = t) %>% 
@@ -124,7 +123,7 @@ for(t in c(95,97,99)){
                               Method = "LCA",
                               Threshold = t)
 
-  readr::write_csv(LCA.int, file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", paste0("LCA.", t, ".", l,  ".csv")))
+  readr::write_csv(LCA.int, file = file.path( res.path, paste0("LCA.", t, ".", l,  ".csv")))
 
 RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)  
   
@@ -132,42 +131,13 @@ RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)
   
 }
 
+readr::write_csv(RES.all.ncbi, file = file.path(res.path, paste0("RES.all.ncbi.csv")))
+
+
 
 #Loading seq table
 
-for(l in LOCUS){
-  
-load(file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("ESVtab.noCHIM.", l, ".Rdata")  ))
-
-assign(x = paste0("DNA.", l), 
-       value =Biostrings::readDNAStringSet(file.path(here::here(), "00_Data", "03c_ESV",paste0("ESV.", l, ".fasta")))
-)
-  
-}
-
-
-tidy.ESV <- function(ESVtab, DNA.seq) {
-  DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
-  
-  ESV.tidy <- ESVtab %>% as_tibble() %>% 
-    dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
-    tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
-    dplyr::left_join(DNA.tidy)
-  
-  return(ESV.tidy) 
-}
-
-
-ESV.taxo.ALL <- tibble()
-
-for(l in LOCUS){
-
-  ESV.taxo.ALL <- bind_rows(ESV.taxo.ALL, 
-                       tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% mutate(Loci = l) 
-                                     )
-  
-  
-}
+ESV.taxo.ALL <- readr::read_csv(file = file.path(here::here(), "02_Results/03_TaxoAssign", paste0("ESV.taxo.ALL.csv")))
 
 
 # Combine all datasets, but dataset by dataset to be sure to keep unassigned
@@ -193,10 +163,13 @@ for(m in c("LCA", "TOP") ){
 }
 
 
+readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.ncbi.wSamples.csv")))
+
+
 #FINAL_RES %>% group_by(ESV) %>% summarise(N = n()) %>% arrange(desc(N))
 
-save(list = c("FINAL_RES", "ESV.taxo.ALL", "RES.all.ncbi"),
-     file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"  ))
+save(list = c("RES.all.ncbi"),
+     file = file.path(res.path, "ESVtab_assign.Rdata"  ))
 
 
 # Basic figures -----------------------------------------------------------
@@ -227,7 +200,7 @@ graph1 <- FINAL_RES %>% mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon)) %
 
 graph1
 
-ggsave(filename = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "Comparison_Blast.png"), plot =  graph1, height = 8, width = 10)
+ggsave(filename = file.path(res.path, "Comparison_Blast.png"), plot =  graph1, height = 8, width = 10)
 
 # Write a final log
 
@@ -245,9 +218,9 @@ cat("\nEND of 03_TaxoAssign_Blast.R script\n",
    
     "\n~ External programs ~",
     paste(system2("blastn", "-version", stdout=T, stderr=T), collapse = ("; ")),     
-    
+    paste("with the reference db:", get.blast.value(l, "db", PARAM.BLAST)),
      # Add it to the log file
-    file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"), 
+    file = file.path( res.path, "TaxoAssign_Blast.log"), 
     append = F, sep = "\n")
 
 
