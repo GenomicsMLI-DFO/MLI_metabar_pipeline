@@ -45,6 +45,13 @@ data.info %>% dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
 
 RUN <- "MI_3992"
 
+# Test if there is something problematic here
+
+if( (data.info %>% dplyr::filter(Run == RUN) %>% dplyr::pull(ID_subprojet) %>% unique()) %in% 
+    (data.info %>% dplyr::filter(Run != RUN) %>% dplyr::pull(ID_subprojet) %>% unique())
+) {cat("Some projects are shared between RUN, you should reconsidered analysis not by RUN but instead all together (04_ESVtable_correction_ALL.R)")}
+
+
 # Create a list of which PCR to be considered in each SUBGROUP
 
 SUBGROUP.ls <- list()
