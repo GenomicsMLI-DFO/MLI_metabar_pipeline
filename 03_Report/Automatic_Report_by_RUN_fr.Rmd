@@ -165,7 +165,7 @@ FNC = Contrôle négatif de filtration (*filtration negative control*)
 
 ENC = Contrôle négatif d'extraction (*extraction negative control*)
 
-PNC/NTC/MNC = Contrôle negatif de PCR (*PCR negatif control*)
+PNC/NTC/MNC = Contrôle negatif de PCR (*PCR negative control*)
 
 PPC = Contrôle positif de PCR (*PCR positive control*)
 
@@ -244,7 +244,7 @@ Le pipeline d'analyse se divise en sept grandes étapes qui ont une influence à
 4. La fusion des reads R1 et R2 (*Merge*)
 5. Le retrait des chimères et la création d'une première table de MOTUs (*ESVdada2*)
 6. La correction pour le tag-jumping (*ESVtagjump*)
-7. La correction pour les contaminants, et le retrait des échantillon contrôle (*ESVfinal*)
+7. La correction pour les contaminants, et le retrait des échantillon contrôles (*ESVfinal*)
 
 Les scripts et résultats se trouvent sur GitHub dans le répertoire **[`r git.url %>% str_remove("https://github.com/")`](`r git.url`)**. Une description plus détaillée du pipeline utilisé est disponible à l'[Annexe I](#annexe-i).
 
@@ -275,7 +275,7 @@ nreads.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
 
 ```
 
-Le patron variation en nombre de MOTUs est aussi différent selon l'étape du pipeline, le locus et le type d'échantillons (contrôle ou non). À noter que les MOTUs sont obtenus seulement à l'étape 4 lors de la fusion des reads R1 et R2.
+Le patron variation en nombre de MOTUs est aussi différent selon l'étape du pipeline, le locus et le type d'échantillon (contrôle ou non). À noter que les MOTUs sont obtenus seulement à l'étape 4 lors de la fusion des reads R1 et R2.
 
 
 ```{r nmotus, echo=FALSE, message=FALSE, warning=FALSE, fig.height=5, fig.width=7}
@@ -319,17 +319,17 @@ nmotus.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
 
 # 4. Assignations taxonomiques
 
-Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminée comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsqu'une banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Si les résultats d'assignations devaient être utilisés pour publication, ces derniers devraient être révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
+Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminée comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du Golfe du Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsqu'une banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Si les résultats d'assignations devaient être utilisés pour publication, ces derniers devraient être révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
 
 \newpage
 
 # 5 Correction des tables de MOTUs
 
-Différentes sources de contaminations ont été revues au cours du pipeline d'analyse. De plus, les échantillons problématiques ont été identifés. Voici les grandes lignes des résultats. 
+Différentes sources de contaminations ont été revues au cours du pipeline d'analyse. De plus, les échantillons problématiques ont été identifiés. Voici les grandes lignes des résultats. 
 
 ## 5.1 Correction pour le tag jumping
 
-Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abundance) reste stable. Augmenter ou diminuer ce seuil a une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abondance) reste stable. Augmenter ou diminuer ce seuil a une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
@@ -370,7 +370,7 @@ depth.param <- metabar.param %>% dplyr::filter(pcr.correct == T)
 
 if(nrow(depth.param) == length(LOCUS)){
   
-  depth.text <- "les échantillons identifiés comme problématique ont été retirés à tous les locus"
+  depth.text <- "les échantillons identifiés comme problématiques ont été retirés à tous les locus"
   
 } 
 
@@ -382,7 +382,7 @@ if(nrow(depth.param) == 0){
 
 if(between(nrow(depth.param), 1, length(LOCUS) -1 )){
   
-  depth.text <- paste("les échantillons identifiés comme problématique ont été retirés aux locus suivants :", paste(depth.param$Locus, collapse = ", "))
+  depth.text <- paste("les échantillons identifiés comme problématiques ont été retirés aux locus suivants :", paste(depth.param$Locus, collapse = ", "))
   
 }  
 
@@ -403,7 +403,7 @@ nreads.res %>% filter(Step %in% c("ESVdada2", "ESVtagjump", "ESVfinal"),
 
 ```
 
-Un seuil minimum de nombre de reads est déterminé par locus (ligne poitillée orangée). Les échantillons sous ce seuil sont identifiés, et leur nombre peut varier entre locus. Il est important de s'intérroger sur les causes possibles d'échantillons présentant un faible nombre de reads (e.g., inhibition, locus très spécifique).
+Un seuil minimum de nombre de reads est déterminé par locus (ligne pointillée orangée). Les échantillons sous ce seuil sont identifiés, et leur nombre peut varier entre locus. Il est important de s'interroger sur les causes possibles d'échantillons présentants un faible nombre de reads (e.g., inhibition, locus très spécifique).
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -424,7 +424,7 @@ data.frame(Loci = LOCUS) %>% left_join(low.depth.sample %>% group_by(Loci, SUM) 
   
 ```
 
-Un seuil de contamination maximale est déterminé afin d'identifier les échantillons plus problématique dans l'interprétation. Voir la section suivante plus de détails sur l'identification des contaminants.
+Un seuil de contamination maximale est déterminé afin d'identifier les échantillons plus problématiques dans l'interprétation. Voir la section suivante plus de détails sur l'identification des contaminants.
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=7}
@@ -461,7 +461,7 @@ graph.artefact.pcr
 
 ## 5.3 Identification des MOTUs contaminant
 
-Les contaminants sont analysés en comparant les échantillons biologiques aux contrôles négatifs. Un MOTUs est identifié comme contaminant lorsque la fréquence maximale observée dans un témoin négatif est supérieure à celle oberservée dans les échantillons.
+Les contaminants sont analysés en comparant les échantillons biologiques aux contrôles négatifs. Un MOTUs est identifié comme contaminant lorsque la fréquence maximale observée dans un témoin négatif est supérieure à celle observée dans les échantillons.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -475,12 +475,12 @@ for(l in LOCUS){
   conta.int <- conta.int %>% mutate(Loci = l)
   conta.summary <- bind_rows(conta.summary, conta.int)
 
-    taxa.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",projet, ".csv"))) 
+  taxa.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_exclude.taxa_",l,"_",projet, ".csv"))) 
   taxa.int <- taxa.int %>% mutate(Loci = l)
   taxa.summary <- bind_rows(taxa.summary, taxa.int)
    
   
-    all.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_",projet, ".csv"))) 
+  all.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("03_detected.controls_",l,"_",projet, ".csv"))) 
   all.int <- all.int %>% mutate(Loci = l)
   all.summary <- bind_rows(all.summary, all.int)
    
@@ -517,8 +517,14 @@ all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
   filter(!is.na(Tagjump.corrected)) %>% 
   group_by(Loci,Contaminant, Exclude.taxa) %>% 
   summarise(`N motus` = n(),
+<<<<<<< HEAD
             `N reads` = sum(Tagjump.corrected)) %>% 
    knitr::kable(caption = "Information l'ensemble des MOTUs observés dans les controles négatifs")
+=======
+            `N reads` = sum(Tagjump.corrected),
+            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+   knitr::kable(caption = "Information sur l'ensemble des MOTUs observés dans les controles négatifs")
+>>>>>>> 109f4c98e5fb9879f050f9897f970fdeb2116220
 }
 
 
@@ -548,14 +554,14 @@ if(nrow(conta.param) == 0 & nrow(taxa.param) == length(LOCUS)){
 }
 
   
-conta.text2 <- paste("Les MOTUs observés dans les controles négatifs été retirés aux locus suivants :", paste(control.param$Locus, collapse = ", ")  )
+conta.text2 <- paste("Les MOTUs observés dans les contrôles négatifs été retirés aux locus suivants :", paste(control.param$Locus, collapse = ", ")  )
 
 if(nrow(control.param) == length(LOCUS)){
-  conta.text2 <- "Les MOTUs observés dans les controles négatifs été retirés ont été retirés à tous les locus"
+  conta.text2 <- "Les MOTUs observés dans les contrôles négatifs ont été retirés à tous les locus"
 } 
 
 if(nrow(control.param) == 0){
-  conta.text2 <- "Les MOTUs observés dans les controles négatifs n'ont pas été systématiquement exclu du jeu de données"
+  conta.text2 <- "Les MOTUs observés dans les contrôles négatifs n'ont pas été systématiquement exclus du jeu de données"
 }
 
 
@@ -641,7 +647,7 @@ graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>%
                        ) +
   theme_minimal()+
   facet_grid(Category ~ Type_echantillon, scale = "free", space = "free") + 
-  ggtitle(paste("Détections dans les témoins négatifs au locus", l)) +
+  ggtitle(paste("Détections dans les contrôles négatifs au locus", l)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         strip.text.y = element_text(angle = 0),
@@ -663,11 +669,11 @@ print(graph.resi)
 
 ## 5.4 Autres aspects à considérer
 
-D'autres corrections pourraient être appliquées sur le jeu de données: 
+D'autres corrections pourraient être appliquées au jeu de données: 
 
 - Les MOTUs pourraient être filtrés sur la longueur de leur séquence.
 - Un minimum de reads par MOTUs par échantillon pourrait être ajouté selon les besoins d'analyses subséquents.
-- S'il y avait des réplicats biologiques, ils pourrait également être utilisés pour identifier d'autres problématiques.
+- S'il y avait des réplicats biologiques, ils pourraient également être utilisés pour identifier d'autres problématiques.
 
 \newpage
 
@@ -717,7 +723,7 @@ metabar.summary %>%
 
 ```
 
-En pratique, les erreurs de PCRs et les approches ou paramètres utilisés pour obtenir les MOTUs peuvent créer des erreurs et certains MOTUs peuvent représenter des artéfacts d'analyse. Pour tenter de pallier ce problème, il est possible de regarder plutôt la relation avec le nombre de taxon unique détectés - même si une grande proportion n'a pas d'assignation taxonomique.  
+En pratique, les erreurs de PCRs et les approches ou paramètres utilisés pour obtenir les MOTUs peuvent créer des erreurs et certains MOTUs peuvent représenter des artéfacts d'analyse. Pour tenter de pallier ce problème, il est possible de regarder plutôt la relation avec le nombre de taxons uniques détectés - même si une grande proportion n'a pas d'assignation taxonomique.  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 3, fig.width=7}
 ESV.table.long <- data.frame(stringsAsFactors = F)
@@ -755,7 +761,7 @@ ESV.table.long %>%
 
 ```
 
-La diversité peut aussi être évaluée à l'aide de différent métrique comme le N de MOTUs, de taxons ou de reads assignés à de grand groupes taxonomiques.
+La diversité peut aussi être évaluée à l'aide de différentes métriques comme le N de MOTUs, de taxons ou de reads assignés à de hauts niveaux phylogénétiques.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=6}
 
@@ -933,7 +939,7 @@ Les étapes sont :
 
 1. `cutadapt` pour enlever les adapteurs
 
-2. `dada2::filterAndTrim` avec les paramètres suivants:
+2. `dada2::filterAndTrim` avec les paramètres suivants :
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 PARAM.DADA2 <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/dada2_param.tsv"))
@@ -983,7 +989,7 @@ cat(res, sep = "\n")
 
 Script associé : **03_TaxoAssign_Blast.R**
 
-Les assignations ont été faites à l'aide de `blastn` avec les paramètres suivants:
+Les assignations ont été faites à l'aide de `blastn` avec les paramètres suivants :
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -1014,19 +1020,19 @@ cat(res, sep = "\n")
 
 Script associé : **04_ESVtable_correction.R**
 
-Les corrections ont été fait à l'aide du paquet `metabaR`. Les étapes sont :
+Les corrections ont été faites à l'aide du paquet `metabaR`. Les étapes sont :
 
 1. Identifier le tagjumping sur l'ensemble des échantillons d'une même run à l'aide de la fonction `tagjumpslayer` (threshold = *tag.threshold*) et les enlever (__facultatif__, tag.correct = *TRUE*). 
 
-2. Identifier les échantillons (pcr) sur l'ensemble des échantillons d'une même run avec peu de profondeur de séquençage (threshold = *depth.threshold*) et les enlever (__facultatif__,, pcr.correct = *TRUE*).  
+2. Identifier les échantillons (pcr) sur l'ensemble des échantillons d'une même run avec peu de profondeur de séquençage (threshold = *depth.threshold*) et les enlever (__facultatif__, pcr.correct = *TRUE*).  
 
 3. Identifier les contaminants spécifiques à un projet à l'aide de la fonction `contaslayer` (method = max, control_types = c("pcr", "extraction")) et les enlever (__facultatif__, motus.correct = *TRUE*). 
 
 4. Identifier les assignations de taxons sur la liste d'exlusion (Table 10) et les enlever (__facultatif__, taxa.correct = *TRUE*)
 
-5. Identifier les échantillons spécifiques à un projet avec présentant une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__, pcr.correct = *TRUE*). 
+5. Identifier les échantillons spécifiques à un projet présentants une forte proportion de contaminants (threshold = *prop.cont.threshold*) et les enlever (__facultatif__, pcr.correct = *TRUE*). 
 
-Les paramètres utilisés sont les suivants:
+Les paramètres utilisés sont les suivants :
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -1066,7 +1072,7 @@ cat(res, sep = "\n")
 
 ## Correction pour le tag jumping
 
-Le choix de ce seuil (ligne orange pointillée) est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs sans observer une diminution du nombre de reads (abundance). Une changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
+Le choix de ce seuil (ligne orange pointillée) est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs sans observer une diminution du nombre de reads (abondance). Un changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
 load( file.path(here::here(), "02_Results/04_ESVtable_correction", paste0( "00_tag.gg.",RUN,".Rdata")))
@@ -1078,7 +1084,7 @@ print(get( paste0("tag.gg.", l)))
 
 ```
 
-Il est possible de vérifier, pour le MOTUs le plus abondant, l'impact du seuil choisi
+Il est possible de vérifier, pour le MOTUs le plus abondant, l'impact du seuil choisi.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, out.extra="page=2"}
 
