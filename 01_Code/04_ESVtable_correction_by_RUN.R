@@ -44,6 +44,9 @@ data.info %>% dplyr::pull(Run) %>% table()
 data.info %>% dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
 
 RUN <- "MI_3992"
+#if the samples analysed are also in a second Run/lane, you should add a second ID for the run 
+#RUN2 <- "MI_3993" 
+# The RUN2 should be added in all the subsequent code, at every place RUN is present. 
 
 # Test if there is something problematic here
 
