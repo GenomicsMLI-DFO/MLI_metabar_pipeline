@@ -484,8 +484,9 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
   filter(!is.na(sub.tagclean.max)) %>% 
   group_by(Loci) %>% 
   summarise(`N motus` = n(),
-            `N reads` = sum(sub.tagclean.max),
-            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+            `N reads` = sum(sub.tagclean.max)#,
+            #Taxon = paste(unique(Taxon), collapse = ", ")
+) %>% 
    knitr::kable(caption = "Information sur les contaminants identifiés")
 }
 
@@ -497,8 +498,9 @@ taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
   filter(!is.na(Tagjump.corrected)) %>% 
   group_by(Loci,Contaminant) %>% 
   summarise(`N motus` = n(),
-            `N reads` = sum(Tagjump.corrected),
-            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+            `N reads` = sum(Tagjump.corrected)#,
+            #Taxon = paste(unique(Taxon), collapse = ", ")
+) %>% 
    knitr::kable(caption = "Information sur les taxons sur la liste d'exclusion")
 }
 
@@ -509,8 +511,9 @@ all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
   filter(!is.na(Tagjump.corrected)) %>% 
   group_by(Loci,Contaminant, Exclude.taxa) %>% 
   summarise(`N motus` = n(),
-            `N reads` = sum(Tagjump.corrected),
-            Taxon = paste(unique(Taxon), collapse = ", ")) %>% 
+            `N reads` = sum(Tagjump.corrected)#,
+            #Taxon = paste(unique(Taxon), collapse = ", ")#
+) %>% 
    knitr::kable(caption = "Information l'ensemble des MOTUs observés dans les controles négatifs")
 }
 
