@@ -44,12 +44,13 @@ old.names %>% str_detect(paste(paste(R1.old, collapse = "|"), paste(R2.old, coll
 R1.new <- paste0("./00_Data/01b_RawData_rename/", data.info$ID_labo, "_", data.info$Loci, "_R1.fastq.gz")
 R2.new <- paste0("./00_Data/01b_RawData_rename/",data.info$ID_labo, "_", data.info$Loci, "_R2.fastq.gz")
 
+R1.old %>% head()
 R1.new %>% head()
 
 # Change files names ------------------------------------------------------
 
 for(i in seq_along(R1.old)){
-  file.copy(from = R1.old, to = R1.new)
-  file.copy(from = R2.old, to = R2.new)  
+  file.copy(from = R1.old[i], to = R1.new[i])
+  file.copy(from = R2.old[i], to = R2.new[i])  
 }
 
