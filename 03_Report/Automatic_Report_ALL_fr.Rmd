@@ -492,7 +492,7 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 
 
 # Rouler seulement s'il y a des contaminants
-if(nrow(taxa.summary) >= 0){
+if(nrow(taxa.summary) > 0){
 
 taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
   filter(!is.na(Tagjump.corrected)) %>% 
@@ -505,7 +505,7 @@ taxa.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 }
 
 # Rouler seulement s'il y a des contaminants
-if(nrow(all.summary) >= 0){
+if(nrow(all.summary) > 0){
 
 all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
   filter(!is.na(Tagjump.corrected)) %>% 

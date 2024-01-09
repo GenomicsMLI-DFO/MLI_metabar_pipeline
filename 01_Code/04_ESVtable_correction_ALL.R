@@ -1621,3 +1621,4 @@ cat("\nEND of 04_ESVtable_correction.R script\n",
      # Add it to the log file
     file = file.path(here::here(), "00_Data", "04_ESVcorrected", "ESVtab_correction.log"), 
     append = F, sep = "\n")
+

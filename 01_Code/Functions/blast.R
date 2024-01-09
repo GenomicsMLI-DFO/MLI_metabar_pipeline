@@ -44,15 +44,21 @@ quick.blastn <- function(fasta.file, out.file,
 
 
 load.blast <- function(out.file, 
-                       ncbi.tax = ncbi.tax){
+                       ncbi.tax = ncbi.tax,
+                       db = "nt"){
   cat("\nLoading Blast results\n")
   
   RES.ncbi <- readr::read_tsv(out.file, comment = "#", col_names = F)
   
+  if(db %in% c("nt")){
+  
   names(RES.ncbi) <- c("QueryAccVer", "SubjectAccVer", "TaxoId","SciName", "SKindom", "Identity", "AlignmentLength", "mismatches", "gap opens", "q. start", "q. end", "s. start", "s. end", "evalue", "bit score")
-  
   RES.ncbi <- RES.ncbi %>% dplyr::left_join(ncbi.tax, by = c("TaxoId" = "id")) 
-  
+  } else{
+    names(RES.ncbi) <- c("QueryAccVer", "SubjectAccVer",  "Identity", "AlignmentLength", "mismatches", "gap opens", "q. start", "q. end", "s. start", "s. end", "evalue", "bit score")
+    RES.ncbi <- RES.ncbi %>% dplyr::left_join(ncbi.tax, by = c("SubjectAccVer" = "id")) 
+  }
+
   return(RES.ncbi)
 }
 

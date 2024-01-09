@@ -19,14 +19,14 @@ source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "blast.R"))
 
 
-
 res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast")
 
-if(!file.exists(res.path)) dir.create(res.path)blast.res.path 
+if(!file.exists(res.path)) dir.create(res.path)
 
 # Dataset -----------------------------------------------------------------
 
 NCBI.path <- get.value("NCBI.path")
+NCBI.path
 
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
 
@@ -45,13 +45,7 @@ cat("Please set a valid NCBI path in the file Option.txt", sep = " ")
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
 
-# Load taxonomy data
 
-ncbi.tax <- readr::read_tsv(file.path(NCBI.path,"rankedlineage.dmp"), 
-                     col_names = c("id", "name", "species", "genus", "family", "order", "class","phylum", "kingdom", "superkingdom"), 
-                     col_types=("i-c-c-c-c-c-c-c-c-c-"))
-
-ncbi.tax %>% head()
 
 # BLAST query -------------------------------------------------------------
 
@@ -63,7 +57,23 @@ PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast
 PARAM.BLAST$evalue <- as.character(PARAM.BLAST$evalue )
 PARAM.BLAST
 
+# To selection another local taxonomic database
+PARAM.BLAST$db <- "Final_Marine_GSL_v01.fasta"
 
+# Load taxonomy data
+
+if(PARAM.BLAST$db %>% unique() == "nt"){
+   ncbi.tax <- readr::read_tsv(file.path(NCBI.path,"rankedlineage.dmp"), 
+   col_names = c("id", "name", "species", "genus", "family", "order", "class","phylum", "kingdom", "superkingdom"), 
+   col_types=("i-c-c-c-c-c-c-c-c-c-"))
+  
+} else{
+  ncbi.tax <- readr::read_tsv(file.path(NCBI.path,"rankedlineage.dmp"))
+  }
+
+
+
+ncbi.tax %>% head()
 
 # Perform blast
 
@@ -92,7 +102,8 @@ for(l in LOCUS){
   
   assign(x = paste0("RES.",l,".ncbi"), 
          value = load.blast(out.file = file.path(res.path, paste0("Blast.",l, ".raw.out")),
-                            ncbi.tax = ncbi.tax)
+                            ncbi.tax = ncbi.tax,
+                            db = get.blast.value(l, "db", PARAM.BLAST))
          
   )
   
