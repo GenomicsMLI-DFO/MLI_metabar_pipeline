@@ -122,16 +122,22 @@ for(l in LOCUS){
 }
 
 # Motus
+# We need to upload the right assignment method
 
 if(PROG.ASSIGN == "Blast"){
-load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))  
+load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
 RES.all <-  RES.all.ncbi
   }
 if(PROG.ASSIGN == "RDP"){
 load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
 RES.all <- RES.all.rdp
   }
+if(PROG.ASSIGN == "Blast.local"){
+  load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
+  RES.all <-  RES.all.ncbi
+}
 
+# Assign them to an object
 for(l in LOCUS){
   
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
