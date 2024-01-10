@@ -51,6 +51,7 @@ data.info
 # Check that we can run blastX
 
 system2("blastn", "-help")
+system2('blastn', '-version')
 
 PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
 PARAM.BLAST$evalue <- as.character(PARAM.BLAST$evalue )
