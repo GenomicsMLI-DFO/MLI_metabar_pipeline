@@ -63,7 +63,7 @@ for(l in LOCUS){
   quick.rdp(fasta.file = file.path(here::here(),"00_Data/03c_ESV", paste0("ESV.",l,".fasta")), 
             out.path = file.path(res.path, paste0("rdp.",l, ".out")),
             hier.path= file.path(res.path, paste0("hierarchy.",l, ".out")),
-            training.path = file.path(rdp.path ,PARAM.RDP %>% dplyr::filter(Locus == l) %>% pull (TrainingSet)))
+            training.path = file.path(rdp.path ,PARAM.RDP %>% dplyr::filter(Locus == l) %>% dplyr::pull(TrainingSet)))
   
 }
 
@@ -89,7 +89,8 @@ for(l in LOCUS){
     rdp.int <- get(paste0("RES.",l,".rdp")) %>% taxon.thr.RDP(threshold = t) %>% 
       dplyr::mutate(Loci = l,
                     Method = "RDP",
-                    Threshold = t)
+                    Threshold = t,
+                    RefSeq = PARAM.RDP %>% dplyr::filter(Locus == l) %>% dplyr::pull(TrainingSet) %>% str_remove("/rRNAClassifier.properties"))
     
     readr::write_csv(rdp.int, file = file.path(res.path, paste0("RDP.", t, ".", l, ".csv")))
     rdp.int$confidence_order = as.numeric(as.character(rdp.int$confidence_order))
@@ -104,8 +105,7 @@ readr::write_csv(RES.all.rdp, file = file.path(res.path, paste0("RES.all.rdp.csv
 
 
 # LOAD
-
-ESV.taxo.ALL <- readr::read_csv(file = file.path(res.path, paste0("ESV.taxo.ALL.csv")))
+ESV.taxo.ALL <- readr::read_csv(file = file.path(here::here(), "02_Results/03_TaxoAssign", paste0("ESV.taxo.ALL.csv")))
 
 
 # Combine all datasets, but dataset by dataset to be sure to keep unassigned
@@ -115,13 +115,16 @@ for(m in c("RDP") ){
   
   for(t in c(30,50, 80)){
     
+    RefSeq.int <- RES.all.rdp %>% filter(Method == m, Threshold == t) %>% pull(RefSeq) %>% unique()
+    
     RES.all.rdp.int <- RES.all.rdp %>% filter(Method == m, Threshold == t) %>% select(-c(Loci,Method, Threshold)) %>% distinct(.keep_all = T)
     
     FINAL_RES.int <- ESV.taxo.ALL %>% left_join(RES.all.rdp.int,
                                                 by =  c("ESV" = "ESV")) %>% 
       mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
              Method = m, 
-             Threshold = t)
+             Threshold = t,
+             RefSeq = RefSeq.int)
     
     FINAL_RES <- bind_rows(FINAL_RES, FINAL_RES.int)
     
@@ -180,8 +183,9 @@ cat("\nEND of 03_TaxoAssign_RDP_classifier.R script\n",
     "\n~ Important R packages ~",
     paste("Biostrings", packageVersion("Biostrings"), sep = ": "),     
     
-    #"\n~ External programs ~",
-    # paste(system2("rdp_classifier", "--version", stdout=T, stderr=T), collapse = ("; ")),     
+    "\n~ External programs ~",
+    paste("RDP", system2("which", "rdp_classifier", stdout=T, stderr=T), collapse = (": ")),     
+    paste("with the reference db:", paste(PARAM.RDP %>% dplyr::pull(TrainingSet) %>% str_remove("/rRNAClassifier.properties") %>% unique(), collapse = ", ")),
     
     # Add it to the log file
     file = file.path(res.path, "TaxoAssign_RDP.log"), 

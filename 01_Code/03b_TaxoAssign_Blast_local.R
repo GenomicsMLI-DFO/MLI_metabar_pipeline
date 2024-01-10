@@ -18,13 +18,13 @@ source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 source(file.path(here::here(), "01_Code", "Functions", "blast.R"))
 
 
-res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt")
+res.path <- file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local")
 
 if(!file.exists(res.path)) dir.create(res.path)
 
 # Dataset -----------------------------------------------------------------
 
-NCBI.path <- get.value("NCBI.nt.path")
+NCBI.path <- get.value("NCBI.local.path")
 NCBI.path
 
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
@@ -55,6 +55,12 @@ system2("blastn", "-help")
 PARAM.BLAST <- readr::read_tsv(file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
 PARAM.BLAST$evalue <- as.character(PARAM.BLAST$evalue )
 PARAM.BLAST
+
+#
+list.files(NCBI.path)
+
+# To selection another local taxonomic database
+PARAM.BLAST$db <- "Final_Marine_GSL_v01.fasta"
 
 # Load taxonomy data
 
@@ -88,8 +94,6 @@ for(l in LOCUS){
                n.cores = numCores)
   
   
-  
-  
 }
 
 # Load results and add taxonomical information
@@ -112,30 +116,30 @@ for(l in LOCUS){
 RES.all.ncbi <- tibble()
 
 for(l in LOCUS){
+
+for(t in c(95,97,99)){
+  # TOP HIT
+  TOP.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
+                sum.BLAST() %>% 
+                dplyr::mutate(Loci = l,
+                              Method = "TOP",
+                              Threshold = t,
+                              RefSeq = get.blast.value(l, "db", PARAM.BLAST))
   
-  for(t in c(95,97,99)){
-    # TOP HIT
-    TOP.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
-      sum.BLAST() %>% 
-      dplyr::mutate(Loci = l,
-                    Method = "TOP",
-                    Threshold = t,
-                    RefSeq = get.blast.value(l, "db", PARAM.BLAST))
-    
-    readr::write_csv(TOP.int, file = file.path( res.path, paste0("TopHit.", t, ".", l, ".csv")))
-    
-    # LCA
-    LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_LCA(threshold = t) %>% 
-      sum.BLAST() %>% 
-      dplyr::mutate(Loci = l,
-                    Method = "LCA",
-                    Threshold = t,
-                    RefSeq = get.blast.value(l, "db", PARAM.BLAST))
-    
-    readr::write_csv(LCA.int, file = file.path( res.path, paste0("LCA.", t, ".", l,  ".csv")))
-    
-    RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)  
-    
+  readr::write_csv(TOP.int, file = file.path( res.path, paste0("TopHit.", t, ".", l, ".csv")))
+
+  # LCA
+  LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_LCA(threshold = t) %>% 
+                sum.BLAST() %>% 
+                dplyr::mutate(Loci = l,
+                              Method = "LCA",
+                              Threshold = t,
+                              RefSeq = get.blast.value(l, "db", PARAM.BLAST))
+
+  readr::write_csv(LCA.int, file = file.path( res.path, paste0("LCA.", t, ".", l,  ".csv")))
+
+RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)  
+  
   }  
   
 }
@@ -156,23 +160,24 @@ FINAL_RES <- dplyr::tibble()
 for(m in c("LCA", "TOP") ){
   
   for(t in c(95,97,99)){
-    
+
     RefSeq.int <- RES.all.ncbi %>% filter(Method == m, Threshold == t) %>% pull(RefSeq) %>% unique()
     
     RES.all.ncbi.int <- RES.all.ncbi %>% filter(Method == m, Threshold == t) %>% select(-c(Loci,Method, Threshold, RefSeq)) %>% distinct(.keep_all = T)
-    
+
     FINAL_RES.int <- ESV.taxo.ALL %>% left_join(RES.all.ncbi.int,
-                                                by =  c("ESV" = "QueryAccVer")) %>% 
-      mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
-             Method = m, 
-             Threshold = t,
-             RefSeq = RefSeq.int)
-    
-    FINAL_RES <- bind_rows(FINAL_RES, FINAL_RES.int)
-    
+                                              by =  c("ESV" = "QueryAccVer")) %>% 
+                                      mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
+                                             Method = m, 
+                                             Threshold = t,
+                                             RefSeq = RefSeq.int)
+
+   FINAL_RES <- bind_rows(FINAL_RES, FINAL_RES.int)
+
   }
   
 }
+
 
 readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.ncbi.wSamples.csv")))
 
@@ -215,7 +220,7 @@ ggsave(filename = file.path(res.path, "Comparison_Blast.png"), plot =  graph1, h
 
 # Write a final log
 
-cat("\nEND of 03_TaxoAssign_Blast.R script\n",
+cat("\nEND of 03_TaxoAssign_Blast_local.R script\n",
     paste("Pipeline version:", get.value("MLI.version")),
     date(),
     "\n-------------------------\n", 

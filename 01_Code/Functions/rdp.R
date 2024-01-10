@@ -20,9 +20,13 @@ quick.rdp <- function(fasta.file,
 # A function
 
 taxon.thr.RDP <- function(rdp.out, threshold = 80){
-  
+ 
+  if(ncol(rdp.out) != 29){
+    stop("The rdp.out doesn't have the expected number of column!")    
+  }
+
   names(rdp.out)  <- c("ESV", "nothing", "cellular", "Level1", "confidence_cellular", 
-                       # "superkingdom", "Level2", "confidence_superkingdom",
+                       "superkingdom", "Level2", "confidence_superkingdom",
                        "kingdom", "Level3", "confidence_kingdom", 
                        "phylum", "Level4", "confidence_phylum", 
                        "class", "Level5", "confidence_class", 	
