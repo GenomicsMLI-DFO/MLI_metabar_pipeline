@@ -41,6 +41,9 @@ R2.old <- paste0("./00_Data/01a_RawData/", data.info$File, "_R2.fastq.gz")
 # Check that all is detected and TRUE
 old.names %>% str_detect(paste(paste(R1.old, collapse = "|"), paste(R2.old, collapse = "|"), sep = "|")) %>% table()
 
+# check which ones are FALSE if any
+old.names %>% str_subset(paste(paste(unique(R1.old), collapse = "|"), paste(unique(R2.old), collapse = "|"), sep = "|"),negate=TRUE) %>% table()
+
 R1.new <- paste0("./00_Data/01b_RawData_rename/", data.info$ID_labo, "_", data.info$Loci, "_R1.fastq.gz")
 R2.new <- paste0("./00_Data/01b_RawData_rename/",data.info$ID_labo, "_", data.info$Loci, "_R2.fastq.gz")
 
