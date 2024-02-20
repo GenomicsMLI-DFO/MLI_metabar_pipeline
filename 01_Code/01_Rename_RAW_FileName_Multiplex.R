@@ -54,6 +54,9 @@ R2.old <- R2.old %>% unique()
 # Check that all is detected and TRUE
 old.names %>% str_detect(paste(paste(unique(R1.old), collapse = "|"), paste(unique(R2.old), collapse = "|"), sep = "|")) %>% table()
 
+# check which ones are FALSE if any
+old.names %>% str_subset(paste(paste(unique(R1.old), collapse = "|"), paste(unique(R2.old), collapse = "|"), sep = "|"),negate=TRUE) %>% table()
+
 R1.new <- paste0("./00_Data/01b_RawData_rename/", data.info$ID_labo, "_multi_R1.fastq.gz")  %>% unique()
 R2.new <- paste0("./00_Data/01b_RawData_rename/",data.info$ID_labo, "_multi_R2.fastq.gz")  %>% unique()
 
