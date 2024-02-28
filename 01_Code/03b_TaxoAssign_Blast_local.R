@@ -147,43 +147,10 @@ RES.all.ncbi <- bind_rows(RES.all.ncbi, TOP.int, LCA.int)
 
 readr::write_csv(RES.all.ncbi, file = file.path(res.path, paste0("RES.all.ncbi.csv")))
 
-
-
 #Loading seq table
 
-for(l in LOCUS){
-  
-  load(file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("ESVtab.noCHIM.", l, ".Rdata")  ))
-  
-  assign(x = paste0("DNA.", l), 
-         value =Biostrings::readDNAStringSet(file.path(here::here(), "00_Data", "03c_ESV",paste0("ESV.", l, ".fasta")))
-  )
-  
-}
+ESV.taxo.ALL <- readr::read_csv(file = file.path(here::here(), "02_Results/03_TaxoAssign", paste0("ESV.taxo.ALL.csv")))
 
-
-tidy.ESV <- function(ESVtab, DNA.seq) {
-  DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
-  
-  ESV.tidy <- ESVtab %>% as_tibble() %>% 
-    dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
-    tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
-    dplyr::left_join(DNA.tidy)
-  
-  return(ESV.tidy) 
-}
-
-
-ESV.taxo.ALL <- tibble()
-
-for(l in LOCUS){
-  
-  ESV.taxo.ALL <- bind_rows(ESV.taxo.ALL, 
-                            tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% mutate(Loci = l) 
-  )
-  
-  
-}
 # Combine all datasets, but dataset by dataset to be sure to keep unassigned
 
 FINAL_RES <- dplyr::tibble()
