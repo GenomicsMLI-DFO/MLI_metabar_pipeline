@@ -50,9 +50,11 @@ NCBI.nt.path: /media/genobiwan/Fast_Storage/Projet/Banque_REF_NCBI.git/01_Data/0
 NCBI.local.path: /media/genobiwan/Fast_Storage/Projet/Banque_REF_NCBI.git/01_Data/04_GSL_local
 rdp.path:  /media/genobiwan/Fast_Storage/Projet/Trained_RDP
 
-# Assignment program (Blast/Blast.local/RDP), method (TOP, LCA, RPD) and threshold (95, 50) used for the DB correction
+# Assignment program (Blast/Blast.local/RDP), method (TOP, LCA, RPD) and threshold (95, 50) used for the DB correction and for the output
 
-assign.metabar:   Blast;TOP;95
+assign.1: Blast.local;TOP;95
+assign.2: Blast;TOP;95
+
 
 # Python virtual environment
 PythonENV.path: /home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin

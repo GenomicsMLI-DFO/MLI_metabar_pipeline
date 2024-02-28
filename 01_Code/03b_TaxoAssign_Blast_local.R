@@ -123,6 +123,7 @@ for(t in c(95,97,99)){
   TOP.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
                 sum.BLAST() %>% 
                 dplyr::mutate(Loci = l,
+                              Script = "Blast.local",
                               Method = "TOP",
                               Threshold = t,
                               RefSeq = get.blast.value(l, "db", PARAM.BLAST))
@@ -133,6 +134,7 @@ for(t in c(95,97,99)){
   LCA.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_LCA(threshold = t) %>% 
                 sum.BLAST() %>% 
                 dplyr::mutate(Loci = l,
+                              Script = "Blast.local",
                               Method = "LCA",
                               Threshold = t,
                               RefSeq = get.blast.value(l, "db", PARAM.BLAST))
@@ -166,6 +168,7 @@ for(m in c("LCA", "TOP") ){
     FINAL_RES.int <- ESV.taxo.ALL %>% left_join(RES.all.ncbi.int,
                                               by =  c("ESV" = "QueryAccVer")) %>% 
                                       mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
+                                             Script = "Blast.local",
                                              Method = m, 
                                              Threshold = t,
                                              RefSeq = RefSeq.int)

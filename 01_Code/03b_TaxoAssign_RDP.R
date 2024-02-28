@@ -88,9 +88,10 @@ for(l in LOCUS){
     
     rdp.int <- get(paste0("RES.",l,".rdp")) %>% taxon.thr.RDP(threshold = t) %>% 
       dplyr::mutate(Loci = l,
+                    Script = "RDP",
                     Method = "RDP",
                     Threshold = t,
-                    RefSeq = PARAM.RDP %>% dplyr::filter(Locus == l) %>% dplyr::pull(TrainingSet) %>% str_remove("/rRNAClassifier.properties"))
+                    RefSeq = PARAM.RDP %>% dplyr::filter(Locus == l) %>% dplyr::pull(TrainingSet) %>% stringr::str_remove("/rRNAClassifier.properties"))
     
     readr::write_csv(rdp.int, file = file.path(res.path, paste0("RDP.", t, ".", l, ".csv")))
     rdp.int$confidence_order = as.numeric(as.character(rdp.int$confidence_order))
@@ -122,6 +123,7 @@ for(m in c("RDP") ){
     FINAL_RES.int <- ESV.taxo.ALL %>% left_join(RES.all.rdp.int,
                                                 by =  c("ESV" = "ESV")) %>% 
       mutate(Taxon = ifelse(is.na(Taxon), "Unknown", Taxon),
+             Script = "RDP",
              Method = m, 
              Threshold = t,
              RefSeq = RefSeq.int)
@@ -190,3 +192,4 @@ cat("\nEND of 03_TaxoAssign_RDP_classifier.R script\n",
     # Add it to the log file
     file = file.path(res.path, "TaxoAssign_RDP.log"), 
     append = F, sep = "\n")
+
