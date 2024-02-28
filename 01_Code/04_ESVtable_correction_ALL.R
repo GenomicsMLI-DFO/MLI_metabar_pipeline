@@ -15,6 +15,7 @@ library(magrittr)
 library(stringr)
 library(dplyr)
 library(tidyr)
+library(readr)
 library(ggplot2)
 
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
@@ -32,15 +33,6 @@ cat(length(SUBGROUP), "subgroup will be considered(", paste(SUBGROUP, collapse =
 
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
-
-# Which assignation method (RPD, NCBI) and threshold should be used
-
-PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
-METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
-THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
-
-cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
-
 
 # Create a list of which PCR to be considered in each SUBGROUP
 
@@ -124,26 +116,28 @@ for(l in LOCUS){
 # Motus
 # We need to upload the right assignment method
 
-if(PROG.ASSIGN == "Blast"){
-load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
-RES.all <-  RES.all.ncbi
-  }
-if(PROG.ASSIGN == "RDP"){
-load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
-RES.all <- RES.all.rdp
-  }
-if(PROG.ASSIGN == "Blast.local"){
-  load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
-  RES.all <-  RES.all.ncbi
-}
+RES.all <- readr::read_csv("02_Results/03_TaxoAssign/Assignements.Final.csv")
+
+# if(PROG.ASSIGN == "Blast"){
+# load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
+# RES.all <-  RES.all.ncbi
+#   }
+# if(PROG.ASSIGN == "RDP"){
+# load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
+# RES.all <- RES.all.rdp
+#   }
+# if(PROG.ASSIGN == "Blast.local"){
+#   load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
+#   RES.all <-  RES.all.ncbi
+# }
 
 # Assign them to an object
 for(l in LOCUS){
   
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
-                          QueryAccVer = names(get(paste0("DNA.",l)))) 
+                          ESV = names(get(paste0("DNA.",l)))) 
   
-  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == METHOD.ASSIGN, Threshold == as.numeric(THRESH.ASSIGN)) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
+  motus <-   motus.int %>% dplyr::left_join(RES.all %>% dplyr::filter(Loci == l)) #%>% dplyr::distinct(QueryAccVer, .keep_all = T) )
   row.names(motus) <- names(get(paste0("DNA.",l)))
   
   assign(x = paste0("motus.", l), 
@@ -316,8 +310,60 @@ for(l in LOCUS){
   assign(x = paste0("tag.gg.", l), 
          value = tag.gg)
   
+  
+  tests.tagjump.long$Type_echantillon <- metabarlist.int$pcrs$Type_echantillon[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  tests.tagjump.long$project <- metabarlist.int$pcrs$project[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  
+  tag.gg.1 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
+
+    ggplot(aes(x = sample, y = factor(threshold), fill = abundance + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white"#,
+                         #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+    ) +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+    theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")
+
+  tag.gg.2 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
+    
+    ggplot(aes(x = sample, y = factor(threshold), fill = richness + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white"#,
+                         #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+    ) +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+    theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")  
+  
+  
+  tag.gg.3 <- ggpubr::ggarrange(tag.gg.1 + ggtitle( paste("Comparing tag jumping threshold in control for", l)),
+                                tag.gg.2,
+                                nrow = 2
+                                )
+  
+ # n.sample <- length(tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% pull(sample) %>% unique() ) 
+  
+  ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",l, ".png")), 
+         plot = tag.gg.3 ,
+         width =12,
+         height = 8,
+         units = c("in"),
+         bg = "white")
+  
+  readr::write_csv(tests.tagjump.long %>% dplyr::filter(!is.na(controls)),
+                   file =  file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",l, ".csv")))
+  
   # Check
   cat("Threshold MUST be validated with the graph ", paste0("02_Results/04_ESVtable_correction/00_tagjump.threshold_",l, ".png") , "\n")  
+  
+  # Create the dataset to be exported
   
   metabarlist.int.clean <- metabaR::tagjumpslayer(metabarlist.int, thresholds.tag )
   
@@ -1507,8 +1553,8 @@ for(l in LOCUS){
         
         read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
           dplyr::mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% 
@@ -1516,8 +1562,8 @@ for(l in LOCUS){
         
         read.ori.tidy <- metabarlist.int.sub$reads %>% as.data.frame() %>% 
           dplyr::mutate(ID_labo = row.names(metabarlist.int.sub$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
@@ -1586,7 +1632,6 @@ for(l in LOCUS){
 } # End of overall loop  
 
 # Save overall file --------------------------------------------------------------
-
 
 for(l in LOCUS){
   
