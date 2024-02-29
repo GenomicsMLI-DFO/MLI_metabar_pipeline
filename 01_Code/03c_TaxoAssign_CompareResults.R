@@ -130,7 +130,7 @@ res.2 %>% dplyr::filter(ESV %nin% res.1$ESV) %>%  group_by(Loci) %>% summarise(N
 
 res.final <- bind_rows(res.1, 
                        res.2 %>% dplyr::filter(ESV %nin% res.1$ESV) )
-
+res.final
 # Check that no duplicated values persisted
 table(duplicated(res.final$ESV))
 
@@ -163,7 +163,7 @@ graph.ESV.final <- res.final %>% dplyr::filter(Levels %in% c("species", "genus")
 
 graph.ESV.final
 
-ggsave(filename = file.path("02_Results/03_TaxoAssign", "Comparison_Final_nESV.png"), plot =  graph.ESV, height = 8, width = 10)
+ggsave(filename = file.path("02_Results/03_TaxoAssign", "Comparison_Final_nESV.png"), plot =  graph.ESV.final, height = 8, width = 10)
 
 
 
