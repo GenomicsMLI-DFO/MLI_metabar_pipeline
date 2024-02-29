@@ -480,14 +480,78 @@ Différentes sources de contaminations ont été revues au cours du pipeline d'a
 
 ## 5.1 Correction pour le tag jumping
 
-Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads (abundance) reste stable. Augmenter ou diminuer ce seuil a une incidence directe sur le taux de faux négatifs et faux positifs. Les résultats des seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+Le tag jumpping est une problématique importante pouvant créer un bruit de fond sur l'ensemble des échantillons et amener des problèmes de faux positifs (détections d'espèces non présentes). Pour compenser l'effet du tag jumping, un seuil minimal de N reads est déterminé par MOTUs. Le choix de ce seuil est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs et que le nombre de reads reste stable. Augmenter ou diminuer ce seuil a une incidence directe sur le taux de faux négatifs et faux positifs. 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
+Pour choisir le meilleur seuil possible, une attention particulière est donnée à l'impact dans les témoins négatifs, le but étant de minimiser le nombre de détections dans ces témoins, particulièrement dans les contrôles négatifs de PCR (PNC, MNC).
+
+
+```{r echo=FALSE, fig.height=5, fig.width=7, message=FALSE, warning=FALSE}
+  metabar.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/metabar_param.tsv"))
 metabar.param <- metabar.param %>% dplyr::filter(Locus %in% LOCUS)
 
 tag.param <- metabar.param %>% dplyr::filter(tag.correct == T)
 
+for(l in LOCUS){
+
+tag.param.int <- tag.param %>% dplyr::filter(Locus == l) %>% pull(tag.threshold)
+  
+ tests.tagjump.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",l, ".csv")))
+ 
+  tests.tagjump.int <- tests.tagjump.int %>% dplyr::filter(LOCUS == l, 
+                                      project %in% c(projet, "ALL", "all", "All")) 
+ 
+
+   tag.gg.1 <- tests.tagjump.int %>% 
+
+    ggplot(aes(x = sample, y = factor(threshold), fill = abundance + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white",
+                         name = "N reads +1") +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+     theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        #strip.text.y = element_text(angle = 0),
+        #strip.text.x = element_text(angle = 90),
+        panel.spacing = unit(0, "in"),
+        legend.title = element_text(angle = 0, vjust = 0.9))
+
+  tag.gg.2 <- tests.tagjump.int %>% 
+    ggplot(aes(x = sample, y = factor(threshold), fill = richness + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white",
+                         name = "N MOTUs +1") +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+    theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        #strip.text.y = element_text(angle = 0),
+        #strip.text.x = element_text(angle = 90),
+        panel.spacing = unit(0, "in"),
+        legend.title = element_text(angle = 0, vjust = 0.9)) 
+  
+  
+  tag.gg.3 <- ggpubr::ggarrange(tag.gg.1 + ggtitle( paste("Comparaison des seuils de tag jumping au", l, "(seuil =", tag.param.int, ")")),
+                                tag.gg.2,
+                                nrow = 2
+                                )
+ 
+ print(tag.gg.3)
+ 
+ }
+
+
+```
+
+Des figures diagnostiques supplémentaires sur les seuils testés dans ce projet se trouve à l'[Annexe II](#annexe-ii).
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 if(nrow(tag.param) == length(LOCUS)){
   
   tag.text <- "une correction pour le tag jumping a été appliquée à tous les locus"
@@ -505,7 +569,7 @@ if(between(nrow(tag.param), 1, length(LOCUS) -1 )){
   tag.text <- paste("une correction pour le tag jumping a été appliquée aux locus suivants :", paste(tag.param$Locus, collapse = ", "))
   
 }  
-  
+
 ```
 
 **Dans ce projet, `r tag.text`.**

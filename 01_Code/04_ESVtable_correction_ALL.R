@@ -310,6 +310,7 @@ for(l in LOCUS){
   assign(x = paste0("tag.gg.", l), 
          value = tag.gg)
   
+  # New diagnostic figure
   
   tests.tagjump.long$Type_echantillon <- metabarlist.int$pcrs$Type_echantillon[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
   tests.tagjump.long$project <- metabarlist.int$pcrs$project[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]

@@ -344,6 +344,58 @@ for(l in LOCUS){
   assign(x = paste0("tag.gg.", l), 
          value = tag.gg)
   
+  
+  
+  tests.tagjump.long$Type_echantillon <- metabarlist.int$pcrs$Type_echantillon[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  tests.tagjump.long$project <- metabarlist.int$pcrs$project[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  
+  tag.gg.1 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
+    
+    ggplot(aes(x = sample, y = factor(threshold), fill = abundance + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white"#,
+                         #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+    ) +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+    theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")
+  
+  tag.gg.2 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
+    
+    ggplot(aes(x = sample, y = factor(threshold), fill = richness + 1)) +
+    geom_bin2d(color = "darkgray")+
+    scale_fill_distiller(trans = "log10",
+                         palette = "Spectral",
+                         na.value = "white"#,
+                         #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+    ) +
+    theme_minimal()+
+    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    labs(x="", y="Threshold") + 
+    theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")  
+  
+  
+  tag.gg.3 <- ggpubr::ggarrange(tag.gg.1 + ggtitle( paste("Comparing tag jumping threshold in control for", l)),
+                                tag.gg.2,
+                                nrow = 2
+  )
+  
+  # n.sample <- length(tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% pull(sample) %>% unique() ) 
+  
+  ggsave(filename = file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",RUN,"_",l, ".png")), 
+         plot = tag.gg.3 ,
+         width =12,
+         height = 8,
+         units = c("in"),
+         bg = "white")
+  
+  readr::write_csv(tests.tagjump.long %>% dplyr::filter(!is.na(controls)),
+                   file =  file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",RUN,"_",l, ".csv")))
+  
+  
   # Check
   cat("Threshold MUST be validated with the graph ", paste0("02_Results/04_ESVtable_correction/00_tagjump.threshold_",RUN,"_", l, ".png") , "\n")  
   
