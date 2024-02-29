@@ -156,8 +156,7 @@ Parameters specific to this step can be modified in the file [*RDP_param.tsv*](.
 
 You can choose to run one or more assignment methods.  
 
-Finally, the script **03c_TaxoAssign_CompareResults.R** within *01_Code* folder need to be run to create a final taxonomical assignment results that can combine more that one assignment method. The choice of the final assignment methods is also defined in the [*Options.txt*](./Options.txt) file.  
-
+Finally, the script **03c_TaxoAssign_CompareResults.R** within *01_Code* folder need to be run to create a final taxonomical assignment results that can combine more that one assignment method, which is recommanded (Bourret et al. 2023). The choice of the final assignment methods is also defined in the [*Options.txt*](./Options.txt) file.  
 
 ### Correct MOTUs tables
 
@@ -191,7 +190,7 @@ While entire R scripts can be send through the command line, sending lines by li
 
 ## References
 
-
+Bourret, A., Nozères, C., Parent, E., and Parent, G.J. 2023. Maximizing the reliability and the number of species assignments in metabarcoding studies using a curated regional library and a public repository. Metabarcoding and Metagenomics 7: 37–49. [doi:10.3897/mbmg.7.98539](https://mbmg.pensoft.net/article/98539/).
 
 
 
