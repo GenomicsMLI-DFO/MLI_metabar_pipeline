@@ -12,6 +12,7 @@ knitr::opts_knit$set(root.dir = here::here())
 # Projet à analyser
 
 projet <- c("TE") 
+sequencer <- "NovaSeq 6000 SP PE250"
 
 # Données initiales
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
@@ -108,7 +109,7 @@ n.samples.control <- n.samples.projet - n.samples.ech
 
 ```
 
-Les données ont été séquencées sur une run de *NovaSeq 6000 SP PE250* comportant au total **`r n.samples.tot`** échantillons (pcr) et `r n.loc.tot` locus. Le projet **`r projet`** comprend un total de **`r n.samples.projet`** échantillons (pcr; incluant `r n.samples.control` contrôles), et **`r length(LOCUS)`** locus (**`r paste(LOCUS, collapse = ", ")`**). 
+Les données ont été séquencées sur une run de *`r sequencer`* comportant au total **`r n.samples.tot`** échantillons (pcr) et `r n.loc.tot` locus. Le projet **`r projet`** comprend un total de **`r n.samples.projet`** échantillons (pcr; incluant `r n.samples.control` contrôles), et **`r length(LOCUS)`** locus (**`r paste(LOCUS, collapse = ", ")`**). 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 if(length(SUBGROUP) == 1){
@@ -312,7 +313,164 @@ nmotus.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
 
 # 4. Assignations taxonomiques
 
-Par défaut, les assignations taxonomiques utilisées dans les sections suivantes ont été faites à l'aide d'une version locale de la banque de séquences publiques NCBI-nt (alias GenBank) et l'outil d'assignation blastn combiné à une approche de TopHit 95%. Cette approche a été déterminée comme optimale au locus COI par des analyses comparatives de plusieurs méthodes (Blast+LCA 95, 97 et 99%, Blast+TopHit 97 et 99%) à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsqu'une banque régionale de séquences références est utilisée. L'automatisation de cette approche est à venir. Si les résultats d'assignations devaient être utilisés pour publication, ces derniers devraient être révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+assign.1 <- stringr::str_split(get.value("assign.1", file = file.path(here::here(), "Options.txt")), pattern = ";")[[1]]
+
+assign.2 <- stringr::str_split(get.value("assign.2", file = file.path(here::here(), "Options.txt")), pattern = ";")[[1]]
+
+if(assign.1[2] == "TOP"){
+  assign.1.method <- "TopHit" 
+} else {
+    assign.1.method <- assign.1[2]
+  
+}
+
+if(assign.2[2] == "TOP"){
+  assign.2.method <- "TopHit" 
+} else {
+    assign.2.method <- assign.2[2]
+  
+}
+
+# Message si tout a été fait avec blast NCBI
+if((paste(assign.1, collapse = " ") == paste(assign.2, collapse = " ")) & (assign.1[1] == "Blast")){
+
+msg1 <- paste("Les assignations taxonomiques utilisées dans les sections suivantes, autant pour les corrections des tables d'ESV que les assignations taxonomiques présentées, ont été effectuées à l'aide d'une version interne de la banque de séquences publiques **NCBI-nt** (alias GenBank) et l'outil d'assignation **blastn** combiné à une approche de",  paste0("**", assign.1.method), assign.1[3],"%**. Cette approche a été déterminée comme efficace au locus COI à partir d'un jeu de données du golfe Saint-Laurent. Toutefois, les résultats de ces analyses montrent aussi que les assignations à l'espèce sont de plus grande fiabilité lorsqu'une banque régionale de séquences références est utilisée.")  
+  
+}
+
+# Message si tout a été fait avec un truc local
+if((paste(assign.1, collapse = " ") == paste(assign.2, collapse = " ")) & (assign.1[1] == "Blast.local")){
+
+msg1 <- paste("Les assignations taxonomiques utilisées dans les sections suivantes, autant pour les corrections des tables d'ESV que les assignations taxonomiques présentées, ont été effectuées à l'aide d'une **banque de séquences références locales** et l'outil d'assignation **blastn** combiné à une approche de", paste0("**",  assign.final.method), assign.final[3],"%**. Bien que les banques locales peuvent être plus fiables que celles publiques, certaines précautions devraient être prises afin de s'assurer que des espèces importantes ne sont pas passées sous le radar.")  
+
+} 
+
+# Message bonne combinaison publique et local 
+
+if((assign.2[1] == "Blast") & (assign.1[1] == "Blast.local") ){
+
+msg1 <- paste("Les assignations taxonomiques utilisées dans les sections suivantes, autant pour les corrections des tables d'ESV que les assignations taxonomiques présentées, sont issues de séquences références locales** et l'outil d'assignation **blastn** combiné à une approche de",  paste0("**", assign.1.method), assign.1[3],"%** complémenté d'une version interne de la banque de séquences publiques **NCBI-nt** (alias GenBank) et l'outil d'assignation **blastn** combiné à une approche de", paste0("**", assign.2.method), assign.2[3],"%** pour les MOTUs non-identifiés par la première approche.")
+
+}
+
+
+```
+
+Les assignations taxonomiques, soit la comparaison des MOTUs observées avec des banques de séquences références, peuvent s'effectuer à l'aide de diverses méthodes qui fournissent des informations souvent complémentaires. Les banques de séquences publiques comme NCBI-nt (alias GenBank) sont utiles car elles comportent le plus de séquences, mais sont sensible aux erreurs d'identifications et peinent à identifier certains groupes dont la diversité génétique est faible. De l'autre côté, les banques de séquences locales comportent souvent moins d'erreurs et sont plus efficaces pour les groupes peu diversifiés, mais peuvent également manquer certaines espèces non-incluses comme les espèces invasives. L'utilisation de différentes banques de séquences références, particulièrement à la fois d'une banque locale/régionale et d'une banque publique, améliore la fiabilité des détections.
+
+## 4.1 Assignations taxonomiques utilisées 
+
+`r msg1`
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+assign.final.path <- file.path(here::here(), "02_Results/03_TaxoAssign/Assignements.Final.csv")
+
+if(file.exists(assign.final.path)){
+  
+  assign.final.res <- read_csv(assign.final.path)
+}
+
+if(paste(assign.2, collapse = " ") != paste(assign.1, collapse = " " )){
+
+  assign.final.phylum <- assign.final.res %>%
+      mutate(Approach = ifelse(Script == "Blast", "NCBI (Genbank)",
+                                          ifelse(Script == "Blast.local", "Banque locale", Script))) %>% 
+    group_by(Loci,phylum, Approach) %>% 
+    summarise(N = n()) %>% 
+    mutate(Total = sum(N),
+           Prop = N/Total)
+  
+  for(l in LOCUS){
+  
+  gg.taxo <- assign.final.phylum %>%  dplyr::filter(Loci == l ) %>% 
+    ggplot(aes(x = phylum, y = Prop, fill = Approach)) +
+      geom_bar(stat = "identity", col = "black") +
+      #facet_grid(Loci ~ ., scale = "free", space = "free")+
+    scale_fill_manual(values = c("white", "gray"))+
+      geom_text(aes(y = 0, label = paste0("n=",Total)), vjust = 0, hjust = 0, angle = 90, col = "black") +
+    labs(y = "Prop. of assigned MOTUs",
+         title = paste("Provenance des assignations pour", l)) +
+      theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, h = 1, vjust = 0.5))
+  print(gg.taxo)
+  
+}
+  }
+
+
+```
+
+Si les résultats d'assignations devaient être utilisés pour publication, ces derniers devraient être révisés par un expert en taxonomie. Nous déconseillons fortement la publication de ces résultats à cette étape de l'automatisation du rapport.
+
+
+
+## 4.2 Comparaison des taxons détectés
+
+Outre les assignations taxonomiques présentées dans ce rapport, d'autres méthodes d'assignations ont été effectuées par le pipeline d'analyse et sont disponible au besoin.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+assign.path <- file.path(here::here(), "02_Results/03_TaxoAssign/Assignements.ALL.csv")
+
+if(file.exists(assign.path)){
+  
+  assign.res <- read_csv(assign.path)
+   assign.res  <- assign.res %>%
+                 dplyr::mutate(Approach = ifelse(Script == "Blast", "NCBI (Genbank)",
+                                          ifelse(Script == "Blast.local", "Banque locale", Script)),
+                               Method = ifelse(Method %in% c("LCA", "TOP"), paste("Blast", Method), Method),
+                               RefSeq = RefSeq %>% stringr::str_remove(".fasta"))
+  assign.res %>%   dplyr::select(Loci,  Approach, RefSeq, Method, Threshold) %>% dplyr::distinct(.keep_all = T) %>% 
+    dplyr::group_by(Loci,  Approach, Method) %>% summarise(RefSeq = paste(unique(RefSeq), collapse = ", "),
+                                                             Threshold = paste(unique(Threshold), collapse = ", ")) %>% 
+     knitr::kable(caption = "Information sur les differentes assignations taxonomiques produites par le pipeline.")
+  
+}
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# Fonction pour filtrer les lignes où toutes les méthodes sont "vrai"
+filtrer_lignes <- function(data, num_colonnes_non_methodes) {
+  # Utilisation de Reduce avec la fonction "&" pour vérifier si toutes les méthodes sont "vrai"
+  condition <- Reduce(`&`, lapply((num_colonnes_non_methodes + 1):ncol(data), function(i) data[, i] == T))
+  
+  # Filtrage des lignes
+  data_filtre <- data[!condition, ]
+  
+  return(data_filtre)
+}
+
+
+if(!is.null(assign.res)){
+
+  sp.test <-  assign.res %>% dplyr::filter(Levels %in% c("species"),
+                               kingdom %in% c("Metazoa", "Animalia")) %>% 
+  
+    dplyr::group_by(Taxon, phylum, Loci, RefSeq) %>% 
+    summarise(Detected = T) %>% 
+    dplyr::ungroup() %>% 
+    tidyr::pivot_wider(names_from =  RefSeq, values_from = Detected,  values_fill = F)  %>% 
+    filtrer_lignes(3)
+  
+  gg.assign <- sp.test %>%  tidyr::gather( key = "RefSeq", value = "Detected", -c(Taxon, phylum, Loci)) %>% 
+    ggplot(aes(y = Taxon, x = RefSeq, fill = Detected)) +
+    geom_bin2d() +
+    facet_grid(phylum ~ Loci, space = "free", scale = "free") +
+    labs(title ="Comparaison des détections à l'espèce possibles",
+         x = "Séquences références utilisées")
+    theme_bw()
+
+  print(gg.assign)  
+  
+}
+
+```
 
 \newpage
 
@@ -602,7 +760,7 @@ ESV.table.control.long.int <- ESV.control.table %>% pivot_longer(-ID_labo, names
                   left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
   filter(ID_labo %in% SUBGROUP.ls[[projet]],
          Type_echantillon %nin% c("ECH", "PPC", "MPC")) %>% 
-        left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+        left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.control.long <- bind_rows(ESV.table.control.long, ESV.table.control.long.int)
    
 }
@@ -727,7 +885,7 @@ names(ESV.table)[1] <- "ID_labo"
 ESV.table.long.int <- ESV.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
                   mutate(Loci = l) %>% 
                   left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
-                  left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+                  left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.long <- bind_rows(ESV.table.long, ESV.table.long.int)
    
 }
