@@ -1135,33 +1135,62 @@ cat(res, sep = "\n")
 
 ### 2. Assignations taxonomiques
 
-Script associé : **03_TaxoAssign_Blast.R**
+Scripts associés : **03a_TaxoAssign_Blast.R** pour préparer le jeu de données, **03b_TaxoAssign_Blast.R** pour les assignations blast avec NCBI-nt, **03b_TaxoAssign_Blast_local.R** pour les assignations blast avec une banque de référence locale, **03c_TaxoAssign_RDP.R** pour les assignations avec RDP, et **03c_TaxoAssign_CompareResults.R** pour créer le fichier d'assignation taxonomique final.
 
-Les assignations ont été faites à l'aide de `blastn` avec les paramètres suivants:
+Les assignations taxonomiques ont été faites avec les paramètres suivants:
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 blast.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/blast_param.tsv"))
 
 blast.param <- blast.param  %>% mutate(evalue = as.character(evalue))
-blast.param %>% dplyr::filter(Locus %in% LOCUS) %>%   knitr::kable()
+blast.param %>% dplyr::filter(Locus %in% LOCUS) %>% 
+               dplyr::select(-db) %>%  knitr::kable(caption ="Paramètres généraux de Blast")
+
+
+rdp.param <- readr::read_tsv(file = file.path(here::here(), "01_Code/Parameters/rdp_param.tsv"))
+
+rdp.param %>% dplyr::filter(Locus %in% LOCUS) %>% 
+               knitr::kable(caption ="Paramètres généraux de RDP")
 
 
 ```
 
-Par la suite, un script maison permet de faire des assignations avec une approche de LCA ou the TopHit à des seuils de 95, 97 et 99%.
-
 Version des ressources utilisées:
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-if(file.exists(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"))){
 
-res <- readr::read_lines(file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast", "TaxoAssign_Blast.log"),
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+if(file.exists(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt", "TaxoAssign_Blast.log"))){
+
+res <- readr::read_lines(file = file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt", "TaxoAssign_Blast.log"),
                          skip = 7
                          )
 
 
-cat(res, sep = "\n")
+cat("\nBlast avec NCBI-nt (Genbank)",res, sep = "\n")
 }
+
+if(file.exists(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local", "TaxoAssign_Blast.log"))){
+
+res <- readr::read_lines(file = file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local", "TaxoAssign_Blast.log"),
+                         skip = 7
+                         )
+
+
+cat("\nBlast avec une banque de référence locale",res, sep = "\n")
+}
+
+
+if(file.exists(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP", "TaxoAssign_RDP.log"))){
+
+res <- readr::read_lines(file = file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP", "TaxoAssign_RDP.log"),
+                         skip = 0
+                         )
+
+
+cat("\nRDP",res, sep = "\n")
+}
+
+
 ```
 
 ### 3. Correction des tables d'ESV
