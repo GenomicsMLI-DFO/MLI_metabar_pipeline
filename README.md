@@ -1,6 +1,6 @@
 # MLI metabarcoding pipeline
 
-**Current version : 0.2.1**  
+**Current version : 0.2.2**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
 __Main author:__  Audrey Bourret  
@@ -132,11 +132,32 @@ Parameters specific to this step can be modified in the file [*dada2_param.tsv*]
 
 ### Taxonomic assignments
 
-Use the file **03_TaxoAssign_Blast.R** within *01_Code* folder to perform basic blast assignment with LCA and Tophit at 95, 97, and 99 thresholds. 
+Taxonomical assignments are perfomed through multiple complementary scripts. First, use the mandatory script **03a_TaxoAssign_TidyESV.R** within *01_Code* folder to generate the files that are needed in the next steps.
 
-You will need a local version of NCBI-nt database to run this script, and set is path into the [*Options.txt*](./Options.txt) file. Check [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download) for more info.  
+Then, 3 options of assignement are avalaible: 
+
+1. The script **03b_TaxoAssign_Blast.R** within *01_Code* folder performs basic blast assignments using NCBI-nt (Genbank) reference sequence with LCA and Tophit at 95, 97, and 99 thresholds. 
+
+You will need a local version of NCBI-nt database to run this script, and set its path into the [*Options.txt*](./Options.txt) file. Check [here](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download) for more info.  
 
 Parameters specific to this step can be modified in the file [*blast_param.tsv*](./01_Code/Parameters/blast_param.tsv)
+
+2. The script **03b_TaxoAssign_Blast_local.R** within *01_Code* folder performs blast assignments using local reference sequence with LCA and Tophit at 95, 97, and 99 thresholds. 
+
+You will need a local reference database to run this script, and set its path into the [*Options.txt*](./Options.txt) file.  
+
+Parameters specific to this step can be modified in the file [*blast_param.tsv*](./01_Code/Parameters/blast_param.tsv)
+
+3. The script **03b_TaxoAssign_RDP.R** within *01_Code* folder performs basic RDP assignments using a pre-trained dataset. 
+
+You will need a pre-trained dataset to run this script, and set its path into the [*Options.txt*](./Options.txt) file.  
+
+Parameters specific to this step can be modified in the file [*RDP_param.tsv*](./01_Code/Parameters/rdp_param.tsv)
+
+You can choose to run one or more assignment methods.  
+
+Finally, the script **03c_TaxoAssign_CompareResults.R** within *01_Code* folder need to be run to create a final taxonomical assignment results that can combine more that one assignment method. The choice of the final assignment methods is also defined in the [*Options.txt*](./Options.txt) file.  
+
 
 ### Correct MOTUs tables
 
