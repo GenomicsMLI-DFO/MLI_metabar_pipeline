@@ -152,22 +152,30 @@ for(l in LOCUS){
 }
 
 # Motus
+# We need to upload the right assignment method
 
-if(PROG.ASSIGN == "Blast"){
-  load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast/", "ESVtab_assign.Rdata"))  
-  RES.all <-  RES.all.ncbi
-}
-if(PROG.ASSIGN == "RDP"){
-  load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
-  RES.all <- RES.all.rdp
-}
+RES.all <- readr::read_csv("02_Results/03_TaxoAssign/Assignements.Final.csv")
 
+# if(PROG.ASSIGN == "Blast"){
+# load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
+# RES.all <-  RES.all.ncbi
+#   }
+# if(PROG.ASSIGN == "RDP"){
+# load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
+# RES.all <- RES.all.rdp
+#   }
+# if(PROG.ASSIGN == "Blast.local"){
+#   load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
+#   RES.all <-  RES.all.ncbi
+# }
+
+# Assign them to an object
 for(l in LOCUS){
   
   motus.int <- data.frame(sequence =  as.vector( get(paste0("DNA.",l))),
-                          QueryAccVer = names(get(paste0("DNA.",l)))) 
+                          ESV = names(get(paste0("DNA.",l)))) 
   
-  motus <-   motus.int %>% dplyr::left_join(RES.all.ncbi %>% dplyr::filter(Loci == l, Method == METHOD.ASSIGN, Threshold == as.numeric(THRESH.ASSIGN)) %>% dplyr::distinct(QueryAccVer, .keep_all = T) )
+  motus <-   motus.int %>% dplyr::left_join(RES.all %>% dplyr::filter(Loci == l)) #%>% dplyr::distinct(QueryAccVer, .keep_all = T) )
   row.names(motus) <- names(get(paste0("DNA.",l)))
   
   assign(x = paste0("motus.", l), 
