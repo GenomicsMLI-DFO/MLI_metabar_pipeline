@@ -1595,8 +1595,8 @@ for(l in LOCUS){
         
         read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
           dplyr::mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% 
@@ -1604,8 +1604,8 @@ for(l in LOCUS){
         
         read.ori.tidy <- metabarlist.int.sub$reads %>% as.data.frame() %>% 
           dplyr::mutate(ID_labo = row.names(metabarlist.int.sub$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "QueryAccVer", values_to = "Nreads") %>% 
-          dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(QueryAccVer, Taxon, genus, phylum)) %>% 
+          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
