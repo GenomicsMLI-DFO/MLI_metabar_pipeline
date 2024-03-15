@@ -1082,8 +1082,8 @@ graph.int <-   ESV.table.long %>%
     mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
          Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "16Schord"), class, phylum)#,
          #Nreads = ifelse(Nreads == 1, 0 , Nreads)
-         ) %>% 
-  filter(Loci == l) %>% 
+         ) %>% filter(Loci == l,
+         phylum %in% c("Arthropoda", "Cnidaria", "Echinodermata", "Chordata", "Mollusca", "Porifera", "Nemertea", "Bryozoa", "Annelida","Brachiopoda", "Sipuncula", "Chlorophyta")) %>%
   group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, Groupe) %>% 
   summarise(Nreads = sum(Nreads)) %>% 
   ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
