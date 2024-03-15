@@ -830,7 +830,7 @@ ESV.table.control.long.int <- ESV.control.table %>% pivot_longer(-ID_labo, names
                   left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
   filter(ID_labo %in% SUBGROUP.ls[[projet]],
          Type_echantillon %nin% c("ECH", "PPC", "MPC")) %>% 
-        left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+        left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.control.long <- bind_rows(ESV.table.control.long, ESV.table.control.long.int)
    
 }
@@ -955,7 +955,7 @@ names(ESV.table)[1] <- "ID_labo"
 ESV.table.long.int <- ESV.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
                   mutate(Loci = l) %>% 
                   left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
-                  left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "QueryAccVer"))
+                  left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.long <- bind_rows(ESV.table.long, ESV.table.long.int)
    
 }
@@ -1304,7 +1304,7 @@ Version des ressources utilisées:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 if(file.exists("00_Data/04_ESVcorrected/ESVtab_correction.log")){
 
-res <- readr::read_lines(file = file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab_correction_",RUN,".log")),
+res <- readr::read_lines(file = file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab_correction_",RUN,"_.log")),
                          skip = 7
                          )
 
@@ -1322,7 +1322,7 @@ cat(res, sep = "\n")
 Le choix de ce seuil (ligne orange pointillée) est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs sans observer une diminution du nombre de reads (abondance). Un changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
-load( file.path(here::here(), "02_Results/04_ESVtable_correction", paste0( "00_tag.gg.",RUN,".Rdata")))
+load( file.path(here::here(), "02_Results/04_ESVtable_correction", paste0( "00_tag.gg.",RUN,"_.Rdata")))
 
 for(l in LOCUS){
 print(get( paste0("tag.gg.", l))) 
