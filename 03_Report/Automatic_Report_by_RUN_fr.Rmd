@@ -503,7 +503,7 @@ for(l in LOCUS){
 tag.param.int <- tag.param %>% dplyr::filter(Locus == l) %>% pull(tag.threshold)
   
  tests.tagjump.int <- readr::read_csv(file.path(here::here(), "02_Results/04_ESVtable_correction", paste0("00_tagjump.threshold.control_",RUN, "_",l, ".csv")))
- 
+ tests.tagjump.int$LOCUS <- l
   tests.tagjump.int <- tests.tagjump.int %>% dplyr::filter(LOCUS == l, 
                                       project %in% c(projet, "ALL", "all", "All")) 
  
