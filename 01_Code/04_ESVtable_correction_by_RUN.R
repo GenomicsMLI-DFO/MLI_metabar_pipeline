@@ -41,11 +41,11 @@ data.info
 
 # Which assignation method (RPD, NCBI) and threshold should be used
 
-PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
-METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
-THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
+#PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
+#METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
+#THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
 
-cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
+#cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
 
 
 # Check that the structure is alright
