@@ -35,10 +35,10 @@ multiqc <- function(folder.out, loci, sens){
     print(l)
     for(s in sens){
       print(s)
-      cmd <- paste(list.files(folder.out, full.names = T) %>%
+      cmd <- paste(paste(list.files(folder.out, full.names = T) %>%
                      str_subset(paste0("_",l,"_")) %>% # update 2020-06-12 for FishAB vs Fish ...
                      str_subset(paste0("_",s)) %>%
-                     str_subset(".zip"),
+                     str_subset(".zip"), collapse = " "),
                    "--outdir", file.path(folder.out, "MultiQC_report"),
                    "--filename", paste0("multiqc_report_",l, "_", s, ".html"),
                    "-f" # to rewrite on previous data
@@ -65,10 +65,10 @@ multiqc.multiplex <- function(folder.out, sens){
   #  print(l)
     for(s in sens){
       print(s)
-      cmd <- paste(list.files(folder.out, full.names = T) %>%
+      cmd <- paste(paste(list.files(folder.out, full.names = T) %>%
                      #str_subset(paste0("_",l,"_")) %>% # update 2020-06-12 for FishAB vs Fish ...
                      str_subset(paste0("_",s)) %>%
-                     str_subset(".zip"),
+                     str_subset(".zip"), collapse = " "),
                    "--outdir", file.path(folder.out, "MultiQC_report"),
                    "--filename", paste0("multiqc_report_", s, ".html"),
                    "-f" # to rewrite on previous data
