@@ -23,7 +23,7 @@ fastqc <- function(folder.in, folder.out, numCores = 1) {
    #     file=get.value("Raw.log"), 
     #    append = T, sep = "\n") 
     
-    cat("\nFastQC is over, reported were saved in", folder.out, "\n")  
+    cat("\nFastQC is over, reports were saved in", folder.out, "\n")  
     
     
 } # End of my function
@@ -49,7 +49,7 @@ multiqc <- function(folder.out, loci, sens){
     }
   }
   
-  cat(paste("\nMultiQC is over, reported were saved in", paste0(folder.out,"/MultiQC_report")),
+  cat(paste("\nMultiQC is over, reports were saved in", paste0(folder.out,"/MultiQC_report")),
       
       "\nYou should check:",
       "1. Read length", "2. Quality drops", "3. Adaptor content", sep = "\n"
@@ -79,7 +79,7 @@ multiqc.multiplex <- function(folder.out, sens){
    # }
   }
   
-  cat(paste("\nMultiQC is over, reported were saved in", paste0(folder.out,"/MultiQC_report")),
+  cat(paste("\nMultiQC is over, reports were saved in", paste0(folder.out,"/MultiQC_report")),
       
       "\nYou should check:",
       "1. Read length", "2. Quality drops", "3. Adaptor content", sep = "\n"
