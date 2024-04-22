@@ -684,14 +684,42 @@ for(l in LOCUS){
     metabarlist.int.sub$pcrs$nb_reads.subgroup <- rowSums(metabarlist.int.sub$reads)
     metabarlist.int.sub$pcrs$nb_motus.subgroup <- rowSums(metabarlist.int.sub$reads>0)
     metabarlist.int.sub$motus$count.subgroup   <- colSums(metabarlist.int.sub$reads)
+    
+    # control
+    if(is.vector(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])){
+    
+    metabarlist.int.sub$motus$count.control.subgroup <- metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),]
+    metabarlist.int.sub$motus$max.control.subgroup   <- metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),]
+    
+    } else if(is.matrix(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])){
+
     metabarlist.int.sub$motus$count.control.subgroup <- colSums(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+
     metabarlist.int.sub$motus$max.control.subgroup   <- colMax(metabarlist.int.sub$reads[metabarlist.int.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+    
+    } else {
+      metabarlist.int.sub$motus$count.control.subgroup <- 0
+      metabarlist.int.sub$motus$max.control.subgroup  <- 0
+    }
     
     metabarlist.int.clean.sub$pcrs$nb_reads.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads)
     metabarlist.int.clean.sub$pcrs$nb_motus.tagjump.subgroup <- rowSums(metabarlist.int.clean.sub$reads>0)
     metabarlist.int.clean.sub$motus$count.tagjump.subgroup   <- colSums(metabarlist.int.clean.sub$reads)
-    metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup  <- colSums(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
-    metabarlist.int.clean.sub$motus$max.control.tagjump.subgroup  <- colMax(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+    
+    # control
+    if(is.vector(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])){
+      
+      metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup <- metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),]
+      metabarlist.int.clean.sub$motus$max.control.tagjump.subgroup   <-metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),]
+    } else if(is.matrix(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])){
+      
+      metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup  <- colSums(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+      metabarlist.int.clean.sub$motus$max.control.tagjump.subgroup  <- colMax(metabarlist.int.clean.sub$reads[metabarlist.int.clean.sub$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
+      
+    } else {
+      metabarlist.int.clean.sub$motus$count.control.tagjump.subgroup <- 0
+      metabarlist.int.clean.sub$motus$max.control.tagjump.subgroup <- 0
+    }
     
     # Contaslayer
     
