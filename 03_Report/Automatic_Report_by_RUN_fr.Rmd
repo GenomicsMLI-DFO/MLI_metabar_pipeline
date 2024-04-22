@@ -455,9 +455,9 @@ filtrer_lignes <- function(data, num_colonnes_non_methodes) {
   return(data_filtre)
 }
 
-
 if(!is.null(assign.res)){
-
+  # Run it only if there is more than 1 RefSeq
+  if(length(unique(assign.res$RefSeq)) > 1){
   sp.test <-  assign.res %>% dplyr::filter(Levels %in% c("species"),
                                kingdom %in% c("Metazoa", "Animalia")) %>% 
   
@@ -477,6 +477,7 @@ if(!is.null(assign.res)){
 
   print(gg.assign)  
   
+  }
 }
 
 ```
