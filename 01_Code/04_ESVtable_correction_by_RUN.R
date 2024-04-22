@@ -189,7 +189,8 @@ data.info
 
 for(l in LOCUS){
   
-  pcr.int <- data.info  %>%  dplyr::filter(Loci == l) %>% 
+  pcr.int <- data.info  %>%  dplyr::filter(Loci == l,
+                                           Run == RUN) %>% 
     dplyr::rename(sample_id = ID_labo,
                   plate_no = ID_plaque,
                   project = ID_subprojet) %>% 
@@ -238,16 +239,12 @@ for(l in LOCUS){
                                            pcrs = get(paste0("pcr.", l)), 
                                            samples = get(paste0("samples.", l)))
   
-  # Subset by the run
-  
-  metabarlist.int <- metabaR::subset_metabarlist(metabarlist.int, table="pcrs",
-                                                 indices = metabarlist.int$pcrs$Run == RUN)
-  
   
   assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
   
 }
+
 
 # Load metabar threshold
 
@@ -281,7 +278,10 @@ for(l in LOCUS){
   metabarlist.int$motus$count   <- colSums(metabarlist.int$reads)
   metabarlist.int$motus$count.control <- colSums(metabarlist.int$reads[metabarlist.int$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
   metabarlist.int$motus$max.control   <-  colMax(metabarlist.int$reads[metabarlist.int$pcrs$control_type %in% c("extraction", "pcr", "sequencing"),])
-  
+
+  # Filter to remove all empty ESV
+  metabarlist.int <- metabaR::subset_metabarlist(  metabarlist.int, table="motus", 
+                                                 indices = (metabarlist.int$motus$count > 0 ) ) 
   
   assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
