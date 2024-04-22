@@ -1326,7 +1326,7 @@ cat(res, sep = "\n")
 Le choix de ce seuil (ligne orange pointillée) est important car il devrait réfléter un point d'inflexion où il y a une diminution dans la diversité des MOTUs sans observer une diminution du nombre de reads (abondance). Un changement dans le seuil peut influencer de manière importante les résultats en termes de faux-négatifs et faux-positifs.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
-load( file.path(here::here(), "02_Results/04_ESVtable_correction", paste0( "00_tag.gg.",RUN,"_.Rdata")))
+load( file.path(here::here(), "02_Results/04_ESVtable_correction", paste0( "00_tag.gg.",RUN,".Rdata")))
 
 for(l in LOCUS){
 print(get( paste0("tag.gg.", l))) 
