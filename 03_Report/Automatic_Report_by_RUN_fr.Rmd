@@ -203,8 +203,8 @@ tag.summary <- data.frame()
 
 for(l in LOCUS){
 
-  tag.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_",RUN, "_", l, ".csv"))) %>%
-                            dplyr::mutate(Loci = as.character(Loci))
+  tag.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_",RUN, "_", l, ".csv")),
+                             col_types = "cddddc")
 
   tag.summary <- bind_rows(tag.summary, tag.int)
   
@@ -213,8 +213,8 @@ for(l in LOCUS){
 metabar.summary <- data.frame()
 
 for(l in LOCUS){
-  metabar.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postMetabaR_", l, "_",projet, ".csv"))) %>%
-                            dplyr::mutate(Loci = as.character(Loci))
+  metabar.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postMetabaR_", l, "_",projet, ".csv")),
+                                       col_types = "cddddcc") 
 
   metabar.summary <- bind_rows(metabar.summary, metabar.int)
   
