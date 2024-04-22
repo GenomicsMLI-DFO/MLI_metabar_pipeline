@@ -856,7 +856,9 @@ resi.int <-   ESV.table.control.long %>%
   mutate(Taxon_loci_Cat = paste(Taxon, Loci, Category))
   
 focus.MOTUs <- resi.int %>% filter(Nreads > 0) %>% pull(Taxon_loci_Cat) %>% unique()
- 
+
+if(length(focus.MOTUs) > 0){
+
 graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>% 
   ggplot(aes(fill = Nreads , x = ID_labo, y = Taxon)) +
   labs(x= "", y = "") + 
@@ -879,6 +881,7 @@ graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>%
         legend.position = "bottom")
 
 print(graph.resi)
+}
 
 }
 
