@@ -203,7 +203,8 @@ tag.summary <- data.frame()
 
 for(l in LOCUS){
 
-  tag.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_",RUN, "_", l, ".csv"))) 
+  tag.int <- readr::read_csv(file.path(here::here(), "00_Data", "04_ESVcorrected", paste0("ESVtab_Stats_postTagjump_",RUN, "_", l, ".csv"))) %>%
+                            dplyr::mutate(Loci = as.character(Loci))
 
   tag.summary <- bind_rows(tag.summary, tag.int)
   
