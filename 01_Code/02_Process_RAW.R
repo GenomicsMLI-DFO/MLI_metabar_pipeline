@@ -481,6 +481,53 @@ for(l in LOCUS){
   
 }
 
+# Compute ESV lengh -------------------------------------------------------
+
+seq.df <- data.frame(Loci = character(),
+                     width = numeric(),
+                     Nreads = numeric())
+
+for(l in LOCUS){
+  
+
+DNA.int <- readDNAStringSet(file.path(here::here(), "00_Data", "03c_ESV", paste0("ESV.",l,".fasta" )))
+
+seq.df.int <-  data.frame(Loci = l,
+                          width = DNA.int@ranges@width,
+                          Nreads = get(paste0("ESVtab.",l))  %>% colSums() )
+
+
+seq.df <- bind_rows(seq.df, seq.df.int)
+
+
+}
+
+gg.seq1 <- seq.df %>% ggplot(aes(x = width)) +
+  geom_bar() +
+  facet_wrap(~Loci, scale = "free", ncol= length(LOCUS)) + 
+  labs(x = "ESV length (pb)", y = "N ESV") +
+  theme_bw()
+gg.seq1
+
+gg.seq2 <- seq.df %>% ggplot(aes(x = width, y = Nreads)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~Loci, scale = "free", ncol = length(LOCUS)) + 
+  labs(x = "ESV length (pb)", y = "N reads") +
+  theme_bw()
+gg.seq2
+
+
+gg.seq <- ggpubr::ggarrange(gg.seq1, gg.seq2,
+                  nrow = 2,
+                  labels = LETTERS,
+                  align = "hv")
+
+gg.seq
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_length.png"), plot =  gg.seq, height = 5, width = 8)
+
+
+
 # Write a final log
 
 cat("\nEND of 02_Process_RAW.R script\n",
