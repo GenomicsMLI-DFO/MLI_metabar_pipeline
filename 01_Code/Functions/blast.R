@@ -21,7 +21,7 @@ quick.blastn <- function(fasta.file, out.file,
                 "-qcov_hsp_perc", qcov_hsp_perc, 
                 "-out", out.file, 
                 "-perc_identity", perc_identity,
-                "-num_threads", numCores,
+                "-num_threads", n.cores,
                 "-max_target_seqs", max_target_seqs, 
                 sep = " ")# forward adapter
   
