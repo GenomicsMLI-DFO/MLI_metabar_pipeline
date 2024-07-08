@@ -25,7 +25,7 @@ SUBGROUP <- stringr::str_split(get.value("group.metabaR", file = file.path(here:
 
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 
-data.info <- data.info %>% mutate(Type_echantillon = factor(Type_echantillon, levels = c("ECH", "FNC", "SNC", "FNC_SNC", "SNC_FNC", "ENC", "PNC", "MNC", "PPC", "MPC")))
+data.info <- data.info %>% mutate(Type_echantillon = factor(Type_echantillon, levels = c("ECH", "FNC", "SNC", "FNC_SNC", "SNC_FNC", "ENC", "PNC", "MNC", "PPC", "MPC", "MCP_High", "MPC_Low")))
 
 # Create a list of which PCR to be considered in each SUBGROUP
 
