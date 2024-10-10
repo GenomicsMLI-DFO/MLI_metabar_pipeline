@@ -6,8 +6,8 @@ Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releas
 __Main author:__  Audrey Bourret  
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
 __Group:__        Laboratory of genomics   
-__Location:__     Maurice Lamontagne Institut  
-__Affiliated publication:__  
+__Location:__     Maurice Lamontagne Institute, Mont-Joli, Québec, Canada  
+__Affiliated publication:__ Chevrinais et al. 2024. Improving the description of an endangered species distribution using localized and reliable environmental DNA detections combined to trawl captures in the marine environment. Biodiversity and Conservation. In review.     
 __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca 
 
 - [Description](#description)
@@ -19,32 +19,31 @@ __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca
   + [From raw reads to MOTUs tables](#from-raw-reads-to-motus-table)
   + [Taxonomic assignments](#taxonomic-assignments)
   + [Correct MOTUs tables](#correct-motus-tables)
-  + [Create an automatic report](#create-an-automatic-report)
 - [Example](#example)
-- [Limitation](#limitations)
-- [Reference](#references)
+- [Limitations](#limitations)
+- [References](#references)
 
 ## Description 
 
-Welcome to the template repository to use the latest version of the MLI metabarcoding pipeline. This pipeline is intended to run in R (and Rstudio) using a few scripts, but need a few external programs too (see [pre-requisite section](#pre-requisite)). This pipeline can run on multiple pre-defined loci, or new ones too.
+Welcome to the template repository to use the latest version of the MLI metabarcoding pipeline. This pipeline is intended to run in R (and Rstudio) using a few scripts, but needs a few external programs too (see [pre-requisite section](#pre-requisite)). This pipeline can run either on multiple pre-defined loci, or on new ones too.
 
 <img src="Pipeline.png" alt="Pipeline"/>
 
 
 ## Status
-Ongoing-improvements
+Released. 
 
 ## How to use the pipeline
 
 ### Pre-requisite
 
-The R scripts should be run line by line within an intregrated development environment (IDE) such as [Rstudio](https://posit.co/download/rstudio-desktop/). Some external programs are also required:
+The R scripts should be executed line by line within an intregrated development environment (IDE) such as [Rstudio](https://posit.co/download/rstudio-desktop/). Some external programs are also required:
   - [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
   - [multiqc](https://multiqc.info/)
   - [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
   - [blast](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 
-To be sure that the external command are found by R, try to run the test script **01_Code/00_Check_External_Program.R**, or these command directly:
+To be sure that the external command is found by R, try to run the test script **01_Code/00_Check_External_Program.R**, or these commands directly:
 
 ```{r}
 system2("fastqc", "--help")
@@ -53,7 +52,7 @@ system2("cutadapt", "--help")
 system2("blastn", "--help")
 ```
 
-MultiQC and cutadapt can be installed in a python environment that should be added to the R path through the  [Option.txt](Option.txt) file, or this command line:
+MultiQC and cutadapt can be installed in a python environment that should be added to the R path through the [Option.txt](Option.txt) file, or with this command line:
 
 ```{r}
 Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
@@ -62,17 +61,17 @@ Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
 ```
 ### Before starting an analysis
 
-- Press the big **Use this template** button in the top of this page to get your own copy of this pipeline (or download the .zip version through the Code button if your are not familiar with github).
-- Put raw fastq files into the *00_Data/01a_RawData* folder (examples files can be found [here](https://github.com/GenomicsMLI-DFO/MLI_metabar_example_dataset))
-- Fill the [SeqInfo.csv](00_Data/00_FileInfos/SeqInfo.csv) file within  the 00_Data/00_FileInfos folder 
-- If the are not already present, install the depending R package : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
+- Press the green button **Use this template** at the top of this page to get your own copy of this pipeline (or download the .zip version through the Code button if your are not familiar with github).
+- Put sequencing raw fastq files into the *00_Data/01a_RawData* folder (training files can be found [here](https://github.com/GenomicsMLI-DFO/MLI_metabar_example_dataset))
+- Fill the [SeqInfo.csv](00_Data/00_FileInfos/SeqInfo.csv) file within the 00_Data/00_FileInfos folder 
+- If necessary, install the depending R packages : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
 
 This can be done all at once with this command line in R :
 
 ```{r}
 install.packages(c("readr", "tidyr", "magrittr", "dplyr", "stringr", "here", "parallel", "ggplot2", "ggforce"))
 ```
-Somes are from biostrings : `dada2`, `Biostrings`, `biomformat`
+Somes packages are from biostrings : `dada2`, `Biostrings`, `biomformat`
 
 ```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -83,25 +82,32 @@ BiocManager::install("dada2")
 BiocManager::install("biomformat")
 ```
 
-Others are on github : `metabaR`
+Others are available on github : `metabaR`
 
 ```{r}
 if (!requireNamespace("remotes", quietly = TRUE))
     install.packages("remotes")
 remotes::install_github("metabaRfactory/metabaR")
 ```
- - Check that parameter sets in [Option.txt](Option.txt) are alright (Locus to perform, N cores available)
+ - Check that parameter sets in [Option.txt](Option.txt) corresponds to your analysis (Locus to analyse, N cores available on your machine)
  
- Current loci already set are the following :
+ Current loci already set are the following:
 
 | Primer | F | R | Ref |
 --- | --- | --- | --- | 
-|COI|GGWACWGGWTGAACWGTWTAYCCYCC|TAIACYTCIGGRTGICCRAARAAYCA| |	
-|MiFishU|GTCGGTAAAACTCGTGCCAGC|CATAGTGGGGTATCTAATCCCAGTTTG| |	
+|COI|GGWACWGGWTGAACWGTWTAYCCYCC|TAIACYTCIGGRTGICCRAARAAYCA| Leray et al 2013 |	
+|MiFishU|GTCGGTAAAACTCGTGCCAGC|CATAGTGGGGTATCTAATCCCAGTTTG| MiFish |	
 |MiMam|GGGTTGGTAAATTTCGTGCCAGC|CATAGTGGGGTATCTAATCCCAGTTTG| |	
 |12SElas02|GTTGGTHAATCTCGTGCCAGC|CATAGTAGGGTATCTAATCCTAGTTTG| |	
 |12SMarVer1|CGTGCCAGCCACCGCG|GGGTATCTAATCCYAGTTTG| |
 |16Schord|ATGCGAGAAGACCCTRTGGAGCT|CCTNGGTCGCCCCAAC| |	
++12S160 Saunders, He
+etc Dloop bélu et 
+D loop phoca = publié OK
+
+
+
+
 
 Other loci can be added, but you'll need to set new parameters in *Options.txt*, and *00_Code/Parameters* folder.
 
@@ -170,10 +176,6 @@ This script will generate, for each loci, many figures and summary table in the 
 To run this script, you will need specific columns to be fulfill in the [*SeqInfo.csv*](./00_Data/00_FileInfos/SeqInfos.csv) file: ID_plaque, ID_puit, ID_subprojet, Type_echantillon, Run, tag_fwd and tag_rev. 
 
 Parameters specific to this step can be modified in the files [*metabar_param.tsv*](./01_Code/Parameters/metabar_param.tsv) and [*metabar_exclude_taxa.tsv*](./01_Code/Parameters/metabar_exclude_taxa.tsv)
-
-### Create an automatic report
-
-Check the *03_Report* folder
 
 ## Example
 
