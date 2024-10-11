@@ -1,7 +1,5 @@
 Locus	TrainingSet
 COI	Porter_COI_V4/rRNAClassifier.properties
-12S	Royce_12S_RADS_V5/rRNAClassifier.properties
 MiFishU	Royce_12S_RADS_V5/rRNAClassifier.properties
-MiFishDFO	Royce_12S_RADS_V5/rRNAClassifier.properties
 12S248	Royce_12S_RADS_V5/rRNAClassifier.properties
 12S160	Royce_12S_RADS_V5/rRNAClassifier.properties
