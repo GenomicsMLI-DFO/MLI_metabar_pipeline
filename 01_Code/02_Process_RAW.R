@@ -47,6 +47,11 @@ system2("multiqc", "--help")
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 data.info
 
+# What is in the data.info
+data.info %>% group_by(Loci) %>% summarise(N = n())
+data.info %>% group_by(Run) %>% summarise(N = n())
+
+# What is in the options
 LOCUS <- stringr::str_split(get.value("Loci"), pattern = ";")[[1]]
 SENS  <- stringr::str_split(get.value("Sens"), pattern = ";")[[1]]
 RUN   <- stringr::str_split(get.value("Run"), pattern = ";")[[1]]
@@ -106,9 +111,9 @@ write_csv(cutadapt.res, file = file.path(here::here(), "02_Results", "02_Filtrat
 graph.cutadapt <- cutadapt.res %>% pivot_longer(c(Raw, Adapt), names_to = "Step", values_to = "Nreads") %>%
   mutate(Nreads1 = Nreads + 1 ,
          Step = factor(Step, levels = c("Raw", "Adapt"))) %>% 
-  left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon), 
-            by = c("ID_labo", "Loci")) %>% 
-  ggplot(aes(x = Step, y = Nreads1, col = Type_echantillon, group = ID_labo)) +
+  left_join(data.info %>% select(ID_sample, Loci, ID_project, Sample_type), 
+            by = c("ID_sample", "Loci")) %>% 
+  ggplot(aes(x = Step, y = Nreads1, col = Sample_type, group = ID_sample)) +
   #geom_jitter(height = 0) +
   geom_point() +
   geom_line() + 
@@ -171,9 +176,9 @@ write_csv(dada2.summary, file = file.path(here::here(), "02_Results", "02_Filtra
 
 graph.dada2 <- dada2.summary %>%  mutate(N1 = N + 1,
                                          #Reads = factor(Reads, levels = c("Remove", "Keep")),
-                                         ID_labo = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
+                                         ID_sample = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
   left_join(data.info) %>% 
-  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Reads, y = N1, col = Sample_type, group = ID_sample)) +
   geom_point() +
   geom_line() + 
   #geom_boxplot() +
@@ -384,7 +389,7 @@ for(l in LOCUS){
 # Compute stats before and after chimera removal
 # From the N reads perspective
 
-Nread.summary <- data.frame(ID_labo = character(),
+Nread.summary <- data.frame(ID_sample = character(),
                             Loci = character(),
                             Merge = numeric(),
                             Final = numeric(),
@@ -392,7 +397,7 @@ Nread.summary <- data.frame(ID_labo = character(),
 
 for(l in LOCUS){
   
-  RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
+  RES <- data.frame(ID_sample = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
                     Loci = l,
                     Merge = rowSums(get(paste0("seqtab.",l,".int"))),
                     Final =  rowSums(get(paste0("ESVtab.",l))) ,
@@ -412,7 +417,7 @@ graph.Nread <- Nread.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), nam
   mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
          N1 = N + 1) %>%   
   left_join(data.info) %>% 
-  ggplot(aes(x = Reads, y = N1, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Reads, y = N1, col = Sample_type, group = ID_sample)) +
   geom_point() +
   geom_line() + 
   #geom_boxplot() +
@@ -428,7 +433,7 @@ ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Nreads_
 
 # From the N ESV perspective    
 
-ESV.summary <- data.frame(ID_labo = character(),
+ESV.summary <- data.frame(ID_sample = character(),
                           Loci = character(),
                           Merge = numeric(),
                           Final = numeric(),
@@ -436,7 +441,7 @@ ESV.summary <- data.frame(ID_labo = character(),
 
 for(l in LOCUS){
   
-  RES <- data.frame(ID_labo = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
+  RES <- data.frame(ID_sample = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
                     Loci = l,
                     Merge = apply(get(paste0("seqtab.",l,".int")), MARGIN = 1, FUN = function(x){length(x[x>0])}),
                     Final =  apply(get(paste0("ESVtab.",l)), MARGIN = 1, FUN = function(x){length(x[x>0])}) ,
@@ -455,7 +460,7 @@ write_csv(ESV.summary, file = file.path(here::here(), "02_Results", "02_Filtrati
 graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
   mutate(Reads = factor(Reads, levels = c("Merge", "Final"))) %>%   
   left_join(data.info) %>% 
-  ggplot(aes(x = Reads, y = N, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Reads, y = N, col = Sample_type, group = ID_sample)) +
   geom_point() +
   geom_line() + 
   #geom_boxplot() +
