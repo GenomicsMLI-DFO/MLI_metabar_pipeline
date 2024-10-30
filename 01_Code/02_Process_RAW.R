@@ -370,6 +370,15 @@ for(l in LOCUS){
 
 # 3.6 Remove chimera 
 
+# To reload seqtab if necessary  
+if(length(str_subset(ls(), "seqtab.")) != length(LOCUS)){
+  
+  for(x in list.files(file.path(here::here(), "00_Data", "03b_SeqTab_dada2"), full.names = T, pattern = ".Rdata")){
+    load(x)
+  }
+  
+}
+
 for(l in LOCUS){
   
   cat("\nRemoving chimera for" , l, "\n")
