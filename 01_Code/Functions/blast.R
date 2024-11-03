@@ -64,9 +64,12 @@ load.blast <- function(out.file,
 
 # Performed LCA at a given threshold, and return everything
 BLAST_LCA <- function(RES, threshold = 0.97){
-  DF <- data.frame()
+
+  cat("\nPerformation BLAST LCA\n")
   
-  RES.OK <- RES %>% filter(#AlignmentLength >= .95 * width,
+    DF <-tibble()
+  
+  RES.OK <- RES %>% dplyr::filter(#AlignmentLength >= .95 * width,
     Identity >= threshold) %>% 
     mutate(Taxon = NA,
            Levels = NA)
@@ -81,16 +84,20 @@ BLAST_LCA <- function(RES, threshold = 0.97){
   }
   
   ASV <- RES.OK %>% pull(QueryAccVer) %>% unique()
+
+  # Set a progress bar
+  pb <- txtProgressBar(min = 0, max = length(ASV), style = 3)
+  
   for(x in seq_along(ASV)){
-    RES.INT <- RES.OK %>% filter(QueryAccVer == ASV[x])
+    RES.INT <- RES.OK %>% dplyr::filter(QueryAccVer == ASV[x])
     
     # loops around ranks
     for(y in c("species", "genus", "family", "order", "class", "phylum", "kingdom")) {
       
-      N.LCA <- RES.INT %>% filter(!is.na(y)) %>%  pull(y) %>% unique() %>% str_subset("NA", negate = T) %>% length()
+      N.LCA <- RES.INT %>% dplyr::filter(!is.na(y)) %>%  pull(y) %>% unique() %>% str_subset("NA", negate = T) %>% length()
       
       if(N.LCA==1){
-        RES.INT$Taxon <-  RES.INT %>% filter(!is.na(y)) %>% pull(y) %>% unique()  %>% str_subset("NA", negate = T)
+        RES.INT$Taxon <-  RES.INT %>% dplyr::filter(!is.na(y)) %>% pull(y) %>% unique()  %>% str_subset("NA", negate = T)
         RES.INT$Levels <-  y
         break;
       }else{
@@ -104,23 +111,26 @@ BLAST_LCA <- function(RES, threshold = 0.97){
       DF <- bind_rows(DF, RES.INT[which(!is.na(RES.INT[,y])),])      
     }
     
-    
+    setTxtProgressBar(pb, x)
   }
   return(DF)  
-  
+  close(pb)
 }   
 
 BLAST_TOPHIT <- function(RES, threshold = 0.95){
-  DF <- data.frame()
   
-  RES.OK <- RES %>% filter(#AlignmentLength >= .95 * width,
+  cat("\nPerformation BLAST TOPHIT\n")
+  
+  DF <- tibble()
+  
+  RES.OK <- RES %>% dplyr::filter(#AlignmentLength >= .95 * width,
     Identity >= threshold) %>% 
     mutate(Taxon = NA,
            Levels = NA)
   
   # if from ncbi
   if(str_count(names(RES.OK), "SciName") %>% sum() == 1){
-    RES.OK <- RES.OK %>% filter(str_detect(SciName, "environmental sample|uncultured|predicted", negate = T))
+    RES.OK <- RES.OK %>% dplyr::filter(str_detect(SciName, "environmental sample|uncultured|predicted", negate = T))
     RES.OK$species <- paste(sapply(str_split(RES.OK$SciName, " "),`[`,1),
                             sapply(str_split(RES.OK$SciName, " "),`[`,2))
     RES.OK$genus <- sapply(str_split(RES.OK$species, " "),`[`,1)
@@ -128,11 +138,16 @@ BLAST_TOPHIT <- function(RES, threshold = 0.95){
   }
   
   ASV <- RES.OK %>% pull(QueryAccVer) %>% unique()
+  
+  # Set a progress bar
+  pb <- txtProgressBar(min = 0, max = length(ASV), style = 3)
+  
+  
   for(x in seq_along(ASV)){
-    RES.INT <- RES.OK %>% filter(QueryAccVer == ASV[x])
+    RES.INT <- RES.OK %>% dplyr::filter(QueryAccVer == ASV[x])
     
     evalue.min <- min(RES.INT$evalue)
-    RES.INT <- RES.INT %>% filter(evalue == evalue.min)
+    RES.INT <- RES.INT %>% dplyr::filter(evalue == evalue.min)
     
     #identity.max <- max(RES.INT$Identity)
     #RES.INT <- RES.INT %>% filter(Identity == identity.max)
@@ -140,10 +155,10 @@ BLAST_TOPHIT <- function(RES, threshold = 0.95){
     # loops around ranks
     for(y in c("species", "genus", "family", "order", "class", "phylum", "kingdom")) {
       
-      N.LCA <- RES.INT %>% filter(!is.na(y)) %>%  pull(y) %>% unique() %>% str_subset("NA", negate = T) %>% length()
+      N.LCA <- RES.INT %>% dplyr::filter(!is.na(y)) %>%  pull(y) %>% unique() %>% str_subset("NA", negate = T) %>% length()
       
       if(N.LCA==1){
-        RES.INT$Taxon <-  RES.INT %>% filter(!is.na(y)) %>% pull(y) %>% unique()  %>% str_subset("NA", negate = T)
+        RES.INT$Taxon <-  RES.INT %>% dplyr::filter(!is.na(y)) %>% pull(y) %>% unique()  %>% str_subset("NA", negate = T)
         RES.INT$Levels <-  y
         break;
       }else{
@@ -156,14 +171,17 @@ BLAST_TOPHIT <- function(RES, threshold = 0.95){
     if(nrow(RES.INT[which(!is.na(RES.INT[,y])),])>0){
       DF <- bind_rows(DF, RES.INT[which(!is.na(RES.INT[,y])),])      
     }
-    
+    setTxtProgressBar(pb, x)  
   }
   return(DF)  
-  
+  close(pb)
 }   
 
 sum.BLAST <- function(DF){
-  RES <- DF %>% select(QueryAccVer, Taxon, Levels, species, genus, family, order, class, phylum, kingdom) %>% unique() 
+  
+  cat("\nSumming BLAST results")
+  
+  RES <- DF %>% dplyr::select(QueryAccVer, Taxon, Levels, species, genus, family, order, class, phylum, kingdom) %>% unique() 
   
   return(RES)
 }
