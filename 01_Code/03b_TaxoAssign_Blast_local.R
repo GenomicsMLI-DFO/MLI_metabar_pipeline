@@ -118,8 +118,13 @@ RES.all.ncbi <- tibble()
 
 for(l in LOCUS){
 
+cat("\nWorking on", l)
+    
 for(t in c(95,97,99)){
-  # TOP HIT
+
+    print(t)
+    
+ # TOP HIT
   TOP.int <- get(paste0("RES.",l,".ncbi")) %>% BLAST_TOPHIT(threshold = t) %>% 
                 sum.BLAST() %>% 
                 dplyr::mutate(Loci = l,
@@ -166,8 +171,8 @@ tidy.ESV <- function(ESVtab, DNA.seq) {
   DNA.tidy <- tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
   
   ESV.tidy <- ESVtab %>% as_tibble() %>% 
-    dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
-    tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
+    dplyr::mutate(ID_sample = row.names(ESVtab)) %>%
+    tidyr::pivot_longer(cols = !ID_sample, names_to = "SEQ", values_to = "Nreads") %>% 
     dplyr::left_join(DNA.tidy)
   
   return(ESV.tidy) 
