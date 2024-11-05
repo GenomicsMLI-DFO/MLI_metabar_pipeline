@@ -51,7 +51,7 @@ data.info
 # Check that the structure is alright
 data.info %>% dplyr::pull(Run) %>% table()
 
-data.info %>% dplyr::group_by(ID_subprojet, Run) %>% dplyr::summarise(N = n())
+data.info %>% dplyr::group_by(ID_subproject, Run) %>% dplyr::summarise(N = n())
 
 RUN <- "MI_3992"
 #if the samples analysed are also in a second Run/lane, you should add a second ID for the run 
@@ -60,9 +60,9 @@ RUN <- "MI_3992"
 
 # Test if there is something problematic here
 
-if( (data.info %>% dplyr::filter(Run == RUN) %>% dplyr::pull(ID_subprojet) %>% unique()) %in% 
-    (data.info %>% dplyr::filter(Run != RUN) %>% dplyr::pull(ID_subprojet) %>% unique())
-) {cat("Some projects are shared between RUN, you should reconsidered analysis not by RUN but instead all together (04_ESVtable_correction_ALL.R)")}
+#if( (data.info %>% dplyr::filter(Run == RUN) %>% dplyr::pull(ID_subproject) %>% unique()) %in% 
+#    (data.info %>% dplyr::filter(Run != RUN) %>% dplyr::pull(ID_subproject) %>% unique())
+#) {cat("Some projects are shared between RUN, you should reconsidered analysis not by RUN but instead all together (04_ESVtable_correction_ALL.R)")}
 
 
 # Create a list of which PCR to be considered in each SUBGROUP
@@ -71,13 +71,13 @@ SUBGROUP.ls <- list()
 
 for(x in SUBGROUP){
   
-  subgroup <- c(data.info %>% dplyr::filter(ID_subprojet == x,
-                                            Run == RUN) %>% dplyr::pull(ID_subprojet) %>% unique(),
-                data.info %>% dplyr::filter(ID_subprojet == x,
-                                            Run == RUN) %>% dplyr::pull(ID_projet) %>% unique(),                                                         
+  subgroup <- c(data.info %>% dplyr::filter(ID_subproject == x,
+                                            Run == RUN) %>% dplyr::pull(ID_subproject) %>% unique(),
+                data.info %>% dplyr::filter(ID_subproject == x,
+                                            Run == RUN) %>% dplyr::pull(ID_project) %>% unique(),                                                         
                 "ALL", "All", "all") %>% unique()
   
-  id <- data.info %>% dplyr::filter(ID_subprojet %in% subgroup)  %>% dplyr::pull(ID_labo) %>% unique()
+  id <- data.info %>% dplyr::filter(ID_subproject %in% subgroup)  %>% dplyr::pull(ID_sample) %>% unique()
   
   # DO IT ONLY IF THERE IS SAMPLES
   if(length(id > 0)){
@@ -130,8 +130,8 @@ tidy.ESV <- function(ESVtab, DNA.seq) {
   DNA.tidy <- tibble::tibble(ESV = names(DNA.seq), SEQ =  DNA.seq %>% as.character())
   
   ESV.tidy <- ESVtab %>% tibble::as_tibble() %>% 
-    dplyr::mutate(ID_labo = row.names(ESVtab)) %>%
-    tidyr::pivot_longer(cols = !ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
+    dplyr::mutate(ID_sample = row.names(ESVtab)) %>%
+    tidyr::pivot_longer(cols = !ID_sample, names_to = "SEQ", values_to = "Nreads") %>% 
     dplyr::left_join(DNA.tidy)
   
   return(ESV.tidy) 
@@ -141,10 +141,10 @@ tidy.ESV <- function(ESVtab, DNA.seq) {
 for(l in LOCUS){
   
   reads.int <- tidy.ESV( get(paste0("ESVtab.",l)),   get(paste0("DNA.",l))) %>% 
-    dplyr::select(ID_labo, ESV, Nreads) %>% tidyr::pivot_wider(names_from = ESV, values_from = Nreads)
+    dplyr::select(ID_sample, ESV, Nreads) %>% tidyr::pivot_wider(names_from = ESV, values_from = Nreads)
   
-  reads <- as.matrix(reads.int %>% dplyr::select(-ID_labo))
-  dimnames(reads)[[1]] <- reads.int %>% dplyr::pull(ID_labo)
+  reads <- as.matrix(reads.int %>% dplyr::select(-ID_sample))
+  dimnames(reads)[[1]] <- reads.int %>% dplyr::pull(ID_sample)
   
   assign(x = paste0("reads.", l), 
          value = reads)
@@ -191,20 +191,20 @@ for(l in LOCUS){
   
   pcr.int <- data.info  %>%  dplyr::filter(Loci == l,
                                            Run == RUN) %>% 
-    dplyr::rename(sample_id = ID_labo,
-                  plate_no = ID_plaque,
-                  project = ID_subprojet) %>% 
-    dplyr::mutate (type = ifelse(Type_echantillon %in% c("Echantillon", "ECH"), "sample", "control"),
+    dplyr::rename(sample_id = ID_sample,
+                  plate_no = ID_plate,
+                  project = ID_subproject) %>% 
+    dplyr::mutate (type = ifelse(Sample_type %in% c("Echantillon", "ECH", "POOL"), "sample", "control"),
                    control_type = ifelse(type == "sample", NA,
-                                         ifelse(Type_echantillon %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
-                                                ifelse(Type_echantillon %in% c("NTC"), "sequencing",
-                                                       ifelse(Type_echantillon %in% c("PPC", "MPC"), "positive", 
+                                         ifelse(Sample_type %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
+                                                ifelse(Sample_type %in% c("NTC"), "sequencing",
+                                                       ifelse(Sample_type %in% c("PPC", "MPC","MPC_Low", "MPC_High"), "positive", 
                                                               "extraction")))),
-                   plate_row= stringr::str_sub(ID_puit, 1, 1),
-                   plate_col= stringr::str_sub(ID_puit, 2,3) ,
+                   plate_row= stringr::str_sub(ID_well, 1, 1),
+                   plate_col= stringr::str_sub(ID_well, 2,3) ,
                    plate_col = as.numeric(as.character(plate_col)),
-                   #tag_fwd = Sequence_i7,
-                   #tag_rev = Sequence_i5,
+                   tag_fwd = Index_i7,
+                   tag_rev = Index_i5,
                    primer_fwd = sapply(stringr::str_split(get.value(paste0(l,".primers")), pattern = ";"), `[`, 1),
                    primer_rev = sapply(stringr::str_split(get.value(paste0(l,".primers")), pattern = ";"), `[`, 2),
     ) %>% as.data.frame()
@@ -221,7 +221,7 @@ for(l in LOCUS){
 
 for(l in LOCUS){
   
-  samples.int <- data.frame(sample_id =  data.info %>% dplyr::filter(Loci == l) %>% dplyr::pull(ID_labo), info = NA) 
+  samples.int <- data.frame(sample_id =  data.info %>% dplyr::filter(Loci == l) %>% dplyr::pull(ID_sample), info = NA) 
   row.names(samples.int )<- samples.int$sample_id
   
   assign(x = paste0("samples.", l), 
@@ -354,7 +354,7 @@ for(l in LOCUS){
   
   
   
-  tests.tagjump.long$Type_echantillon <- metabarlist.int$pcrs$Type_echantillon[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  tests.tagjump.long$Sample_type <- metabarlist.int$pcrs$Sample_type[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
   tests.tagjump.long$project <- metabarlist.int$pcrs$project[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
   
   tag.gg.1 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
@@ -367,7 +367,7 @@ for(l in LOCUS){
                          #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
     ) +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type + project, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
     theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")
   
@@ -381,7 +381,7 @@ for(l in LOCUS){
                          #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
     ) +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type + project, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
     theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")  
   
@@ -1622,25 +1622,25 @@ for(l in LOCUS){
         # Final visualisation
         
         read.correct.tidy <- metabarlist.correct.int$reads %>% as.data.frame() %>% 
-          dplyr::mutate(ID_labo = row.names(metabarlist.correct.int$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::mutate(ID_sample = row.names(metabarlist.correct.int$reads)) %>% 
+          tidyr::pivot_longer(-ID_sample, names_to = "ESV", values_to = "Nreads") %>% 
           dplyr::left_join(metabarlist.correct.int$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-          dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
+          dplyr::group_by(ID_sample, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% 
-          dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"))
+          dplyr::filter(Sample_type %in% c("Echantillon", "ECH", "POOL"))
         
         read.ori.tidy <- metabarlist.int.sub$reads %>% as.data.frame() %>% 
-          dplyr::mutate(ID_labo = row.names(metabarlist.int.sub$reads)) %>% 
-          tidyr::pivot_longer(-ID_labo, names_to = "ESV", values_to = "Nreads") %>% 
+          dplyr::mutate(ID_sample = row.names(metabarlist.int.sub$reads)) %>% 
+          tidyr::pivot_longer(-ID_sample, names_to = "ESV", values_to = "Nreads") %>% 
           dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-          dplyr::group_by(ID_labo, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
-          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
+          dplyr::group_by(ID_sample, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
+          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Sample_type %in% c("Echantillon", "ECH", "POOL"),
                                                                               Nreads > 0)
         
         if(nrow( read.correct.tidy) > 0){
-          final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+          final.correction.gg  <- read.correct.tidy %>%  ggplot(aes(fill = Nreads, x = ID_sample, y = Taxon)) +
             labs(x= "", y = "") + 
             geom_bin2d(color = "darkgray")+
             scale_fill_distiller(trans = "log10",
@@ -1649,7 +1649,7 @@ for(l in LOCUS){
                                  #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
             ) +
             theme_minimal()+
-            facet_grid(phylum ~ ID_projet, scale = "free", space = "free") + 
+            facet_grid(phylum ~ ID_project, scale = "free", space = "free") + 
             ggtitle(paste("Overall visualisation after correction for", l)) +
             theme_bw() +
             theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
@@ -1657,7 +1657,7 @@ for(l in LOCUS){
         } else{final.correct.gg <-  ggplot()}
         
         if(nrow( read.ori.tidy) > 0 ){
-          final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+          final.ori.gg <- read.ori.tidy %>%  ggplot(aes(fill = Nreads, x = ID_sample, y = Taxon)) +
             labs(x= "", y = "") + 
             geom_bin2d(color = "darkgray")+
             scale_fill_distiller(trans = "log10",
@@ -1666,7 +1666,7 @@ for(l in LOCUS){
                                  #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
             ) +
             theme_minimal() +
-            facet_grid(phylum ~ ID_projet, scale = "free", space = "free") +   
+            facet_grid(phylum ~ ID_project, scale = "free", space = "free") +   
             
             ggtitle(paste("Overall visualisation before correction for", l)) +
             theme_bw() +
