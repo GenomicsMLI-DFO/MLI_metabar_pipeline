@@ -29,7 +29,7 @@ SUBGROUP <- stringr::str_split(get.value("group.metabaR", file = file.path(here:
 
 data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", "SeqInfo.csv") )
 
-data.info <- data.info %>% mutate(Type_echantillon = factor(Type_echantillon, levels = c("ECH", "FNC", "SNC", "FNC_SNC", "SNC_FNC", "ENC", "PNC", "MNC", "PPC", "MPC", "MPC_High", "MPC_Low")))
+data.info <- data.info %>% mutate(Sample_type = factor(Sample_type, levels = c("ECH", "POOL", "FNC", "SNC", "FNC_SNC", "SNC_FNC", "ENC", "PNC", "MNC", "PPC", "MPC", "MPC_High", "MPC_Low")))
 
 # Create a list of which PCR to be considered in each SUBGROUP
 
@@ -37,11 +37,11 @@ SUBGROUP.ls <- list()
 
 for(x in SUBGROUP){
   
-  subgroup <- c(data.info %>% dplyr::filter(ID_subprojet == x)  %>% dplyr::filter(Run == RUN) %>% pull(ID_subprojet) %>% unique(),
-                data.info %>% dplyr::filter(ID_subprojet == x)  %>% dplyr::filter(Run == RUN) %>% pull(ID_projet) %>% unique(),                                                         
+  subgroup <- c(data.info %>% dplyr::filter(ID_subproject == x)  %>% dplyr::filter(Run == RUN) %>% pull(ID_subproject) %>% unique(),
+                data.info %>% dplyr::filter(ID_subproject == x)  %>% dplyr::filter(Run == RUN) %>% pull(ID_project) %>% unique(),                                                         
                 "ALL", "All", "all") %>% unique()
   
-  id <- data.info %>% dplyr::filter(ID_subprojet %in% subgroup) %>% dplyr::filter(Run == RUN)  %>% pull(ID_labo) %>% unique()
+  id <- data.info %>% dplyr::filter(ID_subproject %in% subgroup) %>% dplyr::filter(Run == RUN)  %>% pull(ID_sample) %>% unique()
   
   SUBGROUP.ls[[x]] <- id
   
@@ -107,8 +107,8 @@ Les résultats présentés ne peuvent être considérés comme finaux et ne peuv
 n.samples.tot <- data.info %>% dplyr::filter(Run == RUN) %>% nrow()
 n.loc.tot <- data.info %>% dplyr::filter(Run == RUN) %>% pull(Loci) %>% unique() %>% length() 
 
-n.samples.projet <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]], Loci %in% LOCUS) %>% pull(ID_labo) %>% length()
-n.samples.ech <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]], Type_echantillon %in% c("ECH"), Loci %in% LOCUS) %>% pull(ID_labo) %>% length()
+n.samples.projet <- data.info %>% filter(ID_sample %in% SUBGROUP.ls[[projet]], Loci %in% LOCUS) %>% pull(ID_sample) %>% length()
+n.samples.ech <- data.info %>% filter(ID_sample %in% SUBGROUP.ls[[projet]], Sample_type %in% c("ECH", "POOL"), Loci %in% LOCUS) %>% pull(ID_sample) %>% length()
 n.samples.control <- n.samples.projet - n.samples.ech 
 
 ```
@@ -142,12 +142,12 @@ if(length(SUBGROUP) > 1){
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-summary.1 <- data.info %>% filter(ID_labo %in% SUBGROUP.ls[[projet]],
+summary.1 <- data.info %>% filter(ID_sample %in% SUBGROUP.ls[[projet]],
                                    Run == RUN,
                      Loci %in% LOCUS) %>% 
-              group_by(Loci, Type_echantillon) %>% 
+              group_by(Loci, Sample_type) %>% 
               summarise(N = n()) %>% 
-               pivot_wider(names_from = Type_echantillon, values_from = N)
+               pivot_wider(names_from = Sample_type, values_from = N)
 
 
 summary.1  %>% ungroup() %>% mutate(Total = select(. , -1) %>% rowSums()) %>% 
@@ -158,7 +158,7 @@ summary.1  %>% ungroup() %>% mutate(Total = select(. , -1) %>% rowSums()) %>%
 
 **Légende**
 
-ECH = Échantillon
+ECH/POOL = Échantillon
 
 SNC = Contrôle négatif de terrain (*sampling negative control*)
 
@@ -220,16 +220,16 @@ for(l in LOCUS){
   
 }
 
-nreads.res <- cutadapt.res %>% left_join(dada2.summary %>% mutate( ID_labo = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
-                                select(ID_labo, Loci, Trim)) %>% 
+nreads.res <- cutadapt.res %>% left_join(dada2.summary %>% mutate( ID_sample = ID %>% str_remove(paste(paste0("_", LOCUS), collapse = "|"))) %>%
+                                select(ID_sample, Loci, Trim)) %>% 
                                left_join(esv.reads.res) %>% 
-                               left_join(tag.summary %>% select(ID_labo = sample_id, ESVtagjump = nb_reads.tagjump, Loci)) %>% 
-   left_join(metabar.summary %>% select(ID_labo = sample_id, ESVfinal = nb_reads_postmetabaR, Loci)) %>% 
+                               left_join(tag.summary %>% select(ID_sample = sample_id, ESVtagjump = nb_reads.tagjump, Loci)) %>% 
+   left_join(metabar.summary %>% select(ID_sample = sample_id, ESVfinal = nb_reads_postmetabaR, Loci)) %>% 
                pivot_longer(c(Raw, Adapt, Trim, Merge, ESVdada2, ESVtagjump, ESVfinal), names_to = "Step", values_to = "Nreads") %>%
-  left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon, Run), 
-                           by = c("ID_labo", "Loci"))  %>%                           
+  left_join(data.info %>% select(ID_sample, Loci, ID_project, Sample_type, Run), 
+                           by = c("ID_sample", "Loci"))  %>%                           
    mutate(Nreads = ifelse(is.na(Nreads), 0, Nreads),
-                                    Nreads = ifelse((Type_echantillon != "ECH" & Step == "ESVfinal"), NA, Nreads ),
+                                    Nreads = ifelse((Sample_type %nin% c("ECH", "POOL") & Step == "ESVfinal"), NA, Nreads ),
                                     Nreads1 = Nreads + 1 ,
                         Step = factor(Step, levels = c("Raw", "Adapt", "Trim", "Merge", "ESVdada2", "ESVtagjump", "ESVfinal"))) 
 
@@ -258,12 +258,12 @@ Le profil de variation en nombre de reads est différent selon l'étape du pipel
 
 # Load post Metaba
 
-nreads.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
+nreads.res %>%  filter(ID_sample %in% SUBGROUP.ls[[projet]],
                        Run == RUN,
                       Loci %in% LOCUS) %>% 
-  mutate(Cat_echantillon = ifelse(Type_echantillon %in% c("ECH"), "Échantillon", "Contrôle")
+  mutate(Cat_echantillon = ifelse(Sample_type %in% c("ECH", "POOL"), "Échantillon", "Contrôle")
         ) %>% 
-  ggplot(aes(x = Step, y = Nreads1, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Step, y = Nreads1, col = Sample_type, group = ID_sample)) +
   #geom_jitter(height = 0) +
   geom_point(alpha = 0.5) +
   geom_line(alpha = 0.5) + 
@@ -286,23 +286,23 @@ Le patron variation en nombre de MOTUs est aussi différent selon l'étape du pi
 esv.motus.res <- read_csv(file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_NESV.csv"))
 names(esv.motus.res)[4] <- "ESVdada2"
 
-nmotus.res <- esv.motus.res %>% left_join(tag.summary %>% select(ID_labo = sample_id, ESVtagjump = nb_motus.tagjump, Loci)) %>% 
-     left_join(metabar.summary %>% select(ID_labo = sample_id, ESVfinal = nb_motus_postmetabaR, Loci)) %>% 
+nmotus.res <- esv.motus.res %>% left_join(tag.summary %>% select(ID_sample = sample_id, ESVtagjump = nb_motus.tagjump, Loci)) %>% 
+     left_join(metabar.summary %>% select(ID_sample = sample_id, ESVfinal = nb_motus_postmetabaR, Loci)) %>% 
                pivot_longer(c(Merge, ESVdada2, ESVtagjump, ESVfinal), names_to = "Step", values_to = "Nmotus") %>% 
-                 left_join(data.info %>% select(ID_labo, Loci, ID_projet, Type_echantillon, Run), 
-                           by = c("ID_labo", "Loci")) %>%
+                 left_join(data.info %>% select(ID_sample, Loci, ID_project, Sample_type, Run), 
+                           by = c("ID_sample", "Loci")) %>%
                  mutate(Nmotus = ifelse(is.na(Nmotus), 0, Nmotus),
-                        Nmotus = ifelse((Type_echantillon != "ECH" & Step == "ESVfinal"), NA, Nmotus ),
+                        Nmotus = ifelse((Sample_type %nin% c("ECH", "POOL") & Step == "ESVfinal"), NA, Nmotus ),
                         Nmotus1 = Nmotus + 1 ,
                         Step = factor(Step, levels = c("Raw", "Adapt", "Trim", "Merge", "ESVdada2", "ESVtagjump", "ESVfinal"))) 
 
 
-nmotus.res %>%  filter(ID_labo %in% SUBGROUP.ls[[projet]],
+nmotus.res %>%  filter(ID_sample %in% SUBGROUP.ls[[projet]],
                        Run == RUN,
                       Loci %in% LOCUS) %>% 
-    mutate(Cat_echantillon = ifelse(Type_echantillon %in% c("ECH"), "Échantillon", "Contrôle")
+    mutate(Cat_echantillon = ifelse(Sample_type %in% c("ECH", "POOL"), "Échantillon", "Contrôle")
         ) %>% 
-  ggplot(aes(x = Step, y = Nmotus1, col = Type_echantillon, group = ID_labo)) +
+  ggplot(aes(x = Step, y = Nmotus1, col = Sample_type, group = ID_sample)) +
   #geom_jitter(height = 0) +
   geom_point(alpha = 0.5) +
   geom_line(alpha = 0.5) + 
@@ -520,7 +520,7 @@ tag.param.int <- tag.param %>% dplyr::filter(Locus == l) %>% pull(tag.threshold)
                          na.value = "white",
                          name = "N reads +1") +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
      theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
@@ -537,7 +537,7 @@ tag.param.int <- tag.param %>% dplyr::filter(Locus == l) %>% pull(tag.threshold)
                          na.value = "white",
                          name = "N MOTUs +1") +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
     theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
@@ -614,9 +614,9 @@ if(between(nrow(depth.param), 1, length(LOCUS) -1 )){
 
 nreads.res %>% filter(Step %in% c("ESVdada2", "ESVtagjump", "ESVfinal"),
                       Run == RUN,
-                      ID_labo %in% SUBGROUP.ls[[projet]]) %>% 
+                      ID_sample %in% SUBGROUP.ls[[projet]]) %>% 
   left_join(metabar.param, by = c("Loci" = "Locus")) %>% 
-  ggplot(aes(x = Nreads1, fill = Type_echantillon)) +
+  ggplot(aes(x = Nreads1, fill = Sample_type)) +
   geom_histogram() +
   geom_vline(aes(xintercept = depth.threshold), lty=2, color="orange") +
   scale_x_continuous(trans="log10") +
@@ -633,9 +633,9 @@ Un seuil minimum de nombre de reads est déterminé par locus (ligne pointillée
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 low.depth.sample <- nreads.res %>% filter(Step %in% c("ESVtagjump"),
-                      ID_labo %in% SUBGROUP.ls[[projet]],
+                      ID_sample %in% SUBGROUP.ls[[projet]],
                       Run == RUN,
-                      Type_echantillon %in% c("ECH")) %>% 
+                      Sample_type %in% c("ECH", "POOL")) %>% 
   left_join(metabar.param, by = c("Loci" = "Locus")) %>% 
   group_by(Loci) %>% 
   mutate(SUM = n()) %>% 
@@ -712,7 +712,7 @@ for(l in LOCUS){
 }
 
 # Rouler seulement s'il y a des contaminants
-if(nrow(conta.summary) >= 0){
+if(nrow(conta.summary) > 0){
 
 conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
   filter(!is.na(sub.tagclean.max)) %>% 
@@ -725,7 +725,7 @@ conta.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>%
 }
 
 # Rouler seulement s'il y a des contaminants
-if(nrow(taxa.summary) >= 0){
+if(nrow(taxa.summary) > 0){
 
 taxa.summary %>%
   filter(!is.na(Tagjump.corrected)) %>% 
@@ -736,7 +736,7 @@ taxa.summary %>%
 }
 
 # Rouler seulement s'il y a des contaminants
-if(nrow(all.summary) >= 0){
+if(nrow(all.summary) > 0){
 
 all.summary %>% mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
   filter(!is.na(Tagjump.corrected)) %>% 
@@ -826,13 +826,14 @@ for(l in LOCUS){
 
 MOTUs.control.table <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("MOTUs.Metabarinfo.postTagjump_",RUN,"_", l, "_ALL.csv")))
 ESV.control.table   <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab.postTagjump_",RUN,"_", l, "_ALL.csv")))
-names(ESV.control.table)[1] <- "ID_labo" 
+names(ESV.control.table)[1] <- "ID_sample" 
 
-ESV.table.control.long.int <- ESV.control.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
+ESV.table.control.long.int <- ESV.control.table %>% 
+  dplyr::filter(ID_sample %in% SUBGROUP.ls[[projet]]) %>% 
+                  pivot_longer(-ID_sample, names_to = "ID", values_to = "Nreads") %>% 
                   mutate(Loci = l) %>% 
-                  left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
-  filter(ID_labo %in% SUBGROUP.ls[[projet]],
-         Type_echantillon %nin% c("ECH", "PPC", "MPC")) %>% 
+                  left_join(data.info %>% select(ID_sample, ID_project, Sample_type, Region, Site) %>%  distinct(.keep_all = T )) %>% 
+  dplyr::filter( Sample_type %nin% c("ECH", "POOL", "PPC", "MPC", "MPC_High", "MPC_Low")) %>% 
         left_join(MOTUs.control.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.control.long <- bind_rows(ESV.table.control.long, ESV.table.control.long.int)
    
@@ -851,7 +852,7 @@ resi.int <-   ESV.table.control.long %>%
            ) %>% 
   filter(#Nreads > 0,
          Loci == l) %>% 
-  group_by(Category, Loci, ID_labo, Type_echantillon, Taxon) %>% 
+  group_by(Category, Loci, ID_sample, Sample_type, Taxon) %>% 
   summarise(Nreads = sum(Nreads)) %>% 
   mutate(Taxon_loci_Cat = paste(Taxon, Loci, Category))
   
@@ -860,7 +861,7 @@ focus.MOTUs <- resi.int %>% filter(Nreads > 0) %>% pull(Taxon_loci_Cat) %>% uniq
 if(length(focus.MOTUs) > 0){
 
 graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>% 
-  ggplot(aes(fill = Nreads , x = ID_labo, y = Taxon)) +
+  ggplot(aes(fill = Nreads , x = ID_sample, y = Taxon)) +
   labs(x= "", y = "") + 
   geom_bin2d(color = "darkgray")+
   scale_fill_distiller(trans = "log10",
@@ -869,7 +870,7 @@ graph.resi <- resi.int   %>% filter(Taxon_loci_Cat %in% focus.MOTUs) %>%
                        #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
                        ) +
   theme_minimal()+
-  facet_grid(Category ~ Type_echantillon, scale = "free", space = "free") + 
+  facet_grid(Category ~ Sample_type, scale = "free", space = "free") + 
   ggtitle(paste("Détections dans les contrôles négatifs au locus", l)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
@@ -915,8 +916,8 @@ La relation entre la diversité (N MOTUs) et la profondeur de séquençage (N re
 #   
 #   seq.int <- readr::read_delim(esv.path, delim = " ", col_names = F, n_max = 1) %>% as.vector()
 #   esv.int <- readr::read_delim(esv.path, delim = " ", col_names = F, skip = 1) 
-#   names(esv.int) <- c("ID_labo", seq.int)
-#   esv.int <- esv.int %>% pivot_longer(-ID_labo, names_to = "SEQ", values_to = "Nreads") %>% 
+#   names(esv.int) <- c("ID_sample", seq.int)
+#   esv.int <- esv.int %>% pivot_longer(-ID_sample, names_to = "SEQ", values_to = "Nreads") %>% 
 #                          mutate(Loci = l)
 #   
 #   ESV.table <- bind_rows(ESV.table, esv.int)
@@ -926,9 +927,9 @@ La relation entre la diversité (N MOTUs) et la profondeur de séquençage (N re
 ##str(ESV.table)#
 #
 
-#ESV.table <- ESV.table %>% left_join(data.info %>% select(ID_labo, ID_projet, Loci, Type_echantillon))
+#ESV.table <- ESV.table %>% left_join(data.info %>% select(ID_sample, ID_project, Loci, Sample_type))
 
-#ESV.table.summary <- ESV.table %>% group_by(ID_labo, Loci, Type_echantillon) %>% 
+#ESV.table.summary <- ESV.table %>% group_by(ID_sample, Loci, Sample_type) %>% 
 #              summarise(NESV = length(SEQ[Nreads > 0]),
 #                        Nreads = sum(Nreads)) 
 
@@ -956,11 +957,11 @@ for(l in LOCUS){
 
 MOTUs.table <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("MOTUs.Metabarinfo.corrected_",l, "_",projet, ".csv")))
 ESV.table   <- readr::read_csv(file.path(here::here(), "00_Data/04_ESVcorrected", paste0("ESVtab.corrected_",l, "_",projet, ".csv")))
-names(ESV.table)[1] <- "ID_labo" 
+names(ESV.table)[1] <- "ID_sample" 
 
-ESV.table.long.int <- ESV.table %>% pivot_longer(-ID_labo, names_to = "ID", values_to = "Nreads") %>% 
+ESV.table.long.int <- ESV.table %>% pivot_longer(-ID_sample, names_to = "ID", values_to = "Nreads") %>% 
                   mutate(Loci = l) %>% 
-                  left_join(data.info %>% select(ID_labo, ID_projet, Type_echantillon, Station, Site_echantillonnage) %>%  distinct(.keep_all = T )) %>% 
+                  left_join(data.info %>% select(ID_sample, ID_sample_ori, ID_project, Sample_type, Region, Site) %>%  distinct(.keep_all = T )) %>% 
                   left_join(MOTUs.table %>% select(-Loci), by = c("ID" = "ESV"))
 ESV.table.long <- bind_rows(ESV.table.long, ESV.table.long.int)
    
@@ -969,7 +970,7 @@ ESV.table.long <- bind_rows(ESV.table.long, ESV.table.long.int)
 
 ESV.table.long %>% 
   mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
-  group_by(Loci, ID_labo) %>% 
+  group_by(Loci, ID_sample) %>% 
   summarise(nb_taxon_postmetabaR = length(unique(Taxon[Nreads>0])),
             nb_reads_postmetabaR = sum(Nreads)) %>% 
   ggplot(aes(y = nb_taxon_postmetabaR, x = nb_reads_postmetabaR)) +
@@ -1086,20 +1087,20 @@ print(graph.int)
 Un coup d'oeil rapide sur les résultats par échantillon à tous les locus. **À noter que les assignations taxonomiques n’ont pas été révisées par un expert.**
 
 ```{r echo=FALSE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE}
-n.stations <- ESV.table.long %>% pull(Station) %>% unique() %>% length()
-n.sites <- ESV.table.long %>% pull(Site_echantillonnage) %>% unique() %>% length()
+n.Regions <- ESV.table.long %>% pull(Region) %>% unique() %>% length()
+n.sites <- ESV.table.long %>% pull(Site) %>% unique() %>% length()
 
 for(l in LOCUS){
 graph.int <-   ESV.table.long %>% 
     mutate(Taxon= ifelse(is.na(Taxon), "Unassigned", Taxon),
-         Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "16Schord"), class, phylum)#,
+         Groupe = ifelse(Loci %in% c("MiFishU", "MiMam", "12S160", "16Schord"), class, phylum)#,
          #Nreads = ifelse(Nreads == 1, 0 , Nreads)
          ) %>% 
   filter(Loci == l,
          phylum %in% c("Arthropoda", "Cnidaria", "Echinodermata", "Chordata", "Mollusca", "Porifera", "Nemertea", "Bryozoa", "Annelida","Brachiopoda", "Sipuncula", "Chlorophyta")) %>%
-  group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, Groupe) %>% 
+  group_by(Loci, ID_sample, ID_sample_ori, Region, Site, Taxon, Groupe) %>% 
   summarise(Nreads = sum(Nreads)) %>% 
-  ggplot(aes(fill = Nreads, x = ID_labo, y = Taxon)) +
+  ggplot(aes(fill = Nreads, x = ID_sample_ori, y = Taxon)) +
   labs(x= "", y = "") + 
   geom_bin2d(color = "darkgray")+
   scale_fill_distiller(trans = "log10",
@@ -1119,16 +1120,16 @@ graph.int <-   ESV.table.long %>%
         legend.title = element_text(angle = 0, vjust = 0.9),
         legend.position = "bottom")
 
-if(n.stations > 1 & n.sites == 1){
-  graph.int <- graph.int  + facet_grid(Groupe ~ Station, scale = "free", space = "free")    
+if(n.Regions > 1 & n.sites == 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ Region, scale = "free", space = "free")    
 }
 
-if(n.sites > 1 & n.stations == 1){
-  graph.int <- graph.int  + facet_grid(Groupe ~ Site_echantillonnage, scale = "free", space = "free")    
+if(n.sites > 1 & n.Regions == 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ Site, scale = "free", space = "free")    
 }
 
-if(n.sites > 1 & n.stations > 1){
-  graph.int <- graph.int  + facet_grid(Groupe ~ Station + Site_echantillonnage, scale = "free", space = "free")    
+if(n.sites > 1 & n.Regions > 1){
+  graph.int <- graph.int  + facet_grid(Groupe ~ Region + Site, scale = "free", space = "free")    
 }
 
 
@@ -1141,8 +1142,8 @@ print(graph.int)
 ```{r include=FALSE}
 # En profiter pour extraire les données
 
-readr::write_csv(ESV.table.long %>% group_by(Loci, ID_labo, Station, Site_echantillonnage, Taxon, species, genus, family, order, class, phylum) %>% summarise(Nreads = sum(Nreads)), 
-                 file = paste0(projet, "_ESVtab_taxo_report.csv"))
+readr::write_csv(ESV.table.long %>% group_by(Loci, ID_sample,  ID_sample_ori, Region, Site, Taxon, species, genus, family, order, class, phylum) %>% summarise(Nreads = sum(Nreads)), 
+                 file = file.path("03_Report", paste0(projet, "_ESVtab_taxo_report.csv")))
 
 ```
 
