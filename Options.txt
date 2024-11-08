@@ -1,0 +1,48 @@
+# GLOBAL OPTIONS for MLI_metabar_pipeline
+# More than one loci can be analyzed at the same time, use ";" as separators.
+
+Loci: COI
+Sens: R1;R2
+
+# Number of Cores we can use in the analysis
+NumCores: 1
+
+# Run names - needed as samples from the same RUN will be analysed toghetter sometime
+Run: MI_3992
+
+# Primer sequences (default ones)
+
+# mICOIintF / jgHCO2198
+COI.primers: GGWACWGGWTGAACWGTWTAYCCYCC;TAIACYTCIGGRTGICCRAARAAYCA
+
+# MiFish-U-F ; MiFish-U-R
+MiFishU.primers: GTCGGTAAAACTCGTGCCAGC;CATAGTGGGGTATCTAATCCCAGTTTG
+
+# MiFish-248-F ; MiFish-U-R
+12S248.primers: CGTGCCAGCCACCGCGGTT;CATAGTGGGGTATCTAATCCCAGTTTG
+
+# MiFish-160-F ; MiFish-U-R
+12S160.primers: HCGGCGTAAAGVGTGGTTA;CATAGTGGGGTATCTAATCCCAGTTTG 
+
+# Dloop-Pv
+dloopPvm.primers: AGCACCCAAAGCTGACATTC;CGGAGCGAGATCTAGGTACAC
+
+# Subgroup for ESV table correction
+group.metabaR: TE
+
+# Ref database path - must be set to perform these analysis
+NCBI.nt.path: 
+NCBI.local.path: 
+rdp.path:  
+
+# Assignment program (Blast/Blast.local/RDP), method (TOP, LCA, RPD) and threshold (95, 50) used for the DB correction and for the output
+
+assign.1: Blast.local;TOP;95
+assign.2: Blast;TOP;95
+
+
+# Python virtual environment
+PythonENV.path: 
+
+# Actual pipeline version
+MLI.version: 0.2.3

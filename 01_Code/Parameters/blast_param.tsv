@@ -1,0 +1,6 @@
+Locus	db	qcov_hsp_perc	perc_identity	max_target_seqs	evalue
+COI	nt	95	95	500	"1e-50"
+MiFishU	nt	95	95	500	"1e-50"
+12S248	nt	95	95	500	"1e-50"
+12S160	nt	95	95	500	"1e-25"
+dloopPvm	nt	95	95	500	"1e-50"
