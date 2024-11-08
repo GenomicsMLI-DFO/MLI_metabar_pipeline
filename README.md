@@ -3,7 +3,7 @@
 **Current version : 0.2.2**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
-__Main author:__  Audrey Bourret  
+__Main author:__  Audrey Bourret and Marion Chevrinais 
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
 __Group:__        Laboratory of genomics   
 __Location:__     Maurice Lamontagne Institute, Mont-Joli, Québec, Canada  
@@ -180,6 +180,8 @@ The data set contains 4 samples at the COI marker, both F (R1) and R (R2).
 ## Limitations
 
 While entire R scripts can be sent through the command line, sending lines by lines through Rstudio is preferred.
+
+Parameters were tested with PE250 sequencing. They should be adjusted for different read length.
 
 ## References
 

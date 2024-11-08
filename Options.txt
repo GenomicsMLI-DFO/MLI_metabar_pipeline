@@ -42,7 +42,7 @@ assign.2: Blast;TOP;95
 
 
 # Python virtual environment
-PythonENV.path: /home/genobiwan/Documents/PythonVenv/GenoBaseEnv/bin
+PythonENV.path: 
 
 # Actual pipeline version
 MLI.version: 0.2.2
