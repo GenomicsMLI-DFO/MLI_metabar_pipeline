@@ -63,7 +63,7 @@ Sys.setenv(PATH = paste(c("/path/to/PythonVenv/bin",
 
 - Press the green button **Use this template** at the top of this page to get your own copy of this pipeline (or download the .zip version through the Code button if your are not familiar with github).
 - Put sequencing raw fastq files into the *00_Data/01a_RawData* folder (training files can be found [here](https://github.com/GenomicsMLI-DFO/MLI_metabar_example_dataset))
-- Fill the [SeqInfo.csv](00_Data/00_FileInfos/SeqInfo.csv) file within the 00_Data/00_FileInfos folder 
+- Fill the [.csv](00_Data/00_FileInfos/SeqInfo.csv) file within the 00_Data/00_FileInfos folder 
 - If necessary, install the depending R packages : `readr`, `tidyr`, `magrittr`,`dplyr`,`stringr`,`here`,`parallel`, `ggplot2`, `ggforce`
 
 This can be done all at once with this command line in R :
@@ -165,7 +165,7 @@ This step will provide information to identify and correct MOTU tables generated
 
 This script will generate, for each locus, many figures and summary tables in the **02_Results/04_ESVtable_correction** folder, and corrected outputs in the **00_Data/04_ESVcorrected** folder. To help with the interpretation of the outputs, you can check the [metabar website](https://metabarfactory.github.io/metabaR/articles/metabaRF-vignette.html).  
 
-To run this script, you will need specific columns to be fulfilled in the [*SeqInfo.csv*](./00_Data/00_FileInfos/SeqInfos.csv) file: ID_plaque, ID_puit, ID_subprojet, Type_echantillon, Run, tag_fwd and tag_rev. 
+To run this script, you will need specific columns to be fulfilled in the [*SeqInfo.csv*](./00_Data/00_FileInfos/SeqInfo.csv) file: ID_plate, ID_well, ID_subproject, Sample_type, Run, Index_i7 and Index_I5. 
 
 Specific parameters of this step can be modified in the files [*metabar_param.tsv*](./01_Code/Parameters/metabar_param.tsv) and [*metabar_exclude_taxa.tsv*](./01_Code/Parameters/metabar_exclude_taxa.tsv)
 
