@@ -154,7 +154,7 @@ Specific parameters of this step can be modified in the file [*RDP_param.tsv*](.
 
 You can choose to run one or more assignment methods.  
 
-Finally, the script **03c_TaxoAssign_CompareResults.R** within *01_Code* folder need to be run to create a final taxonomical assignment results that can combine more that one assignment method, which is recommanded (Bourret et al. 2023). The choice of the final assignment methods is also defined in the [*Options.txt*](./Options.txt) file.  
+Finally, the script **03c_TaxoAssign_CompareResults.R** within *01_Code* folder needs to be run to create a final taxonomical assignment results that can combine more that one assignment method, which is recommanded (Bourret et al. 2023). The choice of the final assignment methods is also defined in the [*Options.txt*](./Options.txt) file. An option for correction of final taxonomic levels for each taxon by WoRMS nomenclature is given in the script **03c_TaxoAssign_CompareResults_WORMS_corrected.R** within *01_Code* folder.
 
 ### Correct MOTUs tables
 
