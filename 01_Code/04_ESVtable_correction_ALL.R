@@ -1518,7 +1518,7 @@ for(l in LOCUS){
     
     if(pcr.correct == T){   
       
-      metabarlist.correct.int <- metabaR::ubset_metabarlist(metabarlist.correct.int, table="pcrs", 
+      metabarlist.correct.int <- metabaR::subset_metabarlist(metabarlist.correct.int, table="pcrs", 
                                                     indices = (metabarlist.correct.int$pcrs$artefact_type == "Not artefactual"))
       
     }  else {
