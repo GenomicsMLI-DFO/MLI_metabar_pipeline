@@ -3,7 +3,7 @@
 **Current version : 0.2.3**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
-__Main author:__  Audrey Bourret and Marion Chevrinais   
+__Main author:__  Audrey Bourret
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
 __Group:__        Laboratory of genomics   
 __Location:__     Maurice Lamontagne Institute, Mont-Joli, Québec, Canada  
