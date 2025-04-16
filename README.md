@@ -187,7 +187,7 @@ Parameters were tested with PE250 sequencing. They should be adjusted for differ
 
 Chevrinais, M., Côté, G., Gingras, G., et al. 2025b. Refining the distribution and confirming the phylogenetic relationship of the endangered landlocked harbour seal _Phoca vitulina mellonae_ using environmental DNA. Canadian Journal of Fisheries and Aquatic Science. In review. 
 
-Chevrinais, M., Bourret, A., Côté, G. et al. 2025. Improving an endangered marine species distribution using reliable and localized environmental DNA detections combined with trawl captures. Sci Rep 15, 11926. [https://doi.org/10.1038/s41598-025-95358-3](https://www.nature.com/articles/s41598-025-95358-3)  
+Chevrinais, M., Bourret, A., Côté, G. et al. 2025a. Improving an endangered marine species distribution using reliable and localized environmental DNA detections combined with trawl captures. Sci Rep 15, 11926. [https://doi.org/10.1038/s41598-025-95358-3](https://www.nature.com/articles/s41598-025-95358-3)  
 
 Bourret, A., Nozères, C., Parent, E., and Parent, G.J. 2023. Maximizing the reliability and the number of species assignments in metabarcoding studies using a curated regional library and a public repository. Metabarcoding and Metagenomics 7: 37–49. [doi:10.3897/mbmg.7.98539](https://mbmg.pensoft.net/article/98539/).
 
