@@ -155,11 +155,11 @@ for(l in LOCUS){
     dplyr::rename(sample_id = ID_sample,
                   plate_no = ID_plate,
                   project = ID_subproject) %>% 
-    dplyr::mutate (type = ifelse(Type_echantillon %in% c("Echantillon", "ECH"), "sample", "control"),
+    dplyr::mutate (type = ifelse(Sample_type %in% c("Echantillon", "ECH"), "sample", "control"),
                    control_type = ifelse(type == "sample", NA,
-                                         ifelse(Type_echantillon %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
-                                                ifelse(Type_echantillon %in% c("NTC"), "sequencing",
-                                                       ifelse(Type_echantillon %in% c("PPC", "MPC", "MPC_Low", "MPC_High"), "positive", 
+                                         ifelse(Sample_type %in% c("Neg_PCR", "PNC", "MNC"),"pcr",
+                                                ifelse(Sample_type %in% c("NTC"), "sequencing",
+                                                       ifelse(Sample_type %in% c("PPC", "MPC", "MPC_Low", "MPC_High"), "positive", 
                                                               "extraction")))),
                    plate_row= stringr::str_sub(ID_well, 1, 1),
                    plate_col= stringr::str_sub(ID_well, 2,3) ,
@@ -312,7 +312,7 @@ for(l in LOCUS){
   
   # New diagnostic figure
   
-  tests.tagjump.long$Type_echantillon <- metabarlist.int$pcrs$Type_echantillon[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
+  tests.tagjump.long$Sample_type <- metabarlist.int$pcrs$Sample_type[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
   tests.tagjump.long$project <- metabarlist.int$pcrs$project[match(tests.tagjump.long$sample, rownames(metabarlist.int$pcrs))]
   
   tag.gg.1 <- tests.tagjump.long %>% dplyr::filter(!is.na(controls)) %>% 
@@ -325,7 +325,7 @@ for(l in LOCUS){
                          #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
     ) +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type + project, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
     theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")
 
@@ -339,7 +339,7 @@ for(l in LOCUS){
                          #breaks = c(1, 10, 100, 1000, 10000, 100000, 1000000,10000000), labels = c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
     ) +
     theme_minimal()+
-    facet_grid(. ~ Type_echantillon + project, scale = "free", space = "free")+
+    facet_grid(. ~ Sample_type + project, scale = "free", space = "free")+
     labs(x="", y="Threshold") + 
     theme(axis.text.x = element_text(angle=90, h=1), legend.position = "bottom")  
   
@@ -1588,7 +1588,7 @@ for(l in LOCUS){
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_sample, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
           dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% 
-          dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"))
+          dplyr::filter(Sample_type %in% c("Echantillon", "ECH"))
         
         read.ori.tidy <- metabarlist.int.sub$reads %>% as.data.frame() %>% 
           dplyr::mutate(ID_sample = row.names(metabarlist.int.sub$reads)) %>% 
@@ -1596,7 +1596,7 @@ for(l in LOCUS){
           dplyr::left_join(metabarlist.int.sub$motus %>% dplyr::select(ESV, Taxon, genus, phylum)) %>% 
           dplyr::mutate(Taxon = ifelse(is.na(Taxon), "Unassigned", Taxon)) %>% 
           dplyr::group_by(ID_sample, Taxon, phylum) %>% dplyr::summarise(Nreads = sum(Nreads)) %>% 
-          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Type_echantillon %in% c("Echantillon", "ECH"),
+          dplyr::left_join(data.info %>% dplyr::filter(Loci == l)) %>% dplyr::filter(Sample_type %in% c("Echantillon", "ECH"),
                                                                               Nreads > 0)
         
         if(nrow( read.correct.tidy) > 0){
