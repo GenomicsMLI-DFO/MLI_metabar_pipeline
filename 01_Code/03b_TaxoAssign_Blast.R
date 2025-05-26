@@ -139,7 +139,7 @@ for(l in LOCUS){
                     Threshold = t,
                     RefSeq = get.blast.value(l, "db", PARAM.BLAST))
     
-    cat("\Saving results")
+    cat("\nSaving results")
     
     readr::write_csv(LCA.int, file = file.path( res.path, paste0("LCA.", t, ".", l,  ".csv")))
     
