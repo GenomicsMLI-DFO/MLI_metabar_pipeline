@@ -48,7 +48,7 @@ write_csv(res , "02_Results/03_TaxoAssign/Assignements.ALL.csv")
 # Graphics ----------------------------------------------------------------
 
 graph.ESV <- res %>% dplyr::filter(Levels %in% c("species")) %>% 
-  dplyr::group_by(Taxon, phylum, Levels, Loci,  Method, Threshold, Folder, RefSeq ) %>% 
+  dplyr::group_by(Taxon, phylum, Levels, Method, Threshold, Folder, RefSeq ) %>% 
   dplyr::summarize(N_ESV = n()) %>%
   mutate(CAT = paste(Method, Threshold)) %>% 
   ggplot(aes(y = Taxon, x = CAT))+

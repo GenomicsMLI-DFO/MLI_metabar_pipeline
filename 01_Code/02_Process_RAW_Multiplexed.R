@@ -137,7 +137,7 @@ for(x in files.to.use){
 close(pb) # Close the connection
 
 # Internal function
-multiqc.fastp("02_Results/01_fastp/")
+multiqc.fastp("02_Results/01_FastQC/01_Raw/")
 
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
 

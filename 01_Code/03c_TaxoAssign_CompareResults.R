@@ -141,7 +141,7 @@ write_csv(res.final,  "02_Results/03_TaxoAssign/Assignements.Final.csv")
 
 
 graph.ESV.final <- res.final %>% dplyr::filter(Levels %in% c("species", "genus")) %>% 
-  dplyr::group_by(Taxon, phylum, Levels, Loci, Assignment.method ) %>% 
+  dplyr::group_by(Taxon, phylum, Levels, Assignment.method ) %>% 
   summarise(N_ESV = n()) %>% 
   dplyr::mutate(Assignment.method = factor(Assignment.method, levels = c(method.1, method.2))) %>% 
    ggplot(aes(y = Taxon, x = Assignment.method))+
