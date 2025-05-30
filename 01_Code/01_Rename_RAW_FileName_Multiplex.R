@@ -5,20 +5,12 @@
 # easier to work with
 # multiplex files need _multi_ pattern instead of locus name
 
-# Audrey Bourret
-# 2022-04-14
-
 # Library -----------------------------------------------------------------
 
 library(parallel)
 library(here)
 library(magrittr)
 library(stringr)
-
-# Parameters --------------------------------------------------------------------
-
-numCores <- 1
-
 
 # Create new files names --------------------------------------------------
 

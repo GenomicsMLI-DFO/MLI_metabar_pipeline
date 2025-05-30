@@ -1,20 +1,14 @@
-
-
 # Info --------------------------------------------------------------------
 
 # Script to check that all needed external programs can be reach by R
 # If you reach an error message, it's because the program is not install 
-# system wide
-# 
-# Audrey Bourret
-# 2023-08-31
+# system wide and thus the pipeline script won't work correctly.
 
 
 # Library -----------------------------------------------------------------
 
 # Internal functions
 source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
-
 
 # Step 0: Python virtual environment --------------------------------------
 
@@ -44,6 +38,11 @@ system2("fastqc", "--help")
 # https://multiqc.info/
 
 system2("multiqc", "--help")
+
+# Fastp
+# https://github.com/OpenGene/fastp
+
+system2("fastp", "--help")
 
 # Cutadapt
 # https://cutadapt.readthedocs.io/en/stable/

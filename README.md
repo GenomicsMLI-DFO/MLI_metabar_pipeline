@@ -1,13 +1,13 @@
 # MLI metabarcoding pipeline
 
-**Current version : 0.2.3**  
+**Current version : 0.2.4**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
 __Main author:__  Audrey Bourret         
 __Affiliation:__  Fisheries and Oceans Canada (DFO)   
 __Group:__        Laboratory of genomics   
 __Location:__     Maurice Lamontagne Institute, Mont-Joli, Québec, Canada  
-__Affiliated publication:__ Chevrinais et al. 2025a.     
+__Affiliated publication:__ Chevrinais, M., Bourret, A., Côté, G. et al. 2025a. Improving an endangered marine species distribution using reliable and localized environmental DNA detections combined with trawl captures. Sci Rep 15, 11926. [https://doi.org/10.1038/s41598-025-95358-3](https://www.nature.com/articles/s41598-025-95358-3)       
 __Contact:__      e-mail: audrey.bourret@dfo-mpo.gc.ca 
 
 - [Description](#description)
@@ -40,6 +40,7 @@ Released.
 The R scripts should be executed line by line within an intregrated development environment (IDE) such as [Rstudio](https://posit.co/download/rstudio-desktop/). Some external programs are also required:
   - [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
   - [multiqc](https://multiqc.info/)
+  - [fastp](https://github.com/OpenGene/fastp)  
   - [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
   - [blast](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 
@@ -47,6 +48,7 @@ To be sure that the external command is found by R, try to run the test script *
 
 ```{r}
 system2("fastqc", "--help")
+system2("fastp", "--help")
 system2("multiqc", "--help")
 system2("cutadapt", "--help")
 system2("blastn", "--help")
@@ -118,13 +120,14 @@ Use the file **02_Process_RAW.R** within *01_Code* folder to transform raw reads
 Use the file **02_Process_RAW_Multiplexed.R** within *01_Code* folder to transform raw reads into an ESV table on multiplexed data (same sample but at different loci). 
 
 Six steps are included:
-1. fastQC and multiQC on raw reads
+1. fastp and multiQC on raw reads
 2. Cutadapt to check for and remove adaptors (followed by a second fastQC/multiQC)
 	- The option novaseq TRUE/FALSE allowed to used to option -nextseq-trim=20
 3. dada2 filtering (followed by a third fastQC/multiQC)
 4. dada2 error rate assessment
 5. dada2 dereplication, sample inference and merging
-6. dada2 chimera removal
+6. dada2 filter ESV based on their expected length
+7. dada2 chimera removal
 
 Specific parameters of dada2 step can be modified in the file [*dada2_param.tsv*](./01_Code/Parameters/dada2_param.tsv)
 
@@ -200,12 +203,6 @@ Leray, M., Yang, J.Y., Meyer, C.P., Mills, S.C., Agudelo, N., Ranwez, V., Boehm,
 Miya M, Sato Y, Fukunaga T, et al (2015) MiFish, a set of universal PCR primers for metabarcoding environmental DNA from fishes: detection of more than 230 subtropical marine species. R Soc Open Sci 2:150088. https://doi.org/10.1098/rsos.150088
 
 Saunders M, Steeves R, MacIntyre LP, et al (2024) Monitoring estuarine fish communities – environmental DNA (eDNA) metabarcoding as a complement to beach seining. Can J Fish Aquat Sci e-First: https://doi.org/https://doi.org/10.1139/cjfas-2023-0227
-
-
-
-
-
-
 
 
 

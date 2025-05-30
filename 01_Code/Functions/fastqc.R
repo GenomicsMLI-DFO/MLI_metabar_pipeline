@@ -87,4 +87,16 @@ multiqc.multiplex <- function(folder.out, sens){
   
 }
 
-
+multiqc.fastp <- function(folder.in){
+  # Multi QC aggregation - run pretty fast ...
+  cmd <- paste(paste(list.files(folder.in, full.names = T) %>% 
+                       
+                       str_subset(".json"), collapse = " "),
+               "--outdir", file.path(folder.in, "MultiQC_report"),
+               "--filename", paste0("multiqc_report.html"),
+               "-f" # to rewrite on previous data
+  )
+  
+  system2("multiqc", cmd)
+  
+}

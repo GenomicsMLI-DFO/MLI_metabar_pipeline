@@ -45,4 +45,4 @@ assign.2: Blast;TOP;95
 PythonENV.path: 
 
 # Actual pipeline version
-MLI.version: 0.2.3
+MLI.version: 0.2.4

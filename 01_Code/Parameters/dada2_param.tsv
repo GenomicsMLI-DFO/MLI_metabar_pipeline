@@ -1,11 +1,9 @@
-Locus	Sens	truncQ	truncLen	trimLeft	trimRight	maxLen	minLen	minQ	maxEE
-COI	R1	10	0	0	0	Inf	150	0	1
-COI	R2	10	0	0	0	Inf	150	0	1
-MiFishU	R1	10	150	0	0	Inf	100	0	1
-MiFishU	R2	10	150	0	0	Inf	100	0	1
-12S248	R1	10	150	0	0	Inf	100	0	1
-12S248	R2	10	150	0	0	Inf	100	0	1
-12S160	R1	10	95	0	0	Inf	60	0	1
-12S160	R2	10	95	0	0	Inf	60	0	1
-dloopPvm	R1	2	0	0	0	Inf	100	0	Inf
-dloopPvm	R2	2	0	0	0	InF	100	0	Inf
+Locus	Sens	truncQ	truncLen	trimLeft	trimRight	maxLen	minLen	minQ	maxEE	minOverlap	minESVLen	maxESVLen
+COI	R1	10	0	0	0	Inf	150	0	1	30	300	330
+COI	R2	10	0	0	0	Inf	150	0	1			
+MiFishU	R1	10	0	0	0	Inf	100	0	1	30	150	190
+MiFishU	R2	10	0	0	0	Inf	100	0	1				
+12S248	R1	10	150	0	0	Inf	100	0	1	300	140	190			
+12S248	R2	10	150	0	0	Inf	100	0	1				
+12S160	R1	10	95	0	0	Inf	60	0	1	30	100	130
+12S160	R2	10	95	0	0	Inf	60	0	1			

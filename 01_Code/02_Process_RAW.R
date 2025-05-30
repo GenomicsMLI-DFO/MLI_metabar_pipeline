@@ -3,9 +3,6 @@
 
 # eDNA pipeline using DADA2
 # Template pipeline
-# 
-# Audrey Bourret
-# 2021
 
 # Library -----------------------------------------------------------------
 
@@ -39,8 +36,11 @@ Sys.setenv(PATH = paste(c(PythonENV.path,
                           Sys.getenv("PATH")),
                         collapse = .Platform$path.sep))
 
+# Check that fastqc, mutliqc and fastp are found on this computer
+
 system2("cutadapt", "--help")
 system2("multiqc", "--help")
+system2("fastp", "--help")
 
 # Data --------------------------------------------------------------------
 
@@ -66,23 +66,72 @@ cat(numCores, "core(s) will be used by the script",
 
 # Setting up the log file
 
-# Functions ---------------------------------------------------------------
 
-# Check that fastqc and mutliqc are found on this computer
+# 1. RAW quality assesment (fastp) ---------------------------------------
 
-system2("fastqc", "--help")
-system2("multiqc", "--help")
+# 1. RAW quality assesment (fastp) ---------------------------------------
 
-# 1. RAW quality assesment (fastqc) ---------------------------------------
+files.to.use <- list.files("00_Data/01b_RawData_rename",
+                           pattern = "R1.fastq.gz",
+                           full.names = T)
+files.to.use %>% length()
 
-# FastQC
-fastqc(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"),
-       folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"),
-       numCores = numCores)
+# Progress bar
+stepi <- 0
+pb <- txtProgressBar(min = 0, style = 3, max = length(files.to.use), initial = stepi ) 
 
-multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"),
-        loci = LOCUS, 
-        sens = SENS)
+
+for(x in files.to.use){
+  
+  cat("\nProcessing:", x, "\n")
+  
+  stepi <- stepi + 1
+  setTxtProgressBar(pb,stepi)
+  
+  #settings the files
+  file1 <- x
+  file2 <- file1 %>% stringr::str_replace("_R1", "_R2")
+  
+  file1.out <- file1 %>%  stringr::str_replace("01b_RawData_rename", "01c_RawData_Fastp") 
+  
+  file2.out <- file1.out %>% stringr::str_replace("_R1", "_R2")
+  out.json <- file1 %>% str_replace("00_Data/01b_RawData_rename/", "02_Results/01_FastQC/01_Raw/" ) %>% 
+    str_replace("_R1.fastq.gz", ".json") 
+  
+  out.html <- out.json %>% stringr::str_replace(".json", ".html")
+  out.log  <- out.json %>% stringr::str_replace(".json", ".log")
+  
+  # The command
+  
+  if(file.exists(x)){
+    
+    cmd1 <- paste("-w", numCores, # Number of cores
+                  "-i", file1,
+                  "-I", file2,
+                  "-o", file1.out,
+                  "-O", file2.out,
+                  "-j", out.json,
+                  "-h", out.html,
+                  sep = " ")
+   cmd1
+    
+    A1 <- system2("fastp", cmd1, stdout=T, stderr=T) # to R console
+    A1
+    
+    # save a file log
+    cat(file = out.log,
+        "Running Fastp", cmd1, A1,
+        append= T, sep = "\n\n")
+  
+    gc()   
+
+  }
+}
+
+close(pb) # Close the connection
+
+# Internal function
+multiqc.fastp("02_Results/01_fastp/")
 
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
 
@@ -94,7 +143,7 @@ multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "01_Raw"
 
 system2("cutadapt", "--help")
 
-cutadapt(folder.in = file.path(here::here(), "00_Data", "01b_RawData_rename"), 
+cutadapt(folder.in = file.path(here::here(), "00_Data", "01c_RawData_Fastp"), 
          folder.out = file.path(here::here(), "00_Data", "02a_Cutadapt"), 
          loci = LOCUS, 
          sens = SENS, 
@@ -298,6 +347,9 @@ for(l in LOCUS){
   mergers <- vector("list", length(filesF.temp))
   names(mergers) <- filesF.temp
   
+  # Load overlap threshold
+   minOverlap <- PARAM.DADA2 %>% dplyr::filter(Locus == l, Sens == "R1") %>% pull(minOverlap)
+
   # Set a progress bar
   pb <- txtProgressBar(min = 0, max = length(filesF.temp), style = 3)
   
@@ -333,7 +385,7 @@ for(l in LOCUS){
                          derepF = derep.F, 
                          dadaR = dada.R, 
                          derepR = derep.R, 
-                         minOverlap = 30, 
+                         minOverlap = minOverlap, 
                          maxMismatch = 0,
                          returnRejects = FALSE,
                          verbose=TRUE)
@@ -362,13 +414,13 @@ for(l in LOCUS){
   cat("\nSaving SeqTab for" , l, "\n") 
   
   save(list = paste0("seqtab.", l, ".int"),
-       file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("seqtab.wCHIM.", l, ".Rdata")  ))
+       file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("seqtab.raw.", l, ".Rdata")  ))
   
   close(pb)
   
 }
 
-# 3.6 Remove chimera 
+# 3.6 Length filter
 
 # To reload seqtab if necessary  
 if(length(str_subset(ls(), "seqtab.")) != length(LOCUS)){
@@ -379,11 +431,61 @@ if(length(str_subset(ls(), "seqtab.")) != length(LOCUS)){
   
 }
 
+
+length.stat <- tibble()
+
+for(l in LOCUS){
+  
+  cat("\nLength filtratrion for" , l, "\n")
+  
+  MINLEN <- PARAM.DADA2 %>% dplyr::filter(Locus == l, Sens == "R1") %>% pull(minESVLen)
+  MAXLEN <- PARAM.DADA2 %>% dplyr::filter(Locus == l, Sens == "R1") %>% pull(maxESVLen)
+  
+  seqlens <- nchar(getSequences(get(paste0("seqtab.",l,".int"))))
+  
+  length.stat  <-  bind_rows(length.stat, tibble(Locus = l,ESVlength = seqlens))
+  
+  assign(x = paste0("seqtab.length.", l), value = get(paste0("seqtab.",l,".int"))[, seqlens >= MINLEN & seqlens <= MAXLEN]  )
+
+  cat("\nKept",  ncol(get(paste0("seqtab.length.", l))), "ESV out of",   ncol(get(paste0("seqtab.",l,".int"))), "\n") 
+
+  cat("\nSaving SeqTab after length filtration for" , l, "\n") 
+  
+  save(list = paste0("seqtab.length.", l),
+       file = file.path(here::here(), "00_Data", "03b_SeqTab_dada2",paste0("seqtab.length.", l, ".Rdata")  ))
+  
+}
+
+gg.prefilt <- length.stat  %>% ggplot(aes(x =ESVlength )) +
+  geom_histogram() +
+  geom_vline(data = PARAM.DADA2 %>% dplyr::filter(Locus %in% LOCUS, Sens == "R1"), aes(xintercept =minESVLen ), col = "darkred", lty = "dashed") +
+  geom_vline(data = PARAM.DADA2 %>% dplyr::filter(Locus %in% LOCUS, Sens == "R1"), aes(xintercept =maxESVLen ), col = "darkred", lty = "dashed") +
+  facet_wrap(~Locus, scale = "free", nrow = 1) +
+  ggtitle("ESV filtration based on sequence length") +
+  theme_bw(base_size = 8)
+
+gg.prefilt
+
+ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_length_filt.png"), 
+       plot =  gg.prefilt, height = 5, width = 6)
+
+# 3.6 Remove chimera 
+
+# To reload seqtab if necessary  
+if(length(str_subset(ls(), "seqtab.")) != length(LOCUS)*2){
+  
+  for(x in list.files(file.path(here::here(), "00_Data", "03b_SeqTab_dada2"), full.names = T, pattern = ".Rdata")){
+    load(x)
+  }
+  
+}
+
+
 for(l in LOCUS){
   
   cat("\nRemoving chimera for" , l, "\n")
   
-  assign(x = paste0("ESVtab.", l), value = removeBimeraDenovo(get(paste0("seqtab.",l,".int")), method = "consensus", 
+  assign(x = paste0("ESVtab.", l), value = removeBimeraDenovo(get(paste0("seqtab.length.",l)), method = "consensus", 
                                                               multithread = ifelse(numCores > 1, numCores, F), verbose = TRUE)
   )
   
@@ -409,6 +511,7 @@ for(l in LOCUS){
   RES <- data.frame(ID_sample = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
                     Loci = l,
                     Merge = rowSums(get(paste0("seqtab.",l,".int"))),
+                    ESVlength =  rowSums(get(paste0("seqtab.length.",l))),
                     Final =  rowSums(get(paste0("ESVtab.",l))) ,
                     stringsAsFactors = F)  
   
@@ -422,8 +525,8 @@ Nread.summary
 write_csv(Nread.summary, file = file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_Nreads.csv"))
 
 
-graph.Nread <- Nread.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
-  mutate(Reads = factor(Reads, levels = c("Merge", "Final")),
+graph.Nread <- Nread.summary %>% tidyr::pivot_longer(cols = c(Merge, ESVlength, Final), names_to = "Reads", values_to = "N")  %>%
+  mutate(Reads = factor(Reads, levels = c("Merge", "ESVlength", "Final")),
          N1 = N + 1) %>%   
   left_join(data.info) %>% 
   ggplot(aes(x = Reads, y = N1, col = Sample_type, group = ID_sample)) +
@@ -445,6 +548,7 @@ ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Nreads_
 ESV.summary <- data.frame(ID_sample = character(),
                           Loci = character(),
                           Merge = numeric(),
+                          ESVlength = numeric(),
                           Final = numeric(),
                           stringsAsFactors = F)  
 
@@ -453,6 +557,7 @@ for(l in LOCUS){
   RES <- data.frame(ID_sample = rowSums(get(paste0("seqtab.",l,".int"))) %>% names(),
                     Loci = l,
                     Merge = apply(get(paste0("seqtab.",l,".int")), MARGIN = 1, FUN = function(x){length(x[x>0])}),
+                    ESVlength = apply(get(paste0("seqtab.length.",l)), MARGIN = 1, FUN = function(x){length(x[x>0])}),      
                     Final =  apply(get(paste0("ESVtab.",l)), MARGIN = 1, FUN = function(x){length(x[x>0])}) ,
                     stringsAsFactors = F)  
   
@@ -466,14 +571,14 @@ ESV.summary
 write_csv(ESV.summary, file = file.path(here::here(), "02_Results", "02_Filtrations", "ESVtab_Stats_NESV.csv"))
 
 
-graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge, Final), names_to = "Reads", values_to = "N")  %>%
-  mutate(Reads = factor(Reads, levels = c("Merge", "Final"))) %>%   
+graph.ESV <- ESV.summary %>% tidyr::pivot_longer(cols = c(Merge,ESVlength, Final), names_to = "Reads", values_to = "N")  %>%
+  mutate(Reads = factor(Reads, levels = c("Merge", "ESVlength", "Final"))) %>%   
   left_join(data.info) %>% 
   ggplot(aes(x = Reads, y = N, col = Sample_type, group = ID_sample)) +
   geom_point() +
   geom_line() + 
   #geom_boxplot() +
-  #scale_y_continuous(trans="log10") +
+  scale_y_continuous(trans="log10") +
   labs(y = "N ESV", x = "Pipeline step")+ 
   facet_grid(~Loci) +
   theme_bw()+
@@ -541,7 +646,6 @@ gg.seq
 ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "ESV_length.png"), plot =  gg.seq, height = 5, width = 8)
 
 
-
 # Write a final log
 
 cat("\nEND of 02_Process_RAW.R script\n",
@@ -559,6 +663,7 @@ cat("\nEND of 02_Process_RAW.R script\n",
     paste("Biostrings", packageVersion("Biostrings"), sep = ": "),   
     
     "\n~ External programs ~",
+    paste("fastp", system2("fastp", "-v", stdout=T, stderr=T), sep = ": "),    
     paste("fastqc", system2("fastqc", "-v", stdout=T, stderr=T), sep = ": "),     
     paste("multiqc", system2("multiqc", "--version", stdout=T, stderr=T), sep = ": "),     
     paste("cutadapt", system2("cutadapt", "--version", stdout=T, stderr=T), sep = ": "),  

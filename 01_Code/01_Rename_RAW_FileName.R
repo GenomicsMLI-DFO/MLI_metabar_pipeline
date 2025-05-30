@@ -4,20 +4,12 @@
 # Simple code to rename Raw files into something a little bit 
 # easier to work with
 
-# Audrey Bourret
-# 2021-12-20
-
 # Library -----------------------------------------------------------------
 
 library(parallel)
 library(here)
 library(magrittr)
 library(stringr)
-
-# Parameters --------------------------------------------------------------------
-
-numCores <- 1
-
 
 # Create new files names --------------------------------------------------
 
@@ -57,3 +49,8 @@ for(i in seq_along(R1.old)){
   file.copy(from = R2.old[i], to = R2.new[i])  
 }
 
+## It could be faster to simply rename the files instead of copying them :) 
+#for(i in seq_along(R1.old)){
+#  file.rename(from = R1.old[i], to = R1.new[i])
+#  file.rename(from = R2.old[i], to = R2.new[i])  
+#}
