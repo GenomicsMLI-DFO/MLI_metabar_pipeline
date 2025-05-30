@@ -118,18 +118,6 @@ for(l in LOCUS){
 
 RES.all <- readr::read_csv("02_Results/03_TaxoAssign/Assignements.Final.csv")
 
-# if(PROG.ASSIGN == "Blast"){
-# load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
-# RES.all <-  RES.all.ncbi
-#   }
-# if(PROG.ASSIGN == "RDP"){
-# load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
-# RES.all <- RES.all.rdp
-#   }
-# if(PROG.ASSIGN == "Blast.local"){
-#   load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
-#   RES.all <-  RES.all.ncbi
-# }
 
 # Assign them to an object
 for(l in LOCUS){

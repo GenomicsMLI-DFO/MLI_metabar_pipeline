@@ -218,14 +218,12 @@ for(m in c("LCA", "TOP") ){
   
 }
 
-
-readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.ncbi.wSamples.csv")))
-
+#readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.ncbi.wSamples.csv")))
 
 #FINAL_RES %>% group_by(ESV) %>% summarise(N = n()) %>% arrange(desc(N))
 
-save(list = c("RES.all.ncbi"),
-     file = file.path(res.path, "ESVtab_assign.Rdata"  ))
+#save(list = c("RES.all.ncbi"),
+#     file = file.path(res.path, "ESVtab_assign.Rdata"  ))
 
 
 # Basic figures -----------------------------------------------------------

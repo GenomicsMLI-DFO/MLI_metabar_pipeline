@@ -134,10 +134,10 @@ for(m in c("RDP") ){
   
 }
 
-readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.rdp.wSamples.csv")))
-
-save(list = c("RES.all.rdp"),
-   file = file.path(res.path, "ESVtab_assign.Rdata"  ))
+#readr::write_csv(FINAL_RES, file = file.path(res.path, paste0("RES.all.rdp.wSamples.csv")))
+#
+#save(list = c("RES.all.rdp"),
+#   file = file.path(res.path, "ESVtab_assign.Rdata"  ))
 
 
 # Basic figures -----------------------------------------------------------

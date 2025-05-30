@@ -39,15 +39,6 @@ data.info <- readr::read_csv(file.path(here::here(), "00_Data", "00_FileInfos", 
 data.info
 
 
-# Which assignation method (RPD, NCBI) and threshold should be used
-
-#PROG.ASSIGN     <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][1]
-#METHOD.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][2]
-#THRESH.ASSIGN   <- stringr::str_split(get.value("assign.metabar"), pattern = ";")[[1]][3]
-
-#cat("Taxonomical assignments uploaded will be ", PROG.ASSIGN,METHOD.ASSIGN,THRESH.ASSIGN ,"\nTheses parameters can be changed with the file Option.txt", sep = " ")
-
-
 # Check that the structure is alright
 data.info %>% dplyr::pull(Run) %>% table()
 
@@ -155,19 +146,6 @@ for(l in LOCUS){
 # We need to upload the right assignment method
 
 RES.all <- readr::read_csv("02_Results/03_TaxoAssign/Assignements.Final.csv")
-
-# if(PROG.ASSIGN == "Blast"){
-# load(file.path(here::here(), "02_Results/03_TaxoAssign/01_Blast_nt/", "ESVtab_assign.Rdata"))  
-# RES.all <-  RES.all.ncbi
-#   }
-# if(PROG.ASSIGN == "RDP"){
-# load(file.path(here::here(), "02_Results/03_TaxoAssign/02_RDP/", "ESVtab_assign.Rdata"))
-# RES.all <- RES.all.rdp
-#   }
-# if(PROG.ASSIGN == "Blast.local"){
-#   load(file.path(here::here(), "02_Results/03_TaxoAssign/03_Blast_local/", "ESVtab_assign.Rdata"))  
-#   RES.all <-  RES.all.ncbi
-# }
 
 # Assign them to an object
 for(l in LOCUS){
