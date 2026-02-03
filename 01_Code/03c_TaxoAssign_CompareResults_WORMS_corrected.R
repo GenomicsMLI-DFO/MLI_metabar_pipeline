@@ -216,43 +216,55 @@ valid.taxo.f <- valid.taxo %>% separate(valid_name, c("valid_name", "B"),sep = "
                                mutate(species = case_when(rank == "Species" ~ valid_name, rank != "Species" ~ NA) ) %>%
   dplyr::rename(Taxon = scientificname)
 
+## Add to the original file
 
-#add WORMS into the original Assignement file
-assignations.valid <- assignations %>% left_join(valid.taxo.f %>% select(Taxon, AphiaID, authority, status, valid_name, kingdom, phylum, class,order,family,genus, species), by = "Taxon")
-assignations.valid <- assignations.valid  %>% separate(valid_name, c("A",NA), remove = F) %>% 
-  mutate(genus = case_when(Levels == "species" ~ A, 
-                           Levels == "genus" ~ A, 
-                           Levels == "family"~ NA,
-                           Levels == "order"~ NA,
-                           Levels == "class"~ NA,
-                           Levels == "phylum"~ NA,
-                           Levels == "kingdom"~ NA) ) %>% 
-  select(-c(genus.y,Taxon,A)) %>%
-  dplyr::rename(kingdom_NCBI = kingdom.x, 
-         phylum_NCBI = phylum.x,
-         class_NCBI = class.x,
-         order_NCBI = order.x,
-         family_NCBI = family.x,
-         genus_NCBI = genus.x,
-         species_NCBI =species.x,
-         kingdom = kingdom.y,
-         phylum =  phylum.y,
-         class = class.y,
-         order = order.y,
-         family = family.y,
-         Taxon = valid_name,
-         species = species.y
-         #genus = genus.y,
+assignations.valid <- assignations %>%
+  left_join(
+    valid.taxo.f %>%
+      select(Taxon, AphiaID, authority, status, valid_name,
+             kingdom, phylum, class, order, family, genus, species),
+    by = "Taxon",
+    suffix = c(".ori", ".worms")
+  ) %>%
+  # valid_name peut contenir "Genus species Author, year" ; on récupère le premier mot (Genus)
+  tidyr::separate(valid_name, into = c("A", NA), remove = FALSE) %>%
+  mutate(
+    # Recalcule du genus à partir du valid_name uniquement quand c'est pertinent
+    genus_from_validname = case_when(
+      Levels %in% c("species", "genus") ~ A,
+      TRUE ~ NA_character_
+    ),
+    # Pour chaque rang, si le validé existe -> on le prend, sinon on garde l'original
+    kingdom = coalesce(kingdom.worms, kingdom.ori),
+    phylum  = coalesce(phylum.worms,  phylum.ori),
+    class   = coalesce(class.worms,   class.ori),
+    order   = coalesce(order.worms,   order.ori),
+    family  = coalesce(family.worms,  family.ori),
+    # genus : priorité au genus recalculé depuis valid_name (quand applicable), 
+    # puis au genus validé (si présent), sinon à l'original
+    genus   = coalesce(genus_from_validname, genus.worms, genus.ori),
+    species = coalesce(species.worms, species.ori),
+    # Le libellé principal : si validé connu, on prend valid_name ; sinon on garde Taxon d'origine
+    Taxon   = coalesce(valid_name, Taxon)
+  ) %>%
+  # On garde les métadonnées utiles du côté validé
+  mutate(
+    AphiaID  = AphiaID,   # si tu veux prioriser un AphiaID validé
+    authority = authority,
+    status    = status
   )
 
-write.csv(assignations.valid, file = file.path(here::here(), "02_Results/03_TaxoAssign/Assignements.Final.csv"))
+dup.ESV <- assignations.valid %>% dplyr::filter(duplicated(ESV)) %>% pull(ESV)
+
+assignations.valid %>% dplyr::filter(ESV %in% dup.ESV) %>% View()
+
+assignations.valid %>% distinct(.keep_all = T) %>% nrow()
+assignations %>% nrow()
+
+assignations.valid <- assignations.valid %>% distinct(.keep_all = T)
+
+readr::write_csv(assignations.valid, file = file.path(here::here(), "02_Results/03_TaxoAssign/Assignements.Final.csv"))
 
 
 # https://www.marinespecies.org/aphia.php?p=manual to check the significance of WoRMS status. 
-
-
-
-
-
-
 
