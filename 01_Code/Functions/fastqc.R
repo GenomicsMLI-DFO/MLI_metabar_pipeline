@@ -1,7 +1,7 @@
 #system2("fastqc", "--help")
 
 # Wrapper around FastQC
-fastqc <- function(folder.in, folder.out, numCores = 1) {
+fastqc <- function(folder.in, folder.out, fastqc = "fastqc",  numCores = 1) {
   
     Nfiles <- length(list.files(folder.in, pattern = ".fastq.gz"))
     
@@ -11,20 +11,13 @@ fastqc <- function(folder.in, folder.out, numCores = 1) {
     
     temp <-  parallel::mclapply(list.files(folder.in, full.name = T, pattern = "fastq"),
                       FUN = function(i){cmd <- paste("--outdir", folder.out, i, "-q")
-                      system2("fastqc", cmd)
+                      system2(fastqc, cmd)
                       } ,
                       mc.cores = numCores
     )  
     
-   # # Save info on the log file
-   #  cat("FastQC analysis was performed:",
-   #     get.value("result.FQcutadapt.path"),
-  #      "\n-------------------------\n", 
-   #     file=get.value("Raw.log"), 
-    #    append = T, sep = "\n") 
-    
     cat("\nFastQC is over, reports were saved in", folder.out, "\n")  
-    
+ 
     
 } # End of my function
 
