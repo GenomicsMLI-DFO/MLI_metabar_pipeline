@@ -3,6 +3,7 @@ library(readr)
 
 # Function to call blastn
 
+
 quick.blastn <- function(fasta.file, out.file, 
                          db = "nt",
                          perc_identity = 95, 
@@ -10,6 +11,7 @@ quick.blastn <- function(fasta.file, out.file,
                          max_target_seqs = 500, 
                          evalue = "1e-50",
                          NCBI.path = NCBI.path,
+                         blastn = "blastn",
                          n.cores = numCores
                          ){
   
@@ -35,13 +37,11 @@ quick.blastn <- function(fasta.file, out.file,
           "-outfmt", "7", 
           sep = " ")           
          }
-  
-  
-  A <-system2("blastn", cmd1, stdout=T, stderr=T,
+   
+  A <-system2(blastn, cmd1, stdout=T, stderr=T,
               env = paste0("BLASTDB=", NCBI.path))
   
 }
-
 
 load.blast <- function(out.file, 
                        ncbi.tax = ncbi.tax,
