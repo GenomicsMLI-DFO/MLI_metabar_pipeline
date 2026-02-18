@@ -217,7 +217,10 @@ for(l in LOCUS){
                                            pcrs = get(paste0("pcr.", l)), 
                                            samples = get(paste0("samples.", l)))
   
-  
+  #remove empty MOTUs
+  metabarlist.int <- subset_metabarlist(metabarlist.int, "reads", 
+                                        indices = (rowSums(metabarlist.int$reads)>0))
+
   assign(x = paste0("metabarlist.ori.", l), 
          value = metabarlist.int )
   
