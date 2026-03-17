@@ -85,46 +85,46 @@ extract_cutadapt_line <- function(TAB, TEXT){
 
 
 extract_cutadapt_stats <- function(folder.in, loci){
-  # List log files
+
+  # Trie les loci par longueur décroissante pour les motifs
+  loci_sorted <- loci[order(-nchar(loci))]
+  
+  # Crée le motif regex avec underscores devant chaque locus
+  loci_pattern <- paste0("_(", paste(loci_sorted, collapse="|"), ")")
+  
+  # Liste les log files
   cutadapt.log <- list.files(folder.in, full.names = F) %>% str_subset("log.txt")
   
-   
-  # New dataframe 
   RES <- data.frame(ID_sample = character(),
                     Loci = character(),
                     Raw = numeric(),
                     Adapt = numeric(),
                     stringsAsFactors = F)
-  # Loop over the files
   
   for(x in seq_along(cutadapt.log)){
-    
     cat(cutadapt.log[x], sep="\n")
- 
     log.file <- readLines(file.path(folder.in, cutadapt.log[x]))
     
-       
     sample_full <-  cutadapt.log[x] %>% str_remove("_cutadapt_log.txt")
-    sample <- sample_full %>% stringr::str_remove(paste(paste0("_", loci), collapse = "|"))
-    locus  <- sample_full %>% stringr::str_remove(paste0(sample, "_"))  
+    
+    # Utilisez str_match pour extraire le locus de façon sûre
+    locus <- str_match(sample_full, loci_pattern)[,2]
+    # Retirez le locus du nom pour obtenir le sample
+    sample <- sample_full %>% str_remove(paste0("_", locus))
+    
     N.start <- extract_cutadapt_line(log.file, "Total read pairs processed:" ) %>% as.numeric()
     N.cut <- sapply(str_split(extract_cutadapt_line(log.file, "Pairs written \\(passing filters\\):"), "\\("), `[`,1 ) %>% as.numeric()
     
     RES[x,] <- c(sample, locus, N.start, N.cut)
-    
+  }
   
-  
-}
-
   Reads.sum <- RES %>% mutate(Raw = as.numeric(as.character(Raw)),
                               Adapt = as.numeric(as.character(Adapt)))
   
   write_csv(Reads.sum, file = file.path(folder.in, "Cutadapt_Stats.csv"))
-  
   cat("\nStats can be found in", file.path(folder.in, "Cutadapt_Stats.csv"), "\n")
-                              
-}
 
+}
 
 
 
