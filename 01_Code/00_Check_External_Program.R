@@ -1,8 +1,9 @@
 # Info --------------------------------------------------------------------
 
 # Script to check that all needed external programs can be reach by R
-# If you reach an error message, it's because the program is not install 
+# If you reach an error message, it's because the program is not install
 # system wide and thus the pipeline script won't work correctly.
+# You can set different program path in the Option.txt file.
 
 
 # Library -----------------------------------------------------------------
@@ -12,7 +13,7 @@ source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 
 # Step 0: Python virtual environment --------------------------------------
 
-# If some program (e.g., multiqc and cutadapt) are installed in a python 
+# If some program (e.g., multiqc and cutadapt) are installed in a python
 # virtual environment, you could add the virtual environment in the R path env
 # You can add your specific python virtual environment in the Option.txt file
 
@@ -32,22 +33,22 @@ Sys.setenv(PATH = paste(c(PythonENV.path,
 # FASTQC
 # https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
-system2("fastqc", "--help")
+system2(get.value("fastqc.path"), "--help")
 
 # MultiQC
 # https://multiqc.info/
 
-system2("multiqc", "--help")
+system2(get.value("multiqc.path"), "--help")
 
 # Fastp
 # https://github.com/OpenGene/fastp
 
-system2("fastp", "--help")
+system2(get.value("fastp.path"), "--help")
 
 # Cutadapt
 # https://cutadapt.readthedocs.io/en/stable/
 
-system2("cutadapt", "--help")
+system2(get.value("cutadapt.path"), "--help")
 
 
 # Step 2: Blast -----------------------------------------------------------
@@ -60,6 +61,6 @@ file.exists(NCBI.path)
 # Blastn
 # https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata
 
-system2("blastn",  "-help", 
+system2(get.value("blastn.path"),  "-help",
         env = paste0("BLASTDB=", NCBI.path))
 

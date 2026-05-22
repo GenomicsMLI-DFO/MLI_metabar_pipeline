@@ -22,7 +22,7 @@ source(file.path(here::here(), "01_Code", "Functions", "get.value.R"))
 # Load assignment results -------------------------------------------------
 
 # This script will check across all folders available
-res.dirs <- list.dirs("02_Results/03_TaxoAssign", full.names = F)[-1] 
+res.dirs <- list.dirs("02_Results/03_TaxoAssign", full.names = F)[-1]
 res.dirs
 
 # Compile the results
@@ -30,8 +30,8 @@ res <- tibble()
 
 for(i in res.dirs){
 
-res.file <- list.files(file.path("02_Results/03_TaxoAssign",i), pattern = "RES.all", full.names = T) %>% 
-              str_subset("wSamples", negate = T)  
+res.file <- list.files(file.path("02_Results/03_TaxoAssign",i), pattern = "RES.all", full.names = T) %>%
+              str_subset("wSamples", negate = T)
 
 res.int <- read_csv(res.file) %>% mutate(Folder = i)
 
@@ -47,21 +47,21 @@ write_csv(res , "02_Results/03_TaxoAssign/Assignements.ALL.csv")
 
 # Graphics ----------------------------------------------------------------
 
-graph.ESV <- res %>% dplyr::filter(Levels %in% c("species")) %>% 
-  dplyr::group_by(Taxon, phylum, Levels, Method, Threshold, Folder, RefSeq ) %>% 
+graph.ESV <- res %>% dplyr::filter(Levels %in% c("species")) %>%
+  dplyr::group_by(Taxon, phylum, Levels, Method, Threshold, Folder, RefSeq ) %>%
   dplyr::summarize(N_ESV = n()) %>%
-  mutate(CAT = paste(Method, Threshold)) %>% 
+  mutate(CAT = paste(Method, Threshold)) %>%
   ggplot(aes(y = Taxon, x = CAT))+
-  geom_bin2d(aes(fill = N_ESV)) +
+  geom_tile(aes(fill = N_ESV)) +
   scale_fill_viridis_c() +
   facet_grid(phylum~RefSeq + Method, scale = "free", space = "free")+
 theme_bw() +
   labs(title = "Visual comparison detected species",
-       x = "Assignement method")+ 
+       x = "Assignement method")+
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8),
         axis.text.y = element_text(face = "italic", size = 8, vjust = 0.5),
         axis.ticks.y = element_blank(),
-        strip.text.y = element_text(angle = 0, size = 8), 
+        strip.text.y = element_text(angle = 0, size = 8),
         panel.spacing.y=unit(0.1, "lines"),
         legend.position = "right",
         legend.text = element_text(size = 8),
@@ -70,21 +70,21 @@ theme_bw() +
 
 graph.ESV
 
-graph.loci <- res %>% dplyr::filter(Levels %in% c("species")) %>% 
-  dplyr::group_by(Taxon, phylum, Levels, Method, Threshold, Folder, RefSeq ) %>% 
-  summarise(N_loci = length(unique(Loci))) %>% 
-  mutate(CAT = paste(Method, Threshold)) %>% 
+graph.loci <- res %>% dplyr::filter(Levels %in% c("species")) %>%
+  dplyr::group_by(Taxon, phylum, Levels, Method, Threshold, Folder, RefSeq ) %>%
+  summarise(N_loci = length(unique(Loci))) %>%
+  mutate(CAT = paste(Method, Threshold)) %>%
   ggplot(aes(y = Taxon, x = CAT))+
-  geom_bin2d(aes(fill = N_loci)) +
+  geom_tile(aes(fill = N_loci)) +
   scale_fill_viridis_c() +
   facet_grid(phylum~RefSeq + Method, scale = "free", space = "free")+
   theme_bw() +
   labs(title = "Visual comparison detected species",
-       x = "Assignement method")+ 
+       x = "Assignement method")+
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8),
         axis.text.y = element_text(face = "italic", size = 8, vjust = 0.5),
         axis.ticks.y = element_blank(),
-        strip.text.y = element_text(angle = 0, size = 8), 
+        strip.text.y = element_text(angle = 0, size = 8),
         panel.spacing.y=unit(0.1, "lines"),
         legend.position = "right",
         legend.text = element_text(size = 8),
@@ -113,7 +113,7 @@ method.2
 # Subset the dataset with the preferred assignment method
 res.1 <- res %>% dplyr::filter(Method ==  stringr::str_split(method.1, pattern = ";")[[1]][2] ,
                                Threshold == stringr::str_split(method.1, pattern = ";")[[1]][3],
-                               Script  == stringr::str_split(method.1, pattern = ";")[[1]][1]) %>% 
+                               Script  == stringr::str_split(method.1, pattern = ";")[[1]][1]) %>%
                  mutate(Assignment.method = method.1)
 
 res.1 %>% group_by(Loci) %>% summarise(N = n())
@@ -121,7 +121,7 @@ res.1 %>% group_by(Loci) %>% summarise(N = n())
 # Subset the dataset with the second assignment method
 res.2 <- res %>% dplyr::filter(Method ==  stringr::str_split(method.2, pattern = ";")[[1]][2] ,
                                Threshold == stringr::str_split(method.2, pattern = ";")[[1]][3],
-                               Script  == stringr::str_split(method.2, pattern = ";")[[1]][1]) %>% 
+                               Script  == stringr::str_split(method.2, pattern = ";")[[1]][1]) %>%
   mutate(Assignment.method = method.2)
 
 res.2 %>% group_by(Loci) %>% summarise(N = n())
@@ -129,7 +129,7 @@ res.2 %>% group_by(Loci) %>% summarise(N = n())
 res.2 %>% dplyr::filter(ESV %nin% res.1$ESV) %>%  group_by(Loci) %>% summarise(N = n())
 
 
-res.final <- bind_rows(res.1, 
+res.final <- bind_rows(res.1,
                        res.2 %>% dplyr::filter(ESV %nin% res.1$ESV) )
 res.final
 # Check that no duplicated values persisted
@@ -141,21 +141,21 @@ write_csv(res.final,  "02_Results/03_TaxoAssign/Assignements.not.corrected.csv")
 
 
 
-graph.ESV.final <- res.final %>% dplyr::filter(Levels %in% c("species", "genus")) %>% 
-  dplyr::group_by(Taxon, phylum, Levels, Loci, Assignment.method ) %>% 
-  summarise(N_ESV = n()) %>% 
-  dplyr::mutate(Assignment.method = factor(Assignment.method, levels = c(method.1, method.2))) %>% 
+graph.ESV.final <- res.final %>% dplyr::filter(Levels %in% c("species", "genus")) %>%
+  dplyr::group_by(Taxon, phylum, Levels, Loci, Assignment.method ) %>%
+  summarise(N_ESV = n()) %>%
+  dplyr::mutate(Assignment.method = factor(Assignment.method, levels = c(method.1, method.2))) %>%
    ggplot(aes(y = Taxon, x = Assignment.method))+
-  geom_bin2d(aes(fill = N_ESV)) +
+  geom_tile(aes(fill = N_ESV)) +
   scale_fill_viridis_c() +
   facet_grid(phylum~Loci, scale = "free", space = "free")+
   theme_bw() +
   labs(title = "Detected species combining 2 methods",
-       x = "Assignement method")+ 
+       x = "Assignement method")+
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8),
         axis.text.y = element_text(face = "italic", size = 8, vjust = 0.5),
         axis.ticks.y = element_blank(),
-        strip.text.y = element_text(angle = 0, size = 8), 
+        strip.text.y = element_text(angle = 0, size = 8),
         panel.spacing.y=unit(0.1, "lines"),
         legend.position = "right",
         legend.text = element_text(size = 8),
@@ -175,7 +175,7 @@ source(file.path(here::here(), "01_Code", "Functions", "fct_WoRMS.R"))
 assignations <- readr::read_csv(file.path("02_Results/03_TaxoAssign/Assignements.not.corrected.csv"))
 
 #remove duplicate Taxon and NA
-assignations.unique <- assignations %>% distinct(Taxon, .keep_all = T) %>% 
+assignations.unique <- assignations %>% distinct(Taxon, .keep_all = T) %>%
   select(species,Taxon, Levels, genus, family, order, class, phylum, kingdom, ESV)
 assignations.unique <- assignations.unique %>% drop_na(Taxon)
 
@@ -190,15 +190,15 @@ sep
 for(x in sep){
   cat("\nWe now process row number", x)
   y <- x + 9
-  
+
   if(y > length(list.taxon)){
     y <- length(list.taxon)
   }
-  
+
   valid.taxo.int <- validateWORMS(list.taxon[c(x:y)])
-  
+
   valid.taxo <- bind_rows(valid.taxo, valid.taxo.int)
-  
+
 }
 
 write.csv(valid.taxo, file = file.path(here::here(), "02_Results/03_TaxoAssign/Assignements_WoRMS_valid.csv"))
@@ -240,7 +240,7 @@ assignations.valid <- assignations %>%
     class   = coalesce(class.worms,   class.ori),
     order   = coalesce(order.worms,   order.ori),
     family  = coalesce(family.worms,  family.ori),
-    # genus : priorité au genus recalculé depuis valid_name (quand applicable), 
+    # genus : priorité au genus recalculé depuis valid_name (quand applicable),
     # puis au genus validé (si présent), sinon à l'original
     genus   = coalesce(genus_from_validname, genus.worms, genus.ori),
     species = coalesce(species.worms, species.ori),
@@ -266,5 +266,5 @@ assignations.valid <- assignations.valid %>% distinct(.keep_all = T)
 readr::write_csv(assignations.valid, file = file.path(here::here(), "02_Results/03_TaxoAssign/Assignements.Final.csv"))
 
 
-# https://www.marinespecies.org/aphia.php?p=manual to check the significance of WoRMS status. 
+# https://www.marinespecies.org/aphia.php?p=manual to check the significance of WoRMS status.
 

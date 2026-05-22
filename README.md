@@ -1,6 +1,6 @@
 # MLI metabarcoding pipeline
 
-**Current version : 0.2.4**  
+**Current version : 0.2.5**  
 Check [this page](https://github.com/GenomicsMLI-DFO/MLI_metabar_pipeline/releases) for previous versions of the pipeline
 
 __Main author:__  Audrey Bourret         
@@ -44,7 +44,7 @@ The R scripts should be executed line by line within an intregrated development 
   - [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
   - [blast](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 
-To be sure that the external command is found by R, try to run the test script **01_Code/00_Check_External_Program.R**, or these commands directly:
+Program paths can be specified in the *Options.txt* file. To be sure that the external command is found by R, try to run the test script **01_Code/00_Check_External_Program.R**, or these commands directly:
 
 ```{r}
 system2("fastqc", "--help")
