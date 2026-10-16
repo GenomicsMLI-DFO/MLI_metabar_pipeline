@@ -132,7 +132,8 @@ for(x in files.to.use){
 close(pb) # Close the connection
 
 # Internal function
-multiqc.fastp("02_Results/01_FastQC/01_Raw/", multiqc = get.value("multiqc.path"))
+multiqc.fastp("02_Results/01_FastQC/01_Raw/", 
+             multiqc = get.value("multiqc.path"))
 
 
 # 2. RAW to FILT (cutadapt + dada2) ------------------------------------------------------------
@@ -203,11 +204,13 @@ ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "Cutadap
 # Running another fastqc following cutadapt
 fastqc(folder.in = file.path(here::here(), "00_Data", "02a_Cutadapt"),
        folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cutadapt"),
+       fastqc = get.value("fastqc.path"),
        numCores = numCores)
 
 multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "02_Cutadapt"),
         loci = LOCUS,
-        sens = SENS)
+        sens = SENS,
+        multiqc = get.value("multiqc.path"))
 
 
 # 2.2 DADA2
@@ -269,11 +272,13 @@ ggsave(filename = file.path(here::here(), "02_Results/02_Filtrations/", "DADA2_f
 # Running another fastqc following cutadapt
 fastqc(folder.in = file.path(here::here(), "00_Data", "02b_Filtered_dada2"),
        folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada2"),
+       fastqc = get.value("fastqc.path"),
        numCores = numCores)
 
 multiqc(folder.out = file.path(here::here(), "02_Results", "01_FastQC", "03_Dada2"),
         loci = LOCUS,
-        sens = SENS)
+        sens = SENS,
+        multiqc = get.value("multiqc.path"))
 
 
 # 3. FILT to ASV (denoise with DADA2) --------------------------------------------------
